@@ -1,0 +1,126 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
+  background: #f4f5f7;
+  color: #222;
+}
+
+.app {
+  max-width: 680px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  padding: 18px;
+  border-bottom: 1px solid #ddd;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+header p {
+  margin: 4px 0 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.chat {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  min-height: 520px;
+}
+
+.message {
+  max-width: 82%;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border-radius: 16px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.message.user {
+  margin-left: auto;
+  background: #d8ecff;
+}
+
+.message.assistant {
+  margin-right: auto;
+  background: #f0f0f0;
+}
+
+.input-area {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid #ddd;
+}
+
+.input-area input {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 999px;
+  font-size: 16px;
+}
+
+.input-area button {
+  padding: 0 18px;
+  border: none;
+  border-radius: 999px;
+  background: #222;
+  color: #fff;
+  font-size: 15px;
+}
+
+.task-section {
+  border-top: 1px solid #ddd;
+  padding: 14px;
+}
+
+.task-section h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.task {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: #fafafa;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+}
+
+.task p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.task button {
+  align-self: center;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #222;
+  color: white;
+}
+
+.empty {
+  color: #777;
+  font-size: 14px;
+}

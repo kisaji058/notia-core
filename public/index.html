@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notia</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>Notia</h1>
+      <p>あなた専属のAI秘書です。</p>
+    </header>
+
+    <section id="chat" class="chat">
+      <div class="message assistant">
+        おはようございます。Notiaです。<br />
+        今日は何を整理しましょうか？
+      </div>
+    </section>
+
+    <form id="chatForm" class="input-area">
+      <input
+        id="messageInput"
+        type="text"
+        placeholder="メッセージを入力"
+        autocomplete="off"
+      />
+      <button type="submit">送信</button>
+    </form>
+    <section class="task-section">
+  <h2>タスク</h2>
+  <div id="taskList"></div>
+</section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
