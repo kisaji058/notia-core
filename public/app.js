@@ -29,7 +29,7 @@ async function loadTasks() {
     div.innerHTML = `
       <div>
         <strong>${task.title}</strong>
-        ${task.due_date ? `<p>期限：${task.due_date}</p>` : ""}
+        ${task.due_date_label ? `<p>期限：${task.due_date_label}</p>` : ""}
         ${task.description ? `<p>${task.description}</p>` : ""}
       </div>
       <button data-id="${task.id}">完了</button>

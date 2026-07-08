@@ -2,6 +2,7 @@ const {
   addTask,
   findActiveTasks,
   updateTaskById,
+  completeTaskById,
 } = require("../../database");
 
 class TaskManager {
@@ -9,44 +10,23 @@ class TaskManager {
     if (!analysis || !analysis.intent) {
       return null;
     }
-if (analysis.intent === "task_update") {
-  if (!analysis.targetTaskId) {
-    return {
-      updated: false,
-      reason: "target task not found",
-    };
-  }
 
-  const updates = {};
-
-  if (analysis.title) {
-    updates.title = analysis.title;
-  }
-
-  if (analysis.description) {
-    updates.description = analysis.description;
-  }
-
-  if (analysis.dueDate) {
-    updates.dueDate = analysis.dueDate;
-  }
-
-  const success = updateTaskById(analysis.targetTaskId, updates);
-
-  console.log("✅ タスク更新:", analysis.targetTaskId, updates);
-
-  return {
-    updated: success,
-    title: analysis.title,
-    taskId: analysis.targetTaskId,
-  };
-}
-
-
-    if (analysis.intent !== "task_create") {
-      return null;
+    if (analysis.intent === "task_create") {
+      return this.handleCreate(analysis);
     }
 
+    if (analysis.intent === "task_update") {
+      return this.handleUpdate(analysis);
+    }
+
+    if (analysis.intent === "task_complete") {
+      return this.handleComplete(analysis);
+    }
+
+    return null;
+  }
+
+  handleCreate(analysis) {
     if (!analysis.title) {
       return null;
     }
@@ -63,10 +43,12 @@ if (analysis.intent === "task_update") {
       };
     }
 
+    const dueDate = analysis.dueDate || null;
+
     addTask(
       analysis.title,
       analysis.description || "",
-      analysis.dueDate || ""
+      dueDate
     );
 
     console.log("✅ タスク登録:", analysis.title);
@@ -75,8 +57,67 @@ if (analysis.intent === "task_update") {
       created: true,
       duplicated: false,
       title: analysis.title,
-      description: analysis.description,
-      dueDate: analysis.dueDate,
+      description: analysis.description || "",
+      dueDate,
+    };
+  }
+
+  handleUpdate(analysis) {
+    if (!analysis.targetTaskId) {
+      return {
+        updated: false,
+        reason: "target task not found",
+      };
+    }
+
+    const updates = {};
+
+    if (analysis.title !== undefined && analysis.title !== null) {
+      updates.title = analysis.title;
+    }
+
+    if (analysis.description !== undefined && analysis.description !== null) {
+      updates.description = analysis.description;
+    }
+
+    if (analysis.dueDate !== undefined) {
+      updates.dueDate = analysis.dueDate || null;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return {
+        updated: false,
+        reason: "no updates",
+        taskId: analysis.targetTaskId,
+      };
+    }
+
+    const success = updateTaskById(analysis.targetTaskId, updates);
+
+    console.log("✅ タスク更新:", analysis.targetTaskId, updates);
+
+    return {
+      updated: success,
+      taskId: analysis.targetTaskId,
+      updates,
+    };
+  }
+
+  handleComplete(analysis) {
+    if (!analysis.targetTaskId) {
+      return {
+        completed: false,
+        reason: "target task not found",
+      };
+    }
+
+    const success = completeTaskById(analysis.targetTaskId);
+
+    console.log("✅ タスク完了:", analysis.targetTaskId);
+
+    return {
+      completed: success,
+      taskId: analysis.targetTaskId,
     };
   }
 }

@@ -24,6 +24,41 @@ const {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+function formatDueDate(dueDate) {
+  if (!dueDate) {
+    return "期限なし";
+  }
+
+  const today = new Date().toLocaleDateString("sv-SE", {
+    timeZone: "Asia/Tokyo",
+  });
+
+  const todayDate = new Date(`${today}T00:00:00+09:00`);
+  const dueDateObj = new Date(`${dueDate}T00:00:00+09:00`);
+
+  const diffDays = Math.round(
+    (dueDateObj - todayDate) / (1000 * 60 * 60 * 24)
+  );
+
+  if (diffDays < 0) {
+    return `期限超過（${Math.abs(diffDays)}日）`;
+  }
+
+  if (diffDays === 0) {
+    return "本日中";
+  }
+
+  if (diffDays === 1) {
+    return "明日";
+  }
+
+  if (diffDays === 2) {
+    return "明後日";
+  }
+
+  return dueDate;
+}
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -46,7 +81,31 @@ const analysis = await conversationAnalyzer.analyze(message, {
 
 console.log("analysis:", analysis);
 
-const taskResult = taskManager.handle(analysis);
+if (
+  message.includes("タスク一覧") ||
+  message.includes("タスクを見せて") ||
+  message.includes("タスク見せて") ||
+  message.includes("タスク確認") ||
+  message.includes("期日を日付で") ||
+  message.includes("期限を日付で")
+) {
+  const tasks = getActiveTasks();
+
+const reply = tasks.length === 0
+  ? "現在、未完了のタスクはありません。"
+  : tasks.map((task, index) => {
+      const due = formatDueDate(task.due_date);
+      return `${index + 1}. ${due}：${task.title}`;
+    }).join("\n");
+
+  saveConversation("assistant", reply);
+
+  return res.json({
+    reply,
+    analysis,
+    taskResult: null,
+  });
+}
 
 processMemory(analysis);
 
@@ -57,10 +116,14 @@ if (result.handled) {
 
   return res.json({
     reply: result.reply,
-    analysis,
-    taskResult,
+    analysis: result.analysis || analysis,
+    taskResult: result.taskResult || null,
   });
 }
+
+
+
+const taskResult = taskManager.handle(analysis);
 
 const recentMessages = getRecentConversations(10);
 
@@ -93,17 +156,17 @@ const reply = await chatWithNotia(
 });
 
 app.get("/api/tasks", (req, res) => {
-  const tasks = getActiveTasks();
+  const tasks = getActiveTasks().map((task) => ({
+    ...task,
+    due_date_label: formatDueDate(task.due_date),
+  }));
+
   res.json(tasks);
 });
 
 app.post("/api/tasks/:id/complete", (req, res) => {
   completeTask(req.params.id);
   res.json({ ok: true });
-});
-
-app.listen(PORT, () => {
-  console.log(`Notia 起動: http://localhost:${PORT}`);
 });
 
 app.listen(PORT, "0.0.0.0", () => {

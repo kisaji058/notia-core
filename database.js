@@ -39,7 +39,7 @@ function getRecentConversations(limit = 10) {
   `).all(limit).reverse();
 }
 
-function addTask(title, description = "", dueDate = "") {
+function addTask(title, description = "", dueDate = null) {
   db.prepare(`
     INSERT INTO tasks (title, description, due_date)
     VALUES (?, ?, ?)
@@ -64,7 +64,17 @@ function completeTask(id) {
   `).run(id);
 }
 
-function findActiveTasks() {
+function findActiveTasks(title = null) {
+  if (title) {
+    return db.prepare(`
+      SELECT *
+      FROM tasks
+      WHERE status = 'active'
+        AND title = ?
+      ORDER BY id DESC
+    `).all(title);
+  }
+
   return db.prepare(`
     SELECT *
     FROM tasks
@@ -82,15 +92,6 @@ function completeTaskById(id) {
   `).run(id);
 }
 
-function updateTaskById(id, title, description = "", dueDate = "") {
-  db.prepare(`
-    UPDATE tasks
-    SET title = ?,
-        description = ?,
-        due_date = ?
-    WHERE id = ?
-  `).run(title, description, dueDate, id);
-}
 
 // =====================
 // memories

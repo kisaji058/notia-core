@@ -23,6 +23,8 @@ class ConversationAnalyzer {
   "dueDate": "string | null",
   "targetTaskId": "number | null",
   "targetTaskTitle": "string | null",
+  "needsDateConfirmation": "boolean",
+"dateExpression": "string | null",
 
   "memories": [
     {
@@ -58,8 +60,49 @@ class ConversationAnalyzer {
 - タスクとして処理すべき内容
 
 【日時】
-- 「今日」「明日」「来週」などの相対日付は、現在日時を基準に YYYY-MM-DD へ変換する。
-- 期限が分からない場合は dueDate を null にする。
+- dueDate は必ず YYYY-MM-DD または null にする。
+- 空文字 "" は絶対に返さない。
+- 日付が一意に決まる場合のみ dueDate に YYYY-MM-DD を返す。
+- 日付が曖昧な場合は dueDate を null にし、needsDateConfirmation を true にする。
+- その場合、dateExpression にユーザーが使った曖昧な期日表現を入れる。
+
+自動変換してよい表現:
+- 今日
+- 明日
+- 明後日
+- 1週間後 / 一週間後
+- 3日後などの「○日後」
+- 7月15日などの日付指定
+- 来週月曜日、来週金曜日など曜日まで指定された表現
+
+確認が必要な表現:
+- 今週中
+- 来週
+- 来週中
+- 今月中
+- 来月中
+- 月末まで
+- 週末まで
+- 近いうち
+- そのうち
+- できれば
+- 時間があるとき
+
+確認が必要な場合の例:
+ユーザー: 今週中に資料を作る
+{
+  "intent": "task_create",
+  "title": "資料を作る",
+  "description": null,
+  "dueDate": null,
+  "needsDateConfirmation": true,
+  "dateExpression": "今週中",
+  "targetTaskId": null,
+  "targetTaskTitle": null,
+  "memories": [],
+  "priority": "normal",
+  "confidence": 0.9
+}
 
 【intent】
 - 雑談 → chat
@@ -118,20 +161,25 @@ ${JSON.stringify(context, null, 2)}
     return this.safeParse(response);
   }
 
-  safeParse(text) {
-    try {
-      return JSON.parse(text);
-    } catch (error) {
-      return {
-        intent: "unknown",
-        title: null,
-        description: text,
-        dueDate: null,
-        priority: "normal",
-        confidence: 0,
-      };
-    }
+safeParse(text) {
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    return {
+      intent: "unknown",
+      title: null,
+      description: text,
+      dueDate: null,
+      needsDateConfirmation: false,
+      dateExpression: null,
+      targetTaskId: null,
+      targetTaskTitle: null,
+      memories: [],
+      priority: "normal",
+      confidence: 0,
+    };
   }
+}
 }
 
 module.exports = new ConversationAnalyzer();
