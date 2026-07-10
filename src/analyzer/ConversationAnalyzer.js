@@ -1,10 +1,15 @@
 const { chatWithNotia } = require("../../openai");
 
 class ConversationAnalyzer {
-  async analyze(userMessage, context = {}) {
-    const today = new Date().toLocaleDateString("sv-SE", {
-      timeZone: "Asia/Tokyo",
-    });
+async analyze(userMessage, options = {}) {
+  const today = new Date().toLocaleDateString("sv-SE", {
+    timeZone: "Asia/Tokyo",
+  });
+
+const conversationContext = options.context || {};
+const activeTasks =
+  options.activeTasks || conversationContext.activeTasks || [];
+const resolvedReference = options.resolvedReference || null;
 
     const systemPrompt = `
 現在日時: ${today} (Asia/Tokyo)
@@ -60,11 +65,22 @@ class ConversationAnalyzer {
 - タスクとして処理すべき内容
 
 【日時】
-- dueDate は必ず YYYY-MM-DD または null にする。
+- dueDate は必ず YYYY-MM-DD または null を返す。
 - 空文字 "" は絶対に返さない。
-- 日付が一意に決まる場合のみ dueDate に YYYY-MM-DD を返す。
-- 日付が曖昧な場合は dueDate を null にし、needsDateConfirmation を true にする。
-- その場合、dateExpression にユーザーが使った曖昧な期日表現を入れる。
+
+- 日付が一意に決まる場合のみ、dueDate に YYYY-MM-DD を返す。
+- この場合、needsDateConfirmation は false、dateExpression は null にする。
+
+- 日付が曖昧な場合は、dueDate を null にし、needsDateConfirmation を true にする。
+- dateExpression には、ユーザーが実際に発言した曖昧な期日表現をそのまま入れる。
+
+- タスク作成で期日表現がない場合も、dueDate は null、needsDateConfirmation は true にする。
+- この場合、dateExpression は "期限未指定" とする。
+
+- ユーザーが言っていない曖昧な期日表現を補完してはいけない。
+- 「買わないと」「やらないと」「しなきゃ」はタスクとして扱ってよい。
+
+
 
 自動変換してよい表現:
 - 今日
@@ -111,6 +127,36 @@ class ConversationAnalyzer {
 - 既存タスクの完了 → task_complete
 - 判定できない → unknown
 
+【参照解決結果】
+resolvedReference が存在する場合は、その内容を最優先で参照する。
+
+resolvedReference に targetTaskId と targetTaskTitle が含まれている場合は、
+task_update または task_complete の対象として使用する。
+
+resolvedReference が存在する場合、別のタスクを勝手に推定してはいけない。
+
+ただし、ユーザー発言がタスクの完了や更新を意味しない場合は、
+resolvedReference があっても intent を無理に変更しない。
+
+【会話コンテキスト】
+最近の会話履歴がある場合は必ず参考にする。
+
+「あれ」
+「それ」
+「さっきの」
+「この前の」
+「昨日の続き」
+「終わった」
+「やった」
+
+などの省略表現は、最近の会話と activeTasks を照合して判断する。
+
+ただし、対象が明確に1つに絞れない場合は無理に推定しない。
+その場合は targetTaskId と targetTaskTitle を null にする。
+
+会話履歴だけで新しいタスクを勝手に作ってはいけない。
+ユーザーの今回の発言にタスク化の意図がある場合のみ task_create とする。
+
 【タスク】
 - title は簡潔にまとめる。
 - description は補足情報。
@@ -144,12 +190,21 @@ chat とする。
 必ずJSONのみ返す。
 `;
 
-    const userPrompt = `
+const userPrompt = `
 ユーザー発言:
 ${userMessage}
 
+参照解決結果:
+${JSON.stringify(resolvedReference, null, 2)}
+
+最近の会話:
+${JSON.stringify(conversationContext.history || [], null, 2)}
+
+現在のアクティブタスク:
+${JSON.stringify(activeTasks, null, 2)}
+
 会話コンテキスト:
-${JSON.stringify(context, null, 2)}
+${JSON.stringify(conversationContext, null, 2)}
 `;
 
     const response = await chatWithNotia(
