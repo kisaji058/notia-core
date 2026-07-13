@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notia タスク詳細</title>
+  <link rel="stylesheet" href="/css/common.css" />
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+
+<body>
+  <main class="app">
+    <header class="task-detail-header">
+  <a class="task-detail-back" href="/tasks">
+    <span aria-hidden="true">←</span>
+    <span>タスク一覧</span>
+  </a>
+</header>
+
+    <section class="task-detail-section">
+      <p id="taskStatus" class="task-status">
+        読み込み中...
+      </p>
+
+      <form id="taskForm" class="task-form" hidden>
+        <label class="field-group task-title-group">
+  <span class="field-label">タスク名</span>
+
+  <div class="task-title-row">
+    <input
+      id="taskTitle"
+      class="task-title-input"
+      type="text"
+      autocomplete="off"
+    />
+
+    <button
+      type="button"
+      id="notificationButton"
+      class="notification-button"
+      aria-label="通知を切り替える"
+      aria-pressed="false"
+    >
+      🔕
+    </button>
+  </div>
+</label>
+
+        <div class="field-row">
+          <label class="field-group">
+            <span class="field-label">期日</span>
+
+            <input
+              id="taskDueDate"
+              class="field-control"
+              type="date"
+            />
+          </label>
+
+          <label class="field-group">
+            <span class="field-label">時間</span>
+
+            <input
+              id="taskDueTime"
+              class="field-control"
+              type="time"
+            />
+          </label>
+        </div>
+
+        <label class="field-group">
+          <span class="field-label">分類</span>
+
+          <select
+            id="taskCategory"
+            class="field-control"
+          >
+            <option value="work">仕事</option>
+            <option value="school">学校</option>
+            <option value="shopping">買い物</option>
+            <option value="private">プライベート</option>
+            <option value="other">その他</option>
+          </select>
+        </label>
+
+        <label class="field-group">
+          <span class="field-label">優先度</span>
+
+          <select
+  id="taskPriority"
+  class="field-control priority-select"
+>
+  <option value="high">🔴 高</option>
+  <option value="normal">🟡 通常</option>
+  <option value="low">🟢 低</option>
+</select>
+        </label>
+
+        <label class="field-group">
+          <span class="field-label">説明・備考</span>
+
+          <textarea
+            id="taskDescription"
+            class="task-description-input"
+            rows="5"
+          ></textarea>
+        </label>
+
+        <label class="field-group">
+          <span class="field-label">通知タイミング</span>
+
+          <select
+            id="taskNotification"
+            class="field-control"
+          >
+            <option value="none">通知なし</option>
+            <option value="same_day">当日</option>
+            <option value="day_before">前日</option>
+          </select>
+        </label>
+      </form>
+    </section>
+  </main>
+
+  <script src="/js/task.js"></script>
+</body>
+</html>

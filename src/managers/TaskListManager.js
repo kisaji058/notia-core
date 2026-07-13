@@ -98,10 +98,49 @@ function isTaskListRequest(message) {
   );
 }
 
-function sortTasksByDueDate(tasks) {
+function normalizePriority(priority) {
+  if (priority === "high") {
+    return "high";
+  }
+
+  if (priority === "low") {
+    return "low";
+  }
+
+  return "normal";
+}
+
+function getPriorityRank(priority) {
+  const priorityRanks = {
+    high: 1,
+    normal: 2,
+    low: 3,
+  };
+
+  return priorityRanks[normalizePriority(priority)];
+}
+
+function getPriorityIcon(priority) {
+  const priorityIcons = {
+    high: "🔴",
+    normal: "🟡",
+    low: "🔵",
+  };
+
+  return priorityIcons[normalizePriority(priority)];
+}
+
+function sortTasks(tasks) {
   return [...tasks].sort((a, b) => {
+    const priorityDifference =
+      getPriorityRank(a.priority) - getPriorityRank(b.priority);
+
+    if (priorityDifference !== 0) {
+      return priorityDifference;
+    }
+
     if (!a.due_date && !b.due_date) {
-      return 0;
+      return a.title.localeCompare(b.title, "ja");
     }
 
     if (!a.due_date) {
@@ -112,16 +151,23 @@ function sortTasksByDueDate(tasks) {
       return -1;
     }
 
-    return a.due_date.localeCompare(b.due_date);
+    const dueDateDifference = a.due_date.localeCompare(b.due_date);
+
+    if (dueDateDifference !== 0) {
+      return dueDateDifference;
+    }
+
+    return a.title.localeCompare(b.title, "ja");
   });
 }
 
 function formatTaskLines(tasks) {
-  return sortTasksByDueDate(tasks)
+  return sortTasks(tasks)
     .map((task) => {
       const due = formatDueDate(task.due_date);
+      const priorityIcon = getPriorityIcon(task.priority);
 
-      return `・${task.title}（${due}）`;
+      return `・${priorityIcon} ${task.title}（${due}）`;
     })
     .join("\n");
 }
@@ -185,8 +231,11 @@ function formatTasksForApi(tasks = []) {
     return [];
   }
 
-  return tasks.map((task) => ({
+  return sortTasks(tasks).map((task) => ({
     ...task,
+    priority: normalizePriority(task.priority),
+    priority_icon: getPriorityIcon(task.priority),
+    priority_rank: getPriorityRank(task.priority),
     due_date_label: formatDueDate(task.due_date),
     due_date_group: getTaskGroup(task),
   }));
@@ -196,6 +245,10 @@ module.exports = {
   getDiffDays,
   formatDueDate,
   getTaskGroup,
+  normalizePriority,
+  getPriorityRank,
+  getPriorityIcon,
+  sortTasks,
   isTaskListRequest,
   createTaskListReply,
   formatTasksForApi,

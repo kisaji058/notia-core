@@ -70,18 +70,24 @@ class TaskManager {
       };
     }
 
+    const allowedFields = [
+      "title",
+      "description",
+      "dueDate",
+      "dueTime",
+      "priority",
+      "category",
+      "notification",
+    ];
+
     const updates = {};
 
-    if (analysis.title !== undefined && analysis.title !== null) {
-      updates.title = analysis.title;
-    }
+    for (const field of allowedFields) {
+      const value = analysis.updates?.[field];
 
-    if (analysis.description !== undefined && analysis.description !== null) {
-      updates.description = analysis.description;
-    }
-
-    if (analysis.dueDate !== undefined) {
-      updates.dueDate = analysis.dueDate || null;
+      if (value !== undefined && value !== null) {
+        updates[field] = value;
+      }
     }
 
     if (Object.keys(updates).length === 0) {
@@ -92,9 +98,16 @@ class TaskManager {
       };
     }
 
-    const success = updateTaskById(analysis.targetTaskId, updates);
+    const success = updateTaskById(
+      analysis.targetTaskId,
+      updates
+    );
 
-    console.log("✅ タスク更新:", analysis.targetTaskId, updates);
+    console.log(
+      "✅ タスク更新:",
+      analysis.targetTaskId,
+      updates
+    );
 
     return {
       updated: success,
@@ -111,7 +124,9 @@ class TaskManager {
       };
     }
 
-    const success = completeTaskById(analysis.targetTaskId);
+    const success = completeTaskById(
+      analysis.targetTaskId
+    );
 
     console.log("✅ タスク完了:", analysis.targetTaskId);
 

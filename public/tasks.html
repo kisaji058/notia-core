@@ -4,21 +4,76 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Notia タスク一覧</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="/css/common.css" />
+<link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
   <main class="app">
-    <header>
-      <h1>タスク一覧</h1>
-      <p>未完了タスクを確認できます。</p>
-      <a href="/">← チャットに戻る</a>
-    </header>
+    <header class="task-header">
+  <div class="task-header-text">
+    <h1>タスク一覧</h1>
+    <p>未完了タスクを確認できます。</p>
+  </div>
+
+  <div class="task-header-actions">
+    <button type="button" aria-label="並び替え">
+      <span>↕</span>
+      <span>並び替え</span>
+    </button>
+
+    <button type="button" aria-label="絞り込み">
+      <span>🔍</span>
+      <span>絞り込み</span>
+    </button>
+
+    <button type="button" aria-label="設定">
+      <span>⚙</span>
+      <span>設定</span>
+    </button>
+  </div>
+</header>
+
+<a class="back-link" href="/">← チャットに戻る</a>
 
     <section class="task-section task-page">
-      <div id="taskList"></div>
+      <div id="taskList">
+        <p class="task-status">読み込み中...</p>
+      </div>
     </section>
   </main>
 
-  <script src="tasks.js"></script>
+  <section class="completed-section">
+  <div class="completed-header">
+    <h2>最近完了したタスク</h2>
+
+    <a href="/tasks/completed">
+      すべて見る
+      <span aria-hidden="true">›</span>
+    </a>
+  </div>
+
+  <div id="completedTaskList">
+    <p class="task-status">読み込み中...</p>
+  </div>
+</section>
+
+<script src="/js/tasks.js"></script>  
+
+<nav class="bottom-nav">
+  <a href="/">
+    💬<br />
+    チャット
+  </a>
+
+  <a href="/tasks" class="active">
+    ✓<br />
+    タスク
+  </a>
+
+  <a href="/calendar">
+    📅<br />
+    カレンダー
+  </a>
+</nav>
 </body>
 </html>

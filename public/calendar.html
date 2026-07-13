@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+  <title>Notia Calendar</title>
+
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/calendar.css">
+</head>
+
+<body>
+  <header class="calendar-header">
+    <button
+      id="prevDayButton"
+      type="button"
+      aria-label="前の日へ"
+    >
+      ←
+    </button>
+
+    <div class="calendar-date-area">
+      <div class="calendar-date-picker-wrap">
+        <h1 id="calendarTitle"></h1>
+
+        <input
+          id="datePicker"
+          class="calendar-date-picker-input"
+          type="date"
+          aria-label="表示する日付を選択"
+        >
+      </div>
+
+      <button
+        id="todayButton"
+        class="today-button"
+        type="button"
+      >
+        今日に戻る
+      </button>
+    </div>
+
+    <button
+      id="nextDayButton"
+      type="button"
+      aria-label="次の日へ"
+    >
+      →
+    </button>
+  </header>
+
+  <main>
+    <section
+      id="timeline"
+      class="timeline"
+    ></section>
+
+    <section class="unscheduled">
+      <h2>時間未設定</h2>
+
+      <div id="unscheduledList"></div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="/">
+      💬<br>
+      チャット
+    </a>
+
+    <a href="/tasks">
+      ✓<br>
+      タスク
+    </a>
+
+    <a
+      href="/calendar"
+      class="active"
+    >
+      📅<br>
+      カレンダー
+    </a>
+  </nav>
+
+  <script src="/js/calendar.js"></script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+/* ===== Reset ===== */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background: #f5f7fb;
+  padding-bottom: 96px;
+}
+
+/* ===== Buttons ===== */
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* ===== Task Card ===== */
+
+.task-card {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+
+  transition:
+    transform .15s,
+    box-shadow .15s;
+}
+
+.task-card:hover {
+  transform: translateY(-1px);
+
+  box-shadow: 0 3px 8px rgba(0,0,0,.15);
+}
+
+/* ===== Bottom Navigation ===== */
+
+.bottom-nav {
+  position: fixed;
+
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  height: 64px;
+
+  display: flex;
+
+  justify-content: space-around;
+  align-items: center;
+
+  background: white;
+
+  border-top: 1px solid #ddd;
+
+  z-index: 1000;
+}
+
+.bottom-nav a {
+
+  flex: 1;
+
+  text-align: center;
+
+  text-decoration: none;
+
+  color: #666;
+
+  font-size: 13px;
+
+  padding: 10px 0;
+}
+
+.bottom-nav a.active {
+
+  color: #2f855a;
+
+  font-weight: 600;
+}
