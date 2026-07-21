@@ -1,3 +1,5 @@
+console.log("task.js loaded");
+
 const taskStatus = document.getElementById("taskStatus");
 const taskForm = document.getElementById("taskForm");
 const taskNotification = document.getElementById("taskNotification");
@@ -27,6 +29,7 @@ function updateNotificationButton() {
 }
 
 async function loadTask() {
+  console.log("loadTask started");
   const taskId = getTaskId();
 
   if (!taskId) {

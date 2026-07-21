@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>Notia ルーティーン一覧</title>
+
+  <link
+    rel="stylesheet"
+    href="/css/common.css"
+  />
+
+  <link
+    rel="stylesheet"
+    href="/css/routines.css"
+  />
+</head>
+
+<body>
+  <div
+  id="sheetOverlay"
+  class="sheet-overlay"
+  hidden
+></div>
+
+<div
+  id="sheetModal"
+  class="sheet-modal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="sheetTitle"
+  hidden
+>
+  <div class="sheet-header">
+    <h3 id="sheetTitle"></h3>
+
+    <button
+      id="closeSheetButton"
+      type="button"
+      aria-label="シートを閉じる"
+    >
+      ✕
+    </button>
+  </div>
+
+  <div
+    id="sheetContent"
+    class="sheet-content"
+  ></div>
+</div>
+  <main class="app">
+    <header class="routine-header">
+      <div class="routine-header-text">
+        <h1>ルーティーン</h1>
+
+        <p>
+          毎週の予定や習慣を確認できます。
+        </p>
+      </div>
+
+      <button
+        id="addRoutineButton"
+        class="add-routine-button"
+        type="button"
+      >
+        ＋ 追加
+      </button>
+    </header>
+
+    <section
+      class="routine-section routine-page"
+    >
+      <div id="routineList">
+        <p class="routine-status">
+          読み込み中...
+        </p>
+      </div>
+    </section>
+
+    <nav class="bottom-nav">
+      <a href="/">
+        💬<br />
+        チャット
+      </a>
+
+      <a href="/tasks">
+        ✓<br />
+        タスク
+      </a>
+
+      <a href="/calendar">
+        📅<br />
+        カレンダー
+      </a>
+
+      <a
+        href="/routines"
+        class="active"
+      >
+        🔁<br />
+        ルーティーン
+      </a>
+    </nav>
+  </main>
+
+  <script src="/js/components/cardFactory.js"></script>
+  <script src="/js/routines.js"></script>
+</body>
+</html>

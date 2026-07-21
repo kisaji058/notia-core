@@ -7,6 +7,8 @@ const prevDayButton = document.getElementById("prevDayButton");
 const nextDayButton = document.getElementById("nextDayButton");
 const datePicker = document.getElementById("datePicker");
 const todayButton = document.getElementById("todayButton");
+const syncButton = document.getElementById("syncButton");
+const syncStatus = document.getElementById("syncStatus");
 
 const todayString = new Date().toLocaleDateString("sv-SE", {
   timeZone: "Asia/Tokyo",
@@ -125,9 +127,31 @@ function scrollToCurrentTime() {
 
   const now = new Date();
 
-  const hour = now.getHours();
+  const parts =
+    new Intl.DateTimeFormat(
+      "en-US",
+      {
+        hour: "2-digit",
+        hour12: false,
+        timeZone: "Asia/Tokyo",
+      }
+    ).formatToParts(now);
 
-  const target = document.getElementById(`hour-${hour}`);
+  const hour = Number(
+    parts.find(
+      (part) =>
+        part.type === "hour"
+    )?.value
+  );
+
+  if (!Number.isInteger(hour)) {
+    return;
+  }
+
+  const target =
+    document.getElementById(
+      `hour-${hour}`
+    );
 
   if (!target) {
     return;
@@ -139,18 +163,66 @@ function scrollToCurrentTime() {
   });
 }
 
-function renderTasks(tasks) {
+function getJapanTimeParts(dateTime) {
+  if (!dateTime) {
+    return null;
+  }
+
+  const date = new Date(dateTime);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  const parts = new Intl.DateTimeFormat("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Tokyo",
+  }).formatToParts(date);
+
+  const hour = Number(
+    parts.find((part) => part.type === "hour")?.value
+  );
+
+  const minute = Number(
+    parts.find((part) => part.type === "minute")?.value
+  );
+
+  if (
+    !Number.isInteger(hour) ||
+    !Number.isInteger(minute)
+  ) {
+    return null;
+  }
+
+  return {
+    hour,
+    time:
+      `${String(hour).padStart(2, "0")}:` +
+      `${String(minute).padStart(2, "0")}`,
+  };
+}
+
+function renderCalendar(
+  tasks,
+  externalEvents
+) {
   createTimeline();
   unscheduledList.innerHTML = "";
+
+  // =====================
+  // Notiaタスク
+  // =====================
 
   for (const task of tasks) {
     const dueTime = task.due_time;
 
     if (!dueTime) {
-      const item = document.createElement("div");
-
-      item.className = "task-card";
-      item.textContent = `${task.priority_icon} ${task.title}`;
+      const item = createTaskCard(task, {
+  variant: "calendar",
+  priorityIcon: task.priority_icon,
+});
 
       item.addEventListener("click", () => {
         window.location.href = `/tasks/${task.id}`;
@@ -162,7 +234,55 @@ function renderTasks(tasks) {
     }
 
     const hour = Number(dueTime.split(":")[0]);
-    const slot = document.getElementById(`hour-${hour}`);
+    const slot =
+      document.getElementById(`hour-${hour}`);
+
+    if (!slot) {
+      continue;
+    }
+
+    const card = createTaskCard(task, {
+  variant: "calendar",
+  priorityIcon: task.priority_icon,
+  timeText: dueTime,
+});
+
+    card.addEventListener("click", () => {
+      window.location.href = `/tasks/${task.id}`;
+    });
+
+    slot.appendChild(card);
+  }
+
+  // =====================
+  // Google Calendar予定
+  // =====================
+
+  for (const event of externalEvents) {
+    if (event.is_all_day === 1) {
+      const item = document.createElement("div");
+
+      item.className =
+        "task-card google-event-card";
+
+      item.textContent =
+        `Google｜終日 ${event.title}`;
+
+      unscheduledList.appendChild(item);
+
+      continue;
+    }
+
+    const timeParts =
+      getJapanTimeParts(event.start_datetime);
+
+    if (!timeParts) {
+      continue;
+    }
+
+    const slot = document.getElementById(
+      `hour-${timeParts.hour}`
+    );
 
     if (!slot) {
       continue;
@@ -170,16 +290,17 @@ function renderTasks(tasks) {
 
     const card = document.createElement("div");
 
-    card.className = "task-card";
+    card.className =
+      "task-card google-event-card";
 
-    card.innerHTML = `
-      <strong>${dueTime}</strong><br>
-      ${task.priority_icon} ${task.title}
-    `;
+    const time = document.createElement("strong");
+    time.textContent = timeParts.time;
 
-    card.addEventListener("click", () => {
-      window.location.href = `/tasks/${task.id}`;
-    });
+    const title = document.createElement("div");
+    title.textContent = `Google｜${event.title}`;
+
+    card.appendChild(time);
+    card.appendChild(title);
 
     slot.appendChild(card);
   }
@@ -199,15 +320,63 @@ async function loadCalendar() {
       throw new Error(`カレンダー取得失敗: ${res.status}`);
     }
 
-    const tasks = await res.json();
+    const data = await res.json();
 
-    renderTasks(tasks);
+renderCalendar(
+  data.tasks ?? [],
+  data.externalEvents ?? []
+);
 
     setTimeout(() => {
   scrollToCurrentTime();
 }, 50);
   } catch (error) {
     console.error(error);
+  }
+}
+
+async function syncCalendar() {
+  if (!syncButton) {
+    return;
+  }
+
+  try {
+    syncButton.disabled = true;
+    syncButton.textContent = "同期中...";
+
+    if (syncStatus) {
+      syncStatus.textContent = "";
+    }
+
+    const res = await fetch("/api/calendar/sync", {
+      method: "POST",
+    });
+
+    const result = await res.json();
+
+    if (!res.ok || !result.success) {
+      throw new Error(
+        result.message || "Google Calendarとの同期に失敗しました。"
+      );
+    }
+
+    if (syncStatus) {
+      syncStatus.textContent =
+        `Google予定 ${result.importedEvents}件更新 / ` +
+        `Notiaタスク ${result.exportedTasks}件送信`;
+    }
+
+    await loadCalendar();
+  } catch (error) {
+    console.error("Calendar sync error:", error);
+
+    if (syncStatus) {
+      syncStatus.textContent =
+        "Google Calendarとの同期に失敗しました。";
+    }
+  } finally {
+    syncButton.disabled = false;
+    syncButton.textContent = "↻ 同期";
   }
 }
 
@@ -234,5 +403,9 @@ todayButton.addEventListener("click", () => {
   selectedDate = todayString;
   loadCalendar();
 });
+
+if (syncButton) {
+  syncButton.addEventListener("click", syncCalendar);
+}
 
 loadCalendar();

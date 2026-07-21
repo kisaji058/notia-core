@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+  <title>完了タスク</title>
+
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+  <main class="app">
+    <header class="task-header">
+      <h1>完了タスク</h1>
+      <p>過去50件の完了タスクです。</p>
+    </header>
+
+    <a class="back-link" href="/tasks">
+      ← タスク一覧へ戻る
+    </a>
+
+    <section class="task-section">
+      <div id="completedTaskList">
+        <p class="task-status">読み込み中...</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/components/cardFactory.js"></script>
+  <script src="/js/taskUtils.js"></script>
+  <script src="/js/tasks-completed.js"></script>
+</body>
+</html>

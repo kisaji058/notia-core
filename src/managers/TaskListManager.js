@@ -231,7 +231,26 @@ function formatTasksForApi(tasks = []) {
     return [];
   }
 
-  return sortTasks(tasks).map((task) => ({
+  return tasks.map((task) => ({
+    ...task,
+    priority: normalizePriority(task.priority),
+    priority_icon: getPriorityIcon(task.priority),
+    priority_rank: getPriorityRank(task.priority),
+    due_date_label: formatDueDate(task.due_date),
+    due_date_group: getTaskGroup(task),
+  }));
+}
+
+function formatSortedTasksForApi(tasks = []) {
+  return formatTasksForApi(sortTasks(tasks));
+}
+
+function formatTasksForApi(tasks = []) {
+  if (!Array.isArray(tasks)) {
+    return [];
+  }
+
+  return tasks.map((task) => ({
     ...task,
     priority: normalizePriority(task.priority),
     priority_icon: getPriorityIcon(task.priority),
@@ -252,4 +271,5 @@ module.exports = {
   isTaskListRequest,
   createTaskListReply,
   formatTasksForApi,
+  formatSortedTasksForApi,
 };

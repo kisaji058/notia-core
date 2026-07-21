@@ -1,4 +1,4 @@
-function createTaskResultReply(taskResult, analysis) {
+function createTaskResultReply(taskResult, analysis = {}) {
   if (!taskResult) {
     return null;
   }
@@ -18,43 +18,124 @@ function createTaskResultReply(taskResult, analysis) {
   }
 
   if (taskResult.updated) {
-    return createUpdateReply(taskResult, analysis);
+    return createTaskUpdatedReply(
+      taskResult,
+      analysis
+    );
   }
 
   if (taskResult.created) {
-    const title =
-      analysis.title ||
-      taskResult.title ||
-      "タスク";
-
-    return analysis.dueDate
-      ? `承知しました。\n「${title}」を ${analysis.dueDate} 期限で登録しました。`
-      : `承知しました。\n「${title}」を登録しました。`;
+    return createTaskCreatedReply(
+      taskResult,
+      analysis
+    );
   }
 
   if (taskResult.completed) {
-    const title =
-      analysis.targetTaskTitle ||
-      analysis.title ||
-      taskResult.title ||
-      "タスク";
-
-    return `承知しました。\n「${title}」を完了にしました。`;
+    return createTaskCompletedReply(
+      taskResult,
+      analysis
+    );
   }
 
   if (taskResult.duplicated) {
-    return `「${taskResult.title}」はすでに登録されています。`;
+    return `「${taskResult.duplicatedTasks[0]}」はすでに登録されています。`;
   }
 
-  return "タスクを処理できませんでした。もう一度内容を確認してください。";
+  return [
+    "タスクを処理できませんでした。",
+    "もう一度内容を確認してください。",
+  ].join("\n");
 }
 
-function createUpdateReply(taskResult, analysis) {
-  const updates = taskResult.updates || {};
-
-  const originalTitle =
-    analysis.targetTaskTitle ||
+function createTaskCreatedReply(
+  taskResult,
+  analysis
+) {
+  const title =
+    analysis.title ||
+    taskResult.title ||
     "タスク";
+
+  const dueText =
+    formatDueDateForReply(
+      analysis.dueDate
+    );
+
+  const timeText =
+    formatDueTimeForReply(
+      analysis.dueTime
+    );
+
+  let scheduleText = "";
+
+  if (dueText && timeText) {
+    scheduleText = `${dueText} ${timeText}で`;
+  } else if (dueText) {
+    scheduleText = `${dueText}までのタスクとして`;
+  } else if (timeText) {
+    scheduleText = `${timeText}で`;
+  }
+
+  const reply = scheduleText
+    ? `承知しました。\n「${title}」を${scheduleText}登録しました。`
+    : `承知しました。\n「${title}」を登録しました。`;
+
+  return appendAdvice(
+    reply,
+    taskResult,
+    analysis
+  );
+}
+
+function createTaskUpdatedReply(
+  taskResult,
+  analysis
+) {
+  const title =
+    analysis.targetTaskTitle ||
+    analysis.title ||
+    taskResult.title ||
+    "タスク";
+
+  const changedItems =
+    getChangedItems(taskResult);
+
+  const reply =
+    buildUpdatedReply(
+      title,
+      changedItems,
+      taskResult.updates || {}
+    );
+
+  return appendAdvice(
+    reply,
+    taskResult,
+    analysis
+  );
+}
+
+function createTaskCompletedReply(
+  taskResult,
+  analysis
+) {
+  const title =
+    analysis.targetTaskTitle ||
+    analysis.title ||
+    taskResult.title ||
+    "タスク";
+
+  return [
+    "承知しました。",
+    `「${title}」を完了にしました。`,
+    "",
+    "お疲れさまでした。",
+  ].join("\n");
+}
+
+function getChangedItems(taskResult) {
+  const updates =
+    taskResult.updates || {};
 
   const categoryLabels = {
     work: "仕事",
@@ -89,14 +170,25 @@ function createUpdateReply(taskResult, analysis) {
   }
 
   if (updates.dueDate !== undefined) {
+    const dueText =
+      updates.dueDate
+        ? formatDueDateForReply(
+            updates.dueDate
+          )
+        : "期限なし";
+
     changedItems.push(
-      `期限を${updates.dueDate || "期限なし"}に`
+      `期限を${dueText}に`
     );
   }
 
   if (updates.dueTime !== undefined) {
+    const timeText =
+      updates.dueTime ||
+      "指定なし";
+
     changedItems.push(
-      `時間を${updates.dueTime || "指定なし"}に`
+      `時間を${timeText}に`
     );
   }
 
@@ -105,7 +197,9 @@ function createUpdateReply(taskResult, analysis) {
       priorityLabels[updates.priority] ||
       updates.priority;
 
-    changedItems.push(`優先度を${priority}に`);
+    changedItems.push(
+      `優先度を${priority}に`
+    );
   }
 
   if (updates.category !== undefined) {
@@ -113,25 +207,210 @@ function createUpdateReply(taskResult, analysis) {
       categoryLabels[updates.category] ||
       updates.category;
 
-    changedItems.push(`分類を${category}に`);
+    changedItems.push(
+      `分類を${category}に`
+    );
   }
 
   if (updates.notification !== undefined) {
     const notification =
-      notificationLabels[updates.notification] ||
+      notificationLabels[
+        updates.notification
+      ] ||
       updates.notification;
 
-    changedItems.push(`通知を${notification}に`);
+    changedItems.push(
+      `通知を${notification}に`
+    );
+  }
+
+  return changedItems;
+}
+
+function buildUpdatedReply(
+  title,
+  changedItems,
+  updates
+) {
+  const hasDueDate =
+    updates.dueDate !== undefined;
+
+  const hasDueTime =
+    updates.dueTime !== undefined;
+
+  if (hasDueDate || hasDueTime) {
+    const dueText =
+      updates.dueDate
+        ? formatDueDateForReply(
+            updates.dueDate
+          )
+        : null;
+
+    const timeText =
+      updates.dueTime || null;
+
+    const scheduleText = [
+      dueText,
+      timeText,
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    if (scheduleText) {
+      return [
+        "承知しました。",
+        `「${title}」を${scheduleText}へ変更しました。`,
+      ].join("\n");
+    }
   }
 
   if (changedItems.length === 0) {
-    return `承知しました。\n「${originalTitle}」を更新しました。`;
+    return [
+      "承知しました。",
+      `「${title}」を更新しました。`,
+    ].join("\n");
   }
 
   return [
     "承知しました。",
-    `「${originalTitle}」の${changedItems.join("、")}変更しました。`,
+    `「${title}」の${changedItems.join("、")}変更しました。`,
   ].join("\n");
+}
+
+function formatDueDateForReply(dueDate) {
+  if (!dueDate) {
+    return null;
+  }
+
+  const todayString =
+    new Date().toLocaleDateString(
+      "sv-SE",
+      {
+        timeZone: "Asia/Tokyo",
+      }
+    );
+
+  const today =
+    new Date(
+      `${todayString}T00:00:00+09:00`
+    );
+
+  const target =
+    new Date(
+      `${dueDate}T00:00:00+09:00`
+    );
+
+  const diffDays =
+    Math.round(
+      (target - today) /
+      (1000 * 60 * 60 * 24)
+    );
+
+  if (diffDays === 0) {
+    return "今日";
+  }
+
+  if (diffDays === 1) {
+    return "明日";
+  }
+
+  if (diffDays === 2) {
+    return "明後日";
+  }
+
+  return target.toLocaleDateString(
+    "ja-JP",
+    {
+      timeZone: "Asia/Tokyo",
+      month: "long",
+      day: "numeric",
+      weekday: "short",
+    }
+  );
+}
+
+function formatDueTimeForReply(dueTime) {
+  if (!dueTime) {
+    return null;
+  }
+
+  return dueTime;
+}
+
+function appendAdvice(
+  reply,
+  taskResult,
+  analysis
+) {
+  if (!reply) {
+    return reply;
+  }
+
+  const advice =
+    createTaskAdvice(
+      taskResult,
+      analysis
+    );
+
+  if (!advice) {
+    return reply;
+  }
+
+  return `${reply}\n\n${advice}`;
+}
+
+function createTaskAdvice(
+  taskResult,
+  analysis
+) {
+  if (!taskResult || !analysis) {
+    return null;
+  }
+
+  const updates =
+    taskResult.updates || {};
+
+  // =====================
+  // 新規登録
+  // =====================
+
+  // 日付は決まったが、時間が未設定
+  if (
+    taskResult.created &&
+    analysis.dueDate &&
+    !analysis.dueTime
+  ) {
+    return "時間は決まっていますか？";
+  }
+
+  // 日付と時間が最初から決まっている
+  if (
+    taskResult.created &&
+    analysis.dueDate &&
+    analysis.dueTime &&
+    (
+      !analysis.notification ||
+      analysis.notification === "none"
+    )
+  ) {
+    return "必要であれば、通知も設定できます。";
+  }
+
+  // =====================
+  // 更新
+  // =====================
+
+  // 時間を後から設定・変更した
+  if (
+    taskResult.updated &&
+    updates.dueTime !== undefined &&
+    updates.dueTime &&
+    updates.notification === undefined
+  ) {
+    return "必要であれば、通知も設定できます。";
+  }
+
+  return null;
 }
 
 module.exports = {

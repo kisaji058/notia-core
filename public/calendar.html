@@ -52,6 +52,22 @@
     </button>
   </header>
 
+  <section class="calendar-sync-area">
+  <button
+    id="syncButton"
+    class="calendar-sync-button"
+    type="button"
+  >
+    ↻ 同期
+  </button>
+
+  <p
+    id="syncStatus"
+    class="calendar-sync-status"
+    aria-live="polite"
+  ></p>
+</section>
+
   <main>
     <section
       id="timeline"
@@ -66,25 +82,31 @@
   </main>
 
   <nav class="bottom-nav">
-    <a href="/">
-      💬<br>
-      チャット
-    </a>
+  <a href="/">
+    💬<br>
+    チャット
+  </a>
 
-    <a href="/tasks">
-      ✓<br>
-      タスク
-    </a>
+  <a href="/tasks">
+    ✓<br>
+    タスク
+  </a>
 
-    <a
-      href="/calendar"
-      class="active"
-    >
-      📅<br>
-      カレンダー
-    </a>
-  </nav>
+  <a
+    href="/calendar"
+    class="active"
+  >
+    📅<br>
+    カレンダー
+  </a>
 
-  <script src="/js/calendar.js"></script>
+  <a href="/routines">
+    🔁<br>
+    ルーティーン
+  </a>
+</nav>
+
+<script src="/js/components/cardFactory.js"></script>  
+<script src="/js/calendar.js"></script>
 </body>
 </html>

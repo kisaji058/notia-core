@@ -1,0 +1,165 @@
+.routine-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+
+  margin-bottom: 24px;
+}
+
+.routine-header-text h1 {
+  margin: 0 0 6px;
+  font-size: 28px;
+}
+
+.routine-header-text p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.add-routine-button {
+  flex-shrink: 0;
+
+  border: none;
+  border-radius: 999px;
+
+  padding: 10px 16px;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.routine-section {
+  padding-bottom: 96px;
+}
+
+#routineList {
+  display: grid;
+  gap: 14px;
+}
+
+.routine-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+
+  padding: 18px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 4px 14px
+    rgba(0, 0, 0, 0.05);
+}
+
+.routine-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  margin-bottom: 14px;
+}
+
+.routine-day-badge {
+  display: inline-flex;
+  align-items: center;
+
+  min-height: 30px;
+
+  padding: 5px 11px;
+
+  border-radius: 999px;
+
+  background: #eef7f2;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.routine-category {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.routine-title {
+  margin: 0 0 8px;
+
+  font-size: 19px;
+  line-height: 1.5;
+}
+
+.routine-time {
+  margin: 0;
+
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.routine-status {
+  margin: 40px 0;
+
+  text-align: center;
+
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.routine-error {
+  color: #b91c1c;
+}
+
+.routine-empty {
+  padding: 40px 20px;
+
+  border: 1px dashed #d1d5db;
+  border-radius: 18px;
+
+  text-align: center;
+
+  background: #ffffff;
+}
+
+.routine-empty-title {
+  margin: 0 0 8px;
+
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.routine-empty-description {
+  margin: 0;
+
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+@media (max-width: 640px) {
+  .routine-header {
+    align-items: center;
+  }
+
+  .routine-header-text h1 {
+    font-size: 24px;
+  }
+
+  .add-routine-button {
+    padding: 9px 14px;
+  }
+
+  .routine-card {
+    padding: 16px;
+  }
+
+  .routine-title {
+    font-size: 18px;
+  }
+
+  .bottom-nav a {
+    font-size: 11px;
+  }
+}

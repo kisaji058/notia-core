@@ -27,40 +27,86 @@ class TaskManager {
   }
 
   handleCreate(analysis) {
-    if (!analysis.title) {
-      return null;
-    }
+  const tasks =
+    Array.isArray(analysis.tasks) && analysis.tasks.length > 0
+      ? analysis.tasks
+      : [
+          {
+            title: analysis.title,
+            description: analysis.description,
+            dueDate: analysis.dueDate,
+            dueTime: analysis.dueTime,
+            priority: analysis.priority,
+            category: analysis.category,
+            notification: analysis.notification,
+          },
+        ];
 
-    const existingTasks = findActiveTasks(analysis.title);
+  const createdTasks = [];
+  const duplicatedTasks = [];
+  const processedTaskKeys = new Set();
+
+  for (const task of tasks) {
+    if (!task.title) {
+      continue;
+    }
+  
+  const taskKey = `${task.title}::${task.dueDate || ""}`;
+
+if (processedTaskKeys.has(taskKey)) {
+  console.log(
+    "解析結果内の重複をスキップ:",
+    task.title,
+    task.dueDate || null
+  );
+  continue;
+}
+
+processedTaskKeys.add(taskKey);
+
+    const existingTasks =
+  findActiveTasks(
+    task.title,
+    task.dueDate || null
+  );
 
     if (existingTasks.length > 0) {
-      console.log("既存タスクあり:", analysis.title);
-
-      return {
-        created: false,
-        duplicated: true,
-        title: analysis.title,
-      };
+      console.log("既存タスクあり:", task.title);
+      duplicatedTasks.push(task.title);
+      continue;
     }
 
-    const dueDate = analysis.dueDate || null;
+    const taskId = addTask(
+  task.title,
+  task.description || "",
+  task.dueDate || null,
+  task.priority || "normal",
+  task.category || "other",
+  task.dueTime || null,
+  task.notification || "none"
+);
 
-    addTask(
-      analysis.title,
-      analysis.description || "",
-      dueDate
-    );
+    console.log("✅ タスク登録:", task.title);
 
-    console.log("✅ タスク登録:", analysis.title);
-
-    return {
-      created: true,
-      duplicated: false,
-      title: analysis.title,
-      description: analysis.description || "",
-      dueDate,
-    };
+    createdTasks.push({
+  id: taskId,
+      title: task.title,
+      description: task.description || "",
+      dueDate: task.dueDate || null,
+      dueTime: task.dueTime || null,
+      priority: task.priority || "normal",
+      category: task.category || "other",
+      notification: task.notification || "none",
+    });
   }
+
+  return {
+    created: createdTasks.length > 0,
+    duplicated: duplicatedTasks.length > 0,
+    createdTasks,
+    duplicatedTasks,
+  };
+}
 
   handleUpdate(analysis) {
     if (!analysis.targetTaskId) {

@@ -1,4 +1,68 @@
 const { chatWithNotia } = require("../../openai");
+const VALID_INTENTS = [
+  "chat",
+  "task_create",
+  "task_update",
+  "task_complete",
+  "schedule_query",
+  "routine_create",
+  "unknown",
+];
+
+const VALID_CATEGORIES = [
+  "work",
+  "school",
+  "shopping",
+  "private",
+  "other",
+];
+
+const VALID_NOTIFICATIONS = [
+  "none",
+  "same_day",
+  "day_before",
+];
+
+const VALID_PRIORITIES = [
+  "low",
+  "normal",
+  "high",
+];
+
+function validateEnum(value, validValues) {
+  return validValues.includes(value)
+    ? value
+    : null;
+}
+
+function hasExplicitTaskUpdateCue(message) {
+  if (typeof message !== "string") {
+    return false;
+  }
+
+  const updatePatterns = [
+    /変更して/,
+    /変えて/,
+    /直して/,
+    /修正して/,
+    /更新して/,
+    /にして/,
+    /へ変更/,
+    /期限を/,
+    /締切を/,
+    /時間を/,
+    /優先度を/,
+    /分類を/,
+    /カテゴリを/,
+    /通知を/,
+    /タイトルを/,
+    /説明を/,
+  ];
+
+  return updatePatterns.some((pattern) =>
+    pattern.test(message)
+  );
+}
 
 class ConversationAnalyzer {
   async analyze(userMessage, options = {}) {
@@ -23,7 +87,27 @@ JSONのみで返してください。
 
 返却形式:
 {
-  "intent": "chat | task_create | task_update | task_complete | reminder | schedule | unknown",
+  "intent": "chat | task_create | task_update | task_complete | schedule_query | routine_create | unknown",
+"tasks": [
+    {
+      "title": "string",
+      "description": "string | null",
+      "dueDate": "string | null",
+      "dueTime": "string | null",
+      "category": "work | school | shopping | private | other | null",
+      "notification": "none | same_day | day_before | null",
+      "needsDateConfirmation": "boolean",
+      "dateExpression": "string | null",
+      "priority": "low | normal | high"
+    }
+  ],
+  "routine": {
+  "title": "string | null",
+  "dayOfWeek": "number | null",
+  "routineTime": "string | null",
+  "category": "work | school | shopping | private | other | null",
+  "googleCalendarEnabled": "boolean"
+},
   "title": "string | null",
   "description": "string | null",
   "dueDate": "string | null",
@@ -32,6 +116,13 @@ JSONのみで返してください。
   "notification": "none | same_day | day_before | null",
   "targetTaskId": "number | null",
   "targetTaskTitle": "string | null",
+  "scheduleQuery": {
+  "range": "today | tomorrow | day_after_tomorrow | weekday | next_weekday | this_week | next_week | this_month | null",
+  "target":
+"schedule | task | routine | null",
+  "title": "string | null",
+  "dayOfWeek": "number | null"
+},
   "needsDateConfirmation": "boolean",
   "dateExpression": "string | null",
 
@@ -65,6 +156,18 @@ JSONのみで返してください。
 - task_update以外の場合もupdatesを返し、すべてnullにする。
 - ユーザーが変更を指示していない項目をupdatesに入れてはいけない。
 - ユーザーの発言から推測できない値を勝手に補完してはいけない。
+- tasksは必ず配列で返す。
+- task_createの場合は、作成するすべてのタスクをtasksに入れる。
+- task_create以外の場合はtasks: []を返す。
+- タスクが1件だけの場合もtasksに1件入れる。
+- 複数の行動が含まれる場合は、1つにまとめず別々のタスクに分割する。
+- 既存互換のため、task_createではtasksの先頭要素と同じ内容を
+  title、description、dueDate、dueTime、category、notification、
+  needsDateConfirmation、dateExpression、priorityにも入れる。
+- routine_createの場合はtasksを空配列にする。
+- routine_createの場合のみroutineを設定する。
+- routine_create以外ではroutineはnullを返す。
+- RoutineとTaskを混在させてはいけない。
 
 【memories】
 
@@ -95,6 +198,189 @@ JSONのみで返してください。
 - 既存タスクの修正 → task_update
 - 既存タスクの完了 → task_complete
 - 判定できない → unknown
+- 毎週の繰り返し予定登録 → routine_create
+
+【ルーティーン登録】
+
+毎週繰り返す予定や習慣は
+intent を "routine_create" にする。
+
+routine_create の場合は
+
+tasks は必ず [] を返す。
+
+routine を返す。
+
+例
+
+ユーザー:
+毎週月曜18時にジム
+
+{
+  "intent":"routine_create",
+
+  "tasks":[],
+
+  "routine":{
+      "title":"ジム",
+      "dayOfWeek":1,
+      "routineTime":"18:00",
+      "category":"private",
+      "googleCalendarEnabled":false
+  }
+}
+
+曜日は
+
+0 日
+1 月
+2 火
+3 水
+4 木
+5 金
+6 土
+
+時間指定がない場合は
+routineTimeはnull。
+
+Google同期はfalse。
+
+例
+
+ユーザー:
+毎週月曜18時にジム
+
+出力:
+
+{
+  "intent": "routine_create"
+}
+
+例
+
+ユーザー:
+火曜日は英語
+
+↓
+
+intent:
+"routine_create"
+
+例
+
+ユーザー:
+毎週金曜日9時ミーティング
+
+↓
+
+intent:
+"routine_create"
+
+routine_create の場合は
+tasks は必ず [] を返す。
+
+【予定照会】
+
+ユーザーが予定やタスクを確認したい場合は、
+intent を "schedule_query" にする。
+
+### 例1：今日の予定
+
+ユーザー:
+今日何ある？
+
+出力:
+{
+  "intent": "schedule_query",
+  "scheduleQuery": {
+    "range": "today",
+    "target": "schedule",
+    "title": null
+  }
+}
+
+### 例2：期間の予定
+
+ユーザー:
+今週の予定教えて
+
+出力:
+{
+  "intent": "schedule_query",
+  "scheduleQuery": {
+    "range": "this_week",
+    "target": "schedule",
+    "title": null
+  }
+}
+
+### 例3：タスク検索
+
+ユーザー:
+歯医者っていつだっけ？
+
+出力:
+{
+  "intent": "schedule_query",
+  "scheduleQuery": {
+    "range": null,
+    "target": "task",
+    "title": "歯医者"
+  }
+}
+
+### 例4：ルーティーン照会
+
+ユーザー:
+今日のルーティーンは？
+
+出力:
+
+{
+  "intent": "schedule_query",
+  "scheduleQuery": {
+    "range": "today",
+    "target": "routine",
+    "title": null
+  }
+}
+
+月曜日のルーティーン
+
+今日の習慣
+
+今日のルーチン
+
+### 例5：曜日指定
+
+ユーザー:
+月曜日のルーティーンは？
+
+出力:
+{
+  "intent": "schedule_query",
+  "scheduleQuery": {
+    "range": "weekday",
+    "target": "routine",
+    "title": null,
+    "dayOfWeek": 1
+  }
+}
+
+ユーザー:
+金曜日のルーティーン
+
+出力:
+{
+  "intent": "schedule_query",
+  "scheduleQuery": {
+    "range": "weekday",
+    "target": "routine",
+    "title": null,
+    "dayOfWeek": 5
+  }
+}
+
 
 【タスク作成】
 
@@ -125,6 +411,113 @@ task_createの場合:
 
 - どれにも明確に当てはまらない
   → other
+
+【複数タスク作成】
+
+1回のユーザー発言に複数の独立した行動が含まれる場合は、
+行動ごとに別々のタスクとしてtasksへ入れる。
+
+例:
+
+ユーザー:
+明日スーパーに行って、銀行にも行く
+
+
+
+tasks:
+[
+  {
+    "title": "スーパーに行く",
+    "description": null,
+    "dueDate": "明日に該当するYYYY-MM-DD",
+    "dueTime": null,
+    "category": "shopping",
+    "notification": null,
+    "needsDateConfirmation": false,
+    "dateExpression": null,
+    "priority": "normal"
+  },
+  {
+    "title": "銀行に行く",
+    "description": null,
+    "dueDate": "明日に該当するYYYY-MM-DD",
+    "dueTime": null,
+    "category": "private",
+    "notification": null,
+    "needsDateConfirmation": false,
+    "dateExpression": null,
+    "priority": "normal"
+  }
+]
+
+共通の期日表現が複数の行動にかかっている場合は、
+すべてのタスクに同じdueDateを設定する。
+
+ユーザー:
+明日、スーパーに行って銀行にも行く
+
+この場合、「明日」は両方のタスクに適用する。
+
+ユーザー:
+スーパーは明日、銀行は金曜日に行く
+
+この場合、それぞれ異なるdueDateを設定する。
+
+ユーザー:
+明日スーパーに行って、銀行にも行く。クリーニングも出す
+
+この場合は3件のタスクに分け、
+3件すべてに明日の日付を設定する。
+
+「〜して、〜する」
+「〜と〜をやる」
+「〜も」
+「それから」
+「あと」
+などで複数の独立した行動が示されている場合は、
+可能な限り個別のタスクに分割する。
+
+単なる手順や補足は別タスクに分割せず、
+descriptionに入れる。
+
+例:
+資料を作って上司に確認してもらう
+
+「上司への確認依頼」が独立して管理すべき行動なら2件、
+資料作成の説明にすぎない場合は1件とする。
+文脈から自然な単位で判断する。
+
+【新規タスクと更新の区別】
+
+ユーザーの今回の発言が、
+新しい行動・予定・用事を述べている場合はtask_createにする。
+
+既存のactiveTasksに似たタイトルのタスクが存在していても、
+それだけを理由にtask_updateにしてはいけない。
+
+以下のような発言は、新規タスクとして扱う。
+
+- 明日会議がある
+- 明後日牛乳を買いに行く
+- 金曜日に銀行へ行く
+- 来週資料を作る
+
+task_updateにするのは、
+ユーザーが既存タスクの変更を明示している場合、
+またはresolvedReferenceが存在する場合に限る。
+
+変更を明示する表現の例:
+
+- 期限を変えて
+- 明日に変更して
+- 15時にして
+- タイトルを変えて
+- 学校にして
+- 優先度を上げて
+
+resolvedReferenceがnullで、
+ユーザーが変更を明示していない場合は、
+似たactiveTasksが存在していてもtask_updateにしてはいけない。
 
 【タスク更新】
 
@@ -298,6 +691,11 @@ updates:
   dueDateをnull、
   needsDateConfirmationをtrue、
   dateExpressionを"期限未指定"にする。
+- 複数タスクの場合、期限の有無はタスクごとに判断する。
+- 共通の期日表現がある場合は、対象となるすべてのタスクに適用する。
+- 一部のタスクだけ期日が未指定の場合、そのタスクだけ
+  needsDateConfirmationをtrue、
+  dateExpressionを"期限未指定"にする。
 
 - task_updateで日付変更の指示がない場合は、
   needsDateConfirmationをfalse、
@@ -452,78 +850,358 @@ ${JSON.stringify(activeTasks, null, 2)}
 ${JSON.stringify(conversationContext, null, 2)}
 `;
 
-    const response = await chatWithNotia(
-      userPrompt,
-      [],
-      systemPrompt
-    );
+const response = await chatWithNotia(
+  userPrompt,
+  [],
+  systemPrompt
+);
 
-    return this.safeParse(response);
+console.log(
+  "ConversationAnalyzer result:",
+  {
+    userMessage,
+    resolvedReference,
+    response,
   }
+);
+
+const analysis = this.safeParse(response);
+
+const shouldRetryWithoutTaskContext =
+  analysis.intent === "task_update" &&
+  !resolvedReference &&
+  !hasExplicitTaskUpdateCue(userMessage);
+
+if (!shouldRetryWithoutTaskContext) {
+  return analysis;
+}
+
+console.warn(
+  "⚠️ 更新指示のないtask_updateを再解析:",
+  {
+    userMessage,
+    targetTaskId: analysis.targetTaskId,
+    targetTaskTitle: analysis.targetTaskTitle,
+  }
+);
+
+const retryPrompt = `
+ユーザー発言:
+${userMessage}
+
+重要:
+この発言には既存タスクを変更する明示的な指示がありません。
+既存タスクとのタイトルの類似だけを理由に、
+task_updateとして扱ってはいけません。
+
+この発言単体から意図を判定してください。
+
+参照解決結果:
+null
+
+最近の会話:
+[]
+
+現在のアクティブタスク:
+[]
+
+会話コンテキスト:
+{}
+`;
+
+const retryResponse = await chatWithNotia(
+  retryPrompt,
+  [],
+  systemPrompt
+);
+
+console.log(
+  "ConversationAnalyzer retry result:",
+  {
+    userMessage,
+    response: retryResponse,
+  }
+);
+
+return this.safeParse(retryResponse);
+  }
+
+  async analyzeConfirmation(userMessage, context = {}) {
+  const today = new Date().toLocaleDateString("sv-SE", {
+    timeZone: "Asia/Tokyo",
+  });
+
+  const systemPrompt = `
+現在日時: ${today} (Asia/Tokyo)
+
+あなたはNotiaの確認応答判定器です。
+
+現在、Notiaはタスクの期限をユーザーに確認しています。
+ユーザーの返答を、次のJSON形式で分類してください。
+
+{
+  "confirmationIntent": "set_due_date | no_due_date | cancel | unclear",
+  "dueDate": "YYYY-MM-DD | null",
+  "dueTime": "HH:mm | null"
+}
+
+判断ルール:
+
+- 明日、7月15日、来週金曜日など
+  → set_due_date
+
+- 期限なし、期限はいらない、未定で登録
+  → no_due_date
+
+- やっぱりやめる、もういい、今回はなし、
+  登録しなくていい、保留にする、忘れて
+  → cancel
+
+- 意味が判断できない
+  → unclear
+
+重要:
+
+- 「やっぱなし」「今回はいい」「今はやめておく」など、
+  表現が多少曖昧でも、タスク登録を撤回する意味ならcancelにする。
+- no_due_dateは、タスク自体は登録し、期限だけ設定しない場合。
+- cancelは、タスク自体を登録しない場合。
+- 日付が判定できる場合はdueDateをYYYY-MM-DDで返す。
+- 時間が指定された場合はdueTimeをHH:mmで返す。
+- 値がない場合は必ずnullを返す。
+- JSONのみ返す。
+`;
+
+  const userPrompt = `
+現在の確認状態:
+${JSON.stringify(context, null, 2)}
+
+ユーザー発言:
+${userMessage}
+`;
+
+  const response = await chatWithNotia(
+    userPrompt,
+    [],
+    systemPrompt
+  );
+
+  try {
+    const parsed = JSON.parse(response);
+
+    const validIntents = [
+      "set_due_date",
+      "no_due_date",
+      "cancel",
+      "unclear",
+    ];
+
+    return {
+      confirmationIntent: validIntents.includes(
+        parsed.confirmationIntent
+      )
+        ? parsed.confirmationIntent
+        : "unclear",
+      dueDate: parsed.dueDate ?? null,
+      dueTime: parsed.dueTime ?? null,
+      
+    };
+  } catch (error) {
+    console.error("確認応答の解析に失敗:", error);
+
+    return {
+      confirmationIntent: "unclear",
+      dueDate: null,
+      dueTime: null,
+    };
+  }
+}
 
   safeParse(text) {
-    try {
-      const parsed = JSON.parse(text);
+  try {
+    const parsed = JSON.parse(text);
 
-      return {
-        intent: parsed.intent || "unknown",
-        title: parsed.title ?? null,
-        description: parsed.description ?? null,
-        dueDate: parsed.dueDate ?? null,
-        dueTime: parsed.dueTime ?? null,
-        category: parsed.category ?? null,
-        notification: parsed.notification ?? null,
-        needsDateConfirmation:
-          parsed.needsDateConfirmation ?? false,
-        dateExpression: parsed.dateExpression ?? null,
-        targetTaskId: parsed.targetTaskId ?? null,
-        targetTaskTitle: parsed.targetTaskTitle ?? null,
-        updates: {
-          title: parsed.updates?.title ?? null,
-          description: parsed.updates?.description ?? null,
-          dueDate: parsed.updates?.dueDate ?? null,
-          dueTime: parsed.updates?.dueTime ?? null,
-          priority: parsed.updates?.priority ?? null,
-          category: parsed.updates?.category ?? null,
-          notification: parsed.updates?.notification ?? null,
+    let tasks = [];
+
+    if (Array.isArray(parsed.tasks)) {
+      tasks = parsed.tasks
+        .filter(
+          (task) =>
+            task &&
+            typeof task.title === "string" &&
+            task.title.trim()
+        )
+        .map((task) => ({
+          title: task.title.trim(),
+          description: task.description ?? null,
+          dueDate: task.dueDate ?? null,
+          dueTime: task.dueTime ?? null,
+          category: validateEnum(
+  task.category,
+  VALID_CATEGORIES
+),
+          notification: validateEnum(
+  task.notification,
+  VALID_NOTIFICATIONS
+),
+          needsDateConfirmation:
+            task.needsDateConfirmation ?? false,
+          dateExpression: task.dateExpression ?? null,
+          priority:
+  validateEnum(
+    task.priority,
+    VALID_PRIORITIES
+  ) || "normal",
+        }));
+    }
+
+    if (
+      parsed.intent === "task_create" &&
+      tasks.length === 0 &&
+      typeof parsed.title === "string" &&
+      parsed.title.trim()
+    ) {
+      tasks = [
+        {
+          title: parsed.title.trim(),
+          description: parsed.description ?? null,
+          dueDate: parsed.dueDate ?? null,
+          dueTime: parsed.dueTime ?? null,
+          category: parsed.category ?? null,
+          notification: parsed.notification ?? null,
+          needsDateConfirmation:
+            parsed.needsDateConfirmation ?? false,
+          dateExpression: parsed.dateExpression ?? null,
+          priority: parsed.priority || "normal",
         },
-        memories: Array.isArray(parsed.memories)
-          ? parsed.memories
-          : [],
-        priority: parsed.priority || "normal",
-        confidence:
-          typeof parsed.confidence === "number"
-            ? parsed.confidence
-            : 0,
-      };
+      ];
+    }
+
+    return {
+      intent:
+  VALID_INTENTS.includes(parsed.intent)
+    ? parsed.intent
+    : "unknown",
+      tasks,
+      routine: parsed.routine
+  ? {
+      title:
+        parsed.routine.title ?? null,
+
+      dayOfWeek:
+        parsed.routine.dayOfWeek ?? null,
+
+      routineTime:
+        parsed.routine.routineTime ?? null,
+
+      category:
+  validateEnum(
+    parsed.routine.category,
+    VALID_CATEGORIES
+  ),
+
+      googleCalendarEnabled:
+        parsed.routine.googleCalendarEnabled ??
+        false,
+    }
+  : null,
+      title: parsed.title ?? null,
+      description: parsed.description ?? null,
+      dueDate: parsed.dueDate ?? null,
+      dueTime: parsed.dueTime ?? null,
+      category: parsed.category ?? null,
+      notification: parsed.notification ?? null,
+      needsDateConfirmation:
+        parsed.needsDateConfirmation ?? false,
+      dateExpression: parsed.dateExpression ?? null,
+      targetTaskId: parsed.targetTaskId ?? null,
+      targetTaskTitle: parsed.targetTaskTitle ?? null,
+      scheduleQuery: {
+  range:
+    parsed.scheduleQuery?.range ?? null,
+
+  target:
+    parsed.scheduleQuery?.target ?? null,
+
+  title:
+    parsed.scheduleQuery?.title ?? null,
+  dayOfWeek:
+  parsed.scheduleQuery?.dayOfWeek ?? null,
+},
+      updates: {
+        title: parsed.updates?.title ?? null,
+        description: parsed.updates?.description ?? null,
+        dueDate: parsed.updates?.dueDate ?? null,
+        dueTime: parsed.updates?.dueTime ?? null,
+        priority:
+  validateEnum(
+    parsed.updates?.priority,
+    VALID_PRIORITIES
+  ),
+
+category:
+  validateEnum(
+    parsed.updates?.category,
+    VALID_CATEGORIES
+  ),
+
+notification:
+  validateEnum(
+    parsed.updates?.notification,
+    VALID_NOTIFICATIONS
+  ),
+      },
+      memories: Array.isArray(parsed.memories)
+        ? parsed.memories
+        : [],
+      priority: parsed.priority || "normal",
+      confidence:
+        typeof parsed.confidence === "number"
+          ? parsed.confidence
+          : 0,
+    };
     } catch (error) {
-      return {
-        intent: "unknown",
+    return {
+      intent:
+  VALID_INTENTS.includes(parsed.intent)
+    ? parsed.intent
+    : "unknown",
+      tasks: [],
+      routine: null,
+      title: null,
+      description: text,
+      dueDate: null,
+      dueTime: null,
+      category: null,
+      notification: null,
+      needsDateConfirmation: false,
+      dateExpression: null,
+      targetTaskId: null,
+      targetTaskTitle: null,
+
+      scheduleQuery: {
+  range: null,
+  target: null,
+  title: null,
+  dayOfWeek: null,
+},
+
+      updates: {
         title: null,
-        description: text,
+        description: null,
         dueDate: null,
         dueTime: null,
+        priority: null,
         category: null,
         notification: null,
-        needsDateConfirmation: false,
-        dateExpression: null,
-        targetTaskId: null,
-        targetTaskTitle: null,
-        updates: {
-          title: null,
-          description: null,
-          dueDate: null,
-          dueTime: null,
-          priority: null,
-          category: null,
-          notification: null,
-        },
-        memories: [],
-        priority: "normal",
-        confidence: 0,
-      };
-    }
+      },
+
+      memories: [],
+      priority: "normal",
+      confidence: 0,
+    };
   }
+}
 }
 
 module.exports = new ConversationAnalyzer();

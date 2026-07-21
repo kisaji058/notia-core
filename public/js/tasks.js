@@ -1,11 +1,7 @@
-const completedTaskList = document.getElementById("completedTaskList");
 const taskList = document.getElementById("taskList");
-
-const priorityIcons = {
-  high: "🔴",
-  normal: "🟡",
-  low: "🟢",
-};
+let allTasks = [];
+let currentSort = "due_asc";
+let currentFilter = "all";
 
 async function loadTasks() {
   try {
@@ -19,90 +15,9 @@ async function loadTasks() {
 
     const tasks = await res.json();
 
-    taskList.innerHTML = "";
+    allTasks = tasks;
+refreshTaskList();
 
-    if (tasks.length === 0) {
-      taskList.innerHTML = `
-        <div class="empty-state">
-          <p class="empty-title">未完了タスクはありません。</p>
-          <p class="empty-message">
-            チャットで話しかけると、Notiaがタスクを登録します。
-          </p>
-        </div>
-      `;
-      return;
-    }
-
-    tasks.forEach((task) => {
-      const card = document.createElement("article");
-      card.className = "task-card";
-
-      const priorityIcon =
-        priorityIcons[task.priority] ?? priorityIcons.normal;
-        card.innerHTML = `
-  <div class="task-info" role="button" tabindex="0">
-    <div class="task-title">
-      <span class="priority-icon">${priorityIcon}</span>
-      <span>${escapeHtml(task.title)}</span>
-    </div>
-
-    <div class="task-meta">
-      <span class="task-date">
-        ${formatDueDate(task.due_date)}
-      </span>
-
-      <span class="task-category">
-        ${escapeHtml(getCategoryLabel(task.category))}
-      </span>
-    </div>
-  </div>
-
-  <div class="task-actions">
-    <button
-      type="button"
-      class="complete-button"
-      aria-label="${escapeHtml(task.title)}を完了する"
-    >
-      完了
-    </button>
-
-    <button
-      type="button"
-      class="delete-button"
-      aria-label="${escapeHtml(task.title)}を削除する"
-    >
-      🗑
-    </button>
-  </div>
-`;
-
-      const taskInfo = card.querySelector(".task-info");
-      const completeButton = card.querySelector(".complete-button");
-      const deleteButton = card.querySelector(".delete-button");
-
-      taskInfo.addEventListener("click", () => {
-        location.href = `/tasks/${task.id}`;
-      });
-
-      taskInfo.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          location.href = `/tasks/${task.id}`;
-        }
-      });
-
-      completeButton.addEventListener("click", async () => {
-  await completeTask(task.id, completeButton);
-});
-
-
-
-      deleteButton.addEventListener("click", async () => {
-        await deleteTask(task, deleteButton);
-      });
-
-      taskList.appendChild(card);
-    });
   } catch (error) {
     console.error(error);
 
@@ -119,6 +34,142 @@ async function loadTasks() {
   }
 }
 
+function getSortedTasks(tasks) {
+  const sortedTasks = [...tasks];
+
+  if (currentSort === "priority") {
+    const priorityRank = {
+      high: 1,
+      normal: 2,
+      low: 3,
+    };
+
+    return sortedTasks.sort((a, b) => {
+      return (
+        (priorityRank[a.priority] ?? 2) -
+        (priorityRank[b.priority] ?? 2)
+      );
+    });
+  }
+
+  if (currentSort === "newest") {
+    return sortedTasks.sort((a, b) => {
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+  }
+
+  if (currentSort === "oldest") {
+    return sortedTasks.sort((a, b) => {
+      return new Date(a.created_at) - new Date(b.created_at);
+    });
+  }
+
+  // 期限が近い順
+  return sortedTasks.sort((a, b) => {
+    if (!a.due_date && !b.due_date) {
+      return 0;
+    }
+
+    if (!a.due_date) {
+      return 1;
+    }
+
+    if (!b.due_date) {
+      return -1;
+    }
+
+    return a.due_date.localeCompare(b.due_date);
+  });
+}
+
+function getFilteredTasks(tasks) {
+  if (currentFilter === "all") {
+    return tasks;
+  }
+
+  return tasks.filter((task) => {
+    return task.category === currentFilter;
+  });
+}
+
+function refreshTaskList() {
+  const filteredTasks =
+    getFilteredTasks(allTasks);
+
+  const sortedTasks =
+    getSortedTasks(filteredTasks);
+
+  renderTaskList(sortedTasks);
+}
+
+function renderTaskCard(task) {
+  const priorityIcon =
+  priorityIcons[task.priority] ??
+  priorityIcons.normal;
+
+const card =
+  createTaskCard(task, {
+    priorityIcon,
+    dueDateText: formatDueDate(
+      task.due_date
+    ),
+    categoryText:
+      getCategoryLabel(
+        task.category
+      ),
+    showActions: true,
+  });
+
+
+  const taskInfo = card.querySelector(".task-info");
+  const completeButton =
+    card.querySelector(".complete-button");
+  const deleteButton =
+    card.querySelector(".delete-button");
+
+  taskInfo.addEventListener("click", () => {
+    location.href = `/tasks/${task.id}`;
+  });
+
+  taskInfo.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      location.href = `/tasks/${task.id}`;
+    }
+  });
+
+  completeButton.addEventListener("click", async () => {
+    await completeTask(task.id, completeButton);
+  });
+
+  deleteButton.addEventListener("click", async () => {
+    await deleteTask(task, deleteButton);
+  });
+
+  taskList.appendChild(card);
+}
+
+function renderTaskList(tasks) {
+  taskList.innerHTML = "";
+
+  if (tasks.length === 0) {
+    taskList.innerHTML = `
+      <div class="empty-state">
+        <p class="empty-title">未完了タスクはありません。</p>
+        <p class="empty-message">
+          チャットで話しかけると、Notiaがタスクを登録します。
+        </p>
+      </div>
+    `;
+
+    return;
+  }
+
+  tasks.forEach((task) => {
+    renderTaskCard(task);
+  });
+}
+
 async function completeTask(taskId, button) {
   try {
     button.disabled = true;
@@ -131,10 +182,7 @@ async function completeTask(taskId, button) {
       throw new Error(`タスク完了失敗: ${res.status}`);
     }
 
-    await Promise.all([
-  loadTasks(),
-  loadCompletedTasks(),
-]);
+    await loadTasks();
   } catch (error) {
     console.error(error);
     button.disabled = false;
@@ -168,182 +216,476 @@ async function deleteTask(task, button) {
   }
 }
 
-function formatDueDate(dueDate) {
-  if (!dueDate) {
-    return "期限なし";
-  }
-
-  const today = new Date().toLocaleDateString("sv-SE", {
-    timeZone: "Asia/Tokyo",
-  });
-
-  const todayDate = new Date(`${today}T00:00:00+09:00`);
-  const dueDateObj = new Date(`${dueDate}T00:00:00+09:00`);
-
-  const diffDays = Math.round(
-    (dueDateObj - todayDate) / (1000 * 60 * 60 * 24)
-  );
-
-  if (diffDays < 0) {
-    return `期限超過（${Math.abs(diffDays)}日）`;
-  }
-
-  if (diffDays === 0) {
-    return "本日中";
-  }
-
-  if (diffDays === 1) {
-    return "明日";
-  }
-
-  if (diffDays === 2) {
-    return "明後日";
-  }
-
-  return dueDate;
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function getCategoryLabel(category) {
-  const categoryLabels = {
-    work: "仕事",
-    school: "学校",
-    private: "プライベート",
-    personal: "プライベート",
-    shopping: "買い物",
-    other: "その他",
-  };
-
-  if (!category) {
-    return "その他";
-  }
-
-  return categoryLabels[category] ?? category;
-}
 
 async function loadTaskPage() {
-  await Promise.all([
-    loadTasks(),
-    loadCompletedTasks(),
-  ]);
+  await loadTasks();
 }
 
 loadTaskPage();
 
-async function loadCompletedTasks() {
-  if (!completedTaskList) {
-    return;
-  }
+const sortButton =
+  document.getElementById("sortButton");
 
-  try {
-    completedTaskList.innerHTML = `
-      <p class="task-status">読み込み中...</p>
-    `;
+const filterButton =
+  document.getElementById("filterButton");
 
-    const res = await fetch("/api/tasks/completed/recent");
+const settingsButton =
+  document.getElementById("settingsButton");
 
-    if (!res.ok) {
-      throw new Error(`完了タスク取得失敗: ${res.status}`);
+const sheetOverlay =
+  document.getElementById("sheetOverlay");
+
+const sheetModal =
+  document.getElementById("sheetModal");
+
+const sheetTitle =
+  document.getElementById("sheetTitle");
+
+const sheetContent =
+  document.getElementById("sheetContent");
+
+const closeSheetButton =
+  document.getElementById("closeSheetButton");
+
+function openSheet(title, html) {
+  sheetTitle.textContent = title;
+  sheetContent.innerHTML = html;
+
+  sheetOverlay.hidden = false;
+  sheetModal.hidden = false;
+}
+
+function closeSheet() {
+  sheetOverlay.hidden = true;
+  sheetModal.hidden = true;
+}
+
+sortButton.addEventListener("click", () => {
+  openSheet(
+    "並び替え",
+    `
+      <button
+        class="sheet-item"
+        type="button"
+        data-sort="due_asc"
+      >
+        期限が近い順
+      </button>
+
+      <button
+        class="sheet-item"
+        type="button"
+        data-sort="priority"
+      >
+        優先度順
+      </button>
+
+      <button
+        class="sheet-item"
+        type="button"
+        data-sort="newest"
+      >
+        新しい順
+      </button>
+
+      <button
+        class="sheet-item"
+        type="button"
+        data-sort="oldest"
+      >
+        古い順
+      </button>
+    `
+  );
+
+  const sortItems =
+    sheetContent.querySelectorAll("[data-sort]");
+
+  sortItems.forEach((button) => {
+    if (button.dataset.sort === currentSort) {
+      button.classList.add("is-selected");
+      button.setAttribute("aria-current", "true");
     }
 
-    const tasks = (await res.json()).slice(0, 2);
+    button.addEventListener("click", () => {
+      currentSort = button.dataset.sort;
 
-    completedTaskList.innerHTML = "";
+      refreshTaskList();
+      closeSheet();
+    });
+  });
+});
 
-    if (tasks.length === 0) {
-      completedTaskList.innerHTML = `
-        <p class="completed-empty">
-          最近完了したタスクはありません。
-        </p>
+filterButton.addEventListener("click", () => {
+  openSheet(
+    "絞り込み",
+    `
+      <button
+        class="sheet-item"
+        type="button"
+        data-filter="all"
+      >
+        すべて
+      </button>
+
+      <button
+        class="sheet-item"
+        type="button"
+        data-filter="work"
+      >
+        仕事
+      </button>
+
+      <button
+        class="sheet-item"
+        type="button"
+        data-filter="school"
+      >
+        学校
+      </button>
+
+      <button
+        class="sheet-item"
+        type="button"
+        data-filter="shopping"
+      >
+        買い物
+      </button>
+
+      <button
+        class="sheet-item"
+        type="button"
+        data-filter="private"
+      >
+        プライベート
+      </button>
+
+      <button
+        class="sheet-item"
+        type="button"
+        data-filter="other"
+      >
+        その他
+      </button>
+    `
+  );
+
+  const filterItems =
+    sheetContent.querySelectorAll("[data-filter]");
+
+  filterItems.forEach((button) => {
+    if (button.dataset.filter === currentFilter) {
+      button.classList.add("is-selected");
+      button.setAttribute("aria-current", "true");
+    }
+
+    button.addEventListener("click", () => {
+      currentFilter = button.dataset.filter;
+
+      refreshTaskList();
+      closeSheet();
+    });
+  });
+});
+
+async function loadGoogleIntegration() {
+  const status =
+    document.getElementById("googleStatus");
+
+  const email =
+    document.getElementById("googleEmail");
+
+  const lastSync =
+    document.getElementById("googleLastSync");
+
+  const actions =
+    document.getElementById("googleActions");
+
+  try {
+    const res =
+      await fetch("/api/integrations");
+
+    if (!res.ok) {
+      throw new Error(
+        `連携状態取得失敗: ${res.status}`
+      );
+    }
+
+    const data = await res.json();
+    const google = data.google;
+
+    if (!google.connected) {
+      status.textContent = "未接続";
+      email.textContent = "";
+      lastSync.textContent = "";
+
+      actions.innerHTML = `
+        <a
+          class="integration-primary-button"
+          href="/auth/google"
+        >
+          Googleでログイン
+        </a>
       `;
+
       return;
     }
 
-    tasks.forEach((task) => {
-      const card = document.createElement("article");
-      card.className = "completed-task-card";
+    status.textContent = "🟢 接続済み";
 
-      const priorityIcon =
-        priorityIcons[task.priority] ?? priorityIcons.normal;
+    email.textContent =
+      google.email || "アカウント情報なし";
 
-      card.innerHTML = `
-        <div class="completed-task-info">
-          <div class="completed-task-title">
-            <span class="priority-icon">${priorityIcon}</span>
-            <span>${escapeHtml(task.title)}</span>
+    lastSync.textContent =
+      google.lastSync
+        ? `最終同期：${formatIntegrationDate(
+            google.lastSync
+          )}`
+        : "最終同期：未同期";
+
+    actions.innerHTML = `
+      <button
+        id="googleSyncButton"
+        class="integration-primary-button"
+        type="button"
+      >
+        ↻ 同期
+      </button>
+
+      <button
+        id="googleLogoutButton"
+        class="integration-secondary-button"
+        type="button"
+      >
+        ログアウト
+      </button>
+    `;
+
+    const syncButton =
+      document.getElementById(
+        "googleSyncButton"
+      );
+
+    const logoutButton =
+      document.getElementById(
+        "googleLogoutButton"
+      );
+
+    syncButton.addEventListener(
+      "click",
+      async () => {
+        try {
+          syncButton.disabled = true;
+          syncButton.textContent =
+            "同期中...";
+
+          const syncRes = await fetch(
+            "/api/calendar/sync",
+            {
+              method: "POST",
+            }
+          );
+
+          const result =
+            await syncRes.json();
+
+          if (
+  !syncRes.ok ||
+  !result.success
+) {
+  throw new Error(
+    result.error ||
+      result.message ||
+      `同期失敗: ${syncRes.status}`
+  );
+}
+
+          alert(
+            `同期が完了しました。\n` +
+            `Google予定 ${
+              result.importedEvents ?? 0
+            }件\n` +
+            `Notia同期 ${
+              result.exportedTasks ?? 0
+            }件`
+          );
+
+          await loadGoogleIntegration();
+        } catch (error) {
+          console.error(
+            "Google Calendar sync error:",
+            error
+          );
+
+          alert(
+            "Google Calendarとの同期に失敗しました。"
+          );
+
+          syncButton.disabled = false;
+          syncButton.textContent = "↻ 同期";
+        }
+      }
+    );
+
+    logoutButton.addEventListener(
+      "click",
+      async () => {
+        const confirmed = confirm(
+          "Google Calendarとの連携を解除しますか？"
+        );
+
+        if (!confirmed) {
+          return;
+        }
+
+        try {
+          logoutButton.disabled = true;
+          logoutButton.textContent =
+            "解除中...";
+
+          const logoutRes = await fetch(
+            "/auth/google/logout",
+            {
+              method: "POST",
+            }
+          );
+
+          if (!logoutRes.ok) {
+            throw new Error(
+              `ログアウト失敗: ${logoutRes.status}`
+            );
+          }
+
+          await loadGoogleIntegration();
+
+          alert(
+            "Google Calendarとの連携を解除しました。"
+          );
+        } catch (error) {
+          console.error(
+            "Google logout error:",
+            error
+          );
+
+          alert(
+            "Google Calendarとの連携を解除できませんでした。"
+          );
+
+          logoutButton.disabled = false;
+          logoutButton.textContent =
+            "ログアウト";
+        }
+      }
+    );
+  } catch (error) {
+    console.error(
+      "Google integration load error:",
+      error
+    );
+
+    status.textContent =
+      "接続状態を取得できませんでした。";
+
+    email.textContent = "";
+    lastSync.textContent = "";
+    actions.innerHTML = "";
+  }
+}
+
+function formatIntegrationDate(value) {
+  if (!value) {
+    return "未同期";
+  }
+
+  const normalized =
+    value.includes("T")
+      ? value
+      : `${value.replace(" ", "T")}Z`;
+
+  const date = new Date(normalized);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+settingsButton.addEventListener("click", async () => {
+  openSheet(
+    "設定",
+    `
+      <div class="settings-section">
+        <div class="settings-item">
+          <div class="settings-title">
+            初期並び替え
           </div>
 
-          <div class="completed-task-meta">
-            <span>${formatDueDate(task.due_date)}</span>
-
-            <span class="task-category">
-              ${escapeHtml(getCategoryLabel(task.category))}
-            </span>
+          <div class="settings-description">
+            ${getSortLabel(currentSort)}
           </div>
         </div>
 
-        <button
-          type="button"
-          class="restore-button"
-          aria-label="${escapeHtml(task.title)}を復元する"
-        >
-          復元
-        </button>
-      `;
+        <div class="settings-item">
+          <div class="settings-title">
+            カテゴリー管理
+          </div>
 
-      const restoreButton = card.querySelector(".restore-button");
+          <div class="settings-description">
+            準備中
+          </div>
+        </div>
 
-      restoreButton.addEventListener("click", async () => {
-        await restoreTask(task.id, restoreButton);
-      });
+        <div class="settings-item">
+          <div class="settings-title">
+            表示設定
+          </div>
 
-      completedTaskList.appendChild(card);
-    });
-  } catch (error) {
-    console.error(error);
+          <div class="settings-description">
+            準備中
+          </div>
+        </div>
 
-    completedTaskList.innerHTML = `
-      <div class="error-state">
-        <p>完了タスクを読み込めませんでした。</p>
-        <button type="button" id="retryCompletedButton">
-          再読み込み
-        </button>
+        <div class="settings-item integration-card">
+          <div class="settings-title">
+            Google Calendar
+          </div>
+
+          <div
+            id="googleStatus"
+            class="settings-description"
+          >
+            接続状態を確認しています...
+          </div>
+
+          <div
+            id="googleEmail"
+            class="integration-email"
+          ></div>
+
+          <div
+            id="googleLastSync"
+            class="integration-last-sync"
+          ></div>
+
+          <div
+            id="googleActions"
+            class="integration-actions"
+          ></div>
+        </div>
       </div>
-    `;
+    `
+  );
 
-    document
-      .getElementById("retryCompletedButton")
-      .addEventListener("click", loadCompletedTasks);
-  }
-}
+  await loadGoogleIntegration();
+});
 
-async function restoreTask(taskId, button) {
-  try {
-    button.disabled = true;
-
-    const res = await fetch(`/api/tasks/${taskId}/restore`, {
-      method: "POST",
-    });
-
-    if (!res.ok) {
-      throw new Error(`タスク復元失敗: ${res.status}`);
-    }
-
-    await Promise.all([
-      loadTasks(),
-      loadCompletedTasks(),
-    ]);
-  } catch (error) {
-    console.error(error);
-    button.disabled = false;
-    alert("タスクを復元できませんでした。");
-  }
-}
+sheetOverlay.addEventListener("click", closeSheet);
+closeSheetButton.addEventListener("click", closeSheet);

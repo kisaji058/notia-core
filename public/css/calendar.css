@@ -165,3 +165,40 @@
 .today-button:hover {
   background: #dff0e7;
 }
+
+.calendar-sync-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+}
+
+.calendar-sync-button {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 999px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.calendar-sync-button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.calendar-sync-status {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.google-event-card {
+  border-left: 4px solid #4285f4;
+  background: #eef4ff;
+}
+
+.google-event-card strong {
+  display: block;
+  margin-bottom: 2px;
+}

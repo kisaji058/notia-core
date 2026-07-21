@@ -1,0 +1,73 @@
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+
+  background: rgba(0,0,0,.35);
+
+  z-index: 2000;
+}
+
+.sheet-modal {
+  position: fixed;
+
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  background: white;
+
+  border-radius: 18px 18px 0 0;
+
+  padding: 20px;
+
+  z-index: 2100;
+
+  box-shadow: 0 -10px 30px rgba(0,0,0,.15);
+}
+
+.sheet-header {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  margin-bottom: 16px;
+}
+
+.sheet-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.sheet-item.is-selected {
+  font-weight: 700;
+}
+
+.sheet-item.is-selected::after {
+  content: "✓";
+  margin-left: auto;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.settings-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.settings-description {
+  font-size: 14px;
+  color: #666;
+}

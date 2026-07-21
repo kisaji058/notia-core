@@ -142,7 +142,7 @@ test("タスク一覧に優先度アイコンを表示できる", () => {
 
   assert.match(reply, /🔴 重要なタスク/);
   assert.match(reply, /🟡 通常のタスク/);
-  assert.match(reply, /🔵 余裕のあるタスク/);
+  assert.match(reply, /🔵余裕のあるタスク/);
 });
 
 test("タスク一覧では高優先度から順番に表示される", () => {

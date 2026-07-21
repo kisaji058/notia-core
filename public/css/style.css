@@ -18,73 +18,6 @@ body {
   flex-direction: column;
 }
 
-header {
-  padding: 18px;
-  border-bottom: 1px solid #ddd;
-}
-
-header h1 {
-  margin: 0;
-  font-size: 24px;
-}
-
-header p {
-  margin: 4px 0 0;
-  color: #666;
-  font-size: 14px;
-}
-
-.chat {
-  flex: 1;
-  padding: 16px;
-  overflow-y: auto;
-  min-height: 520px;
-}
-
-.message {
-  max-width: 82%;
-  padding: 12px 14px;
-  margin-bottom: 12px;
-  border-radius: 16px;
-  line-height: 1.6;
-  white-space: pre-wrap;
-}
-
-.message.user {
-  margin-left: auto;
-  background: #d8ecff;
-}
-
-.message.assistant {
-  margin-right: auto;
-  background: #f0f0f0;
-}
-
-.input-area {
-  display: flex;
-  gap: 8px;
-  padding: 12px;
-  border-top: 1px solid #ddd;
-}
-
-.input-area input {
-  flex: 1;
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 999px;
-  font-size: 16px;
-}
-
-.input-area button {
-  padding: 0 18px;
-  border: none;
-  border-radius: 999px;
-  background: #222;
-  color: #fff;
-  font-size: 15px;
-}
-
-
 .empty {
   color: #777;
   font-size: 14px;
@@ -373,14 +306,6 @@ header a:hover {
 
 .task-header-actions button:hover {
   background: #f1f2f2;
-}
-
-.back-link {
-  display: inline-block;
-  margin: 12px 16px 14px;
-
-  color: #4c1691;
-  font-size: 15px;
 }
 
 /* タスクカード */
@@ -877,4 +802,179 @@ select.field-control {
     height: 48px;
     font-size: 21px;
   }
+}
+
+.completed-link-area {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.completed-link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.4;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.completed-link-button:hover {
+  text-decoration: underline;
+}
+
+.chat {
+  padding: 16px;
+  padding-bottom: 110px;
+}
+
+/* =========================
+   Bottom Sheet
+========================= */
+
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+
+  background: rgba(0, 0, 0, 0.35);
+
+  z-index: 999;
+}
+
+.sheet-modal {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+
+  transform: translate(-50%, -50%);
+
+  width: calc(100% - 32px);
+  max-width: 560px;
+  max-height: calc(100vh - 120px);
+
+  overflow-y: auto;
+
+  background: #fff;
+  border-radius: 20px;
+
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
+
+  z-index: 1000;
+  padding: 20px;
+}
+
+.sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 18px;
+}
+
+.sheet-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+#closeSheetButton {
+  width: 36px;
+  height: 36px;
+
+  border: none;
+  border-radius: 999px;
+
+  background: #f3f4f4;
+
+  cursor: pointer;
+
+  font-size: 18px;
+}
+
+#closeSheetButton:hover {
+  background: #e7e8e8;
+}
+
+.sheet-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sheet-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  width: 100%;
+
+  padding: 14px 16px;
+
+  border: 1px solid #e5e7e6;
+  border-radius: 12px;
+
+  background: #fff;
+
+  font-size: 15px;
+
+  cursor: pointer;
+}
+
+.sheet-item:hover {
+  background: #f5f6f6;
+}
+
+.sheet-item.is-selected {
+  font-weight: 700;
+}
+
+.sheet-item.is-selected::after {
+  content: "✓";
+}
+
+[hidden] {
+  display: none !important;
+}
+@media (max-width: 600px) {
+  .sheet-modal {
+    width: calc(100% - 24px);
+    max-height: calc(100vh - 140px);
+    padding: 18px;
+    border-radius: 18px;
+  }
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.settings-item {
+  padding: 16px;
+
+  border: 1px solid #e5e7e6;
+  border-radius: 12px;
+
+  background: #fafafa;
+}
+
+.settings-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #202124;
+}
+
+.settings-description {
+  margin-top: 6px;
+
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.5;
 }

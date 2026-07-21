@@ -1,33 +1,76 @@
-const { saveOrUpdateMemory } = require("../../database");
+const scheduleResolver =
+  require("../resolvers/ScheduleResolver");
 
-function processMemory(analysis) {
-  if (!analysis) return;
+const routineResolver =
+  require("../resolvers/RoutineResolver");
 
-  const memories = analysis.memories;
+const taskResolver =
+  require("../resolvers/TaskResolver");
 
-  if (!Array.isArray(memories) || memories.length === 0) {
-    return;
+function resolve(_message, context) {
+  const analysis = context?.analysis;
+
+  if (!analysis?.intent) {
+    return createUnhandledResult();
   }
 
-  const results = [];
-
-  for (const memory of memories) {
-    if (!memory.category || !memory.key || !memory.value) {
-      continue;
-    }
-
-    const result = saveOrUpdateMemory(
-      memory.category,
-      memory.key,
-      memory.value
+  if (
+    analysis.intent === "routine_create"
+  ) {
+    return routineResolver.resolve(
+      analysis,
+      context
     );
-
-    results.push(result);
   }
 
-  return results;
+  if (
+    analysis.intent !== "schedule_query"
+  ) {
+    return createUnhandledResult();
+  }
+
+  switch (
+    analysis.scheduleQuery?.target
+  ) {
+    case "task":
+      if (
+        !analysis.scheduleQuery?.title
+      ) {
+        return createUnhandledResult();
+      }
+
+      return taskResolver.resolve(
+        analysis,
+        context
+      );
+
+    case "routine":
+      return routineResolver.resolve(
+        analysis,
+        context
+      );
+
+    default:
+      return scheduleResolver.resolve(
+        analysis,
+        context
+      );
+  }
+}
+
+function createUnhandledResult() {
+  return {
+    handled: false,
+    reply: null,
+    result: null,
+  };
+}
+
+function processMemory(_analysis) {
+  // 現時点では何もしない
 }
 
 module.exports = {
   processMemory,
+  resolve,
 };
