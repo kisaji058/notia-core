@@ -77,7 +77,12 @@ function renderTask(task) {
   taskDueDate.value = task.due_date || "";
   taskDueTime.value = task.due_time || "";
   taskCategory.value = task.category || "other";
-  taskPriority.value = task.priority || "normal";
+  taskPriority.value =
+  taskPriority.value =
+  task.priority === "high" ||
+  task.priority === "important"
+    ? "important"
+    : "normal";
   taskDescription.value = task.description || "";
   taskNotification.value = task.notification || "none";
 
@@ -128,6 +133,10 @@ function hasTaskChanged() {
 }
 
 async function saveTask() {
+  console.log("saveTask called");
+  console.log("changed:", hasTaskChanged());
+  console.log(getTaskFormState());
+
   if (!hasTaskChanged() || isSaving) {
     return true;
   }

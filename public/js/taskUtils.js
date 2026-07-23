@@ -1,7 +1,8 @@
 const priorityIcons = {
+  important: "🔴",
+  normal: "",
   high: "🔴",
-  normal: "🟡",
-  low: "🟢",
+  low: "",
 };
 
 function escapeHtml(value) {

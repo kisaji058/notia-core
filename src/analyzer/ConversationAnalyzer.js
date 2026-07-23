@@ -24,9 +24,8 @@ const VALID_NOTIFICATIONS = [
 ];
 
 const VALID_PRIORITIES = [
-  "low",
+  "important",
   "normal",
-  "high",
 ];
 
 function validateEnum(value, validValues) {
@@ -98,7 +97,7 @@ JSONのみで返してください。
       "notification": "none | same_day | day_before | null",
       "needsDateConfirmation": "boolean",
       "dateExpression": "string | null",
-      "priority": "low | normal | high"
+      "priority": "important | normal"
     }
   ],
   "routine": {
@@ -131,7 +130,7 @@ JSONのみで返してください。
     "description": "string | null",
     "dueDate": "string | null",
     "dueTime": "string | null",
-    "priority": "low | normal | high | null",
+    "priority": "important | normal | null",
     "category": "work | school | shopping | private | other | null",
     "notification": "none | same_day | day_before | null"
   },
@@ -144,7 +143,7 @@ JSONのみで返してください。
     }
   ],
 
-  "priority": "low | normal | high",
+  "priority": "important | normal",
   "confidence": "number"
 }
 
@@ -389,7 +388,7 @@ task_createの場合:
 - titleは簡潔にまとめる。
 - descriptionは補足情報を入れる。
 - priorityは通常normal。
-- 今日中、緊急、至急、重要などはhigh。
+- 今日中、緊急、至急、重要などはimportant。
 - categoryを判断できる場合は分類する。
 - 判断できない場合はcategoryをnullにする。
 - notificationの指定がなければnullにする。
@@ -593,12 +592,13 @@ updates.priority:
 updates.priority:
 "normal"
 
-- 「優先度を下げて」
+- 「通常にして」
+- 「普通にして」
+- 「優先度を通常にして」
 - 「後回しでいい」
-- 「低めにして」
 
 updates.priority:
-"low"
+"normal"
 
 【時間更新】
 

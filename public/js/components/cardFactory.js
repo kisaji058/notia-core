@@ -226,8 +226,199 @@ function createRoutineCard(
   return card;
 }
 
+function createTimelineCard(item) {
+  const typeConfig = {
+    task: {
+      label: "タスク",
+      iconClass:
+        "timeline-item-icon--task",
+      iconSrc:
+        "/images/nav/task-selected.png",
+    },
+
+    event: {
+      label: "予定",
+      iconClass:
+        "timeline-item-icon--calendar",
+      iconSrc:
+        "/images/nav/point-selected.png",
+    },
+
+    routine: {
+      label: "ルーティーン",
+      iconClass:
+        "timeline-item-icon--routine",
+      iconSrc:
+        "/images/nav/routine-icon-concept.png",
+    },
+  };
+
+  const config =
+    typeConfig[item.type] ||
+    typeConfig.task;
+
+  let subtitle = "";
+
+  if (
+    item.type === "event" &&
+    item.source === "google"
+  ) {
+    subtitle = "Google Calendar";
+  }
+
+  if (
+    item.type === "task" &&
+    (
+      item.priority === "high" ||
+      item.subtitle === "重要タスク"
+    )
+  ) {
+    subtitle = "重要タスク";
+  }
+
+  const isImportantTask =
+    item.type === "task" &&
+    (
+      item.priority === "high" ||
+      item.subtitle === "重要タスク"
+    );
+
+  return `
+    <article class="timeline-item">
+      <time class="timeline-item-time">
+        ${escapeCardHtml(
+          item.startTime || ""
+        )}
+      </time>
+
+      <div class="timeline-item-marker"></div>
+
+      <div
+  class="
+    timeline-item-content
+    ${isImportantTask
+      ? "timeline-item-content--important"
+      : ""}
+  "
+>
+        <div
+          class="
+            timeline-item-icon
+            ${config.iconClass}
+          "
+        >
+          <img
+            src="${config.iconSrc}"
+            alt=""
+          >
+        </div>
+
+        <div class="timeline-item-main">
+          <h3>
+            ${escapeCardHtml(
+              item.title
+            )}
+          </h3>
+
+          ${
+            subtitle
+              ? `
+                <p class="timeline-item-subtitle">
+                  ${escapeCardHtml(
+                    subtitle
+                  )}
+                </p>
+              `
+              : ""
+          }
+        </div>
+
+        <div class="timeline-item-right">
+          ${
+            isImportantTask
+              ? `
+                <span
+                  class="timeline-priority-dot"
+                  aria-hidden="true"
+                ></span>
+              `
+              : ""
+          }
+
+          <span class="timeline-tag">
+            ${escapeCardHtml(
+              config.label
+            )}
+          </span>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function createUnscheduledCard(item) {
+  const isImportantTask =
+    item.type === "task" &&
+    (
+      item.priority === "high" ||
+      item.subtitle === "重要タスク"
+    );
+
+  return `
+    <article class="unscheduled-item">
+      <div class="unscheduled-item-icon">
+        <img
+          src="/images/nav/task-selected.png"
+          alt=""
+        >
+      </div>
+
+      <div class="unscheduled-item-main">
+        <h3>
+          ${escapeCardHtml(
+            item.title
+          )}
+        </h3>
+
+        ${
+          isImportantTask
+            ? `
+              <p>
+                重要タスク
+              </p>
+            `
+            : ""
+        }
+      </div>
+
+      <div class="timeline-item-right">
+        ${
+          isImportantTask
+            ? `
+              <span
+                class="timeline-priority-dot"
+                aria-hidden="true"
+              ></span>
+            `
+            : ""
+        }
+
+        <span class="timeline-tag">
+          タスク
+        </span>
+      </div>
+    </article>
+  `;
+}
+
 window.createTaskCard =
   createTaskCard;
 
 window.createRoutineCard =
   createRoutineCard;
+
+window.createTimelineCard =
+  createTimelineCard;
+
+window.createUnscheduledCard =
+  createUnscheduledCard;

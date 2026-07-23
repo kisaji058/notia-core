@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+  <title>Notia Calendar</title>
+
+  <link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/css/chat.css">
+<link rel="stylesheet" href="/css/calendar.css">
+<link rel="stylesheet" href="/css/today.css">
+</head>
+
+<body>
+  <div class="today-fixed-area">
+    <header class="chat-header">
+      <div class="chat-header-brand">
+        <img
+          class="chat-header-logo"
+          src="/images/notia-logo.png"
+          alt=""
+        >
+
+        <img
+          class="chat-header-wordmark"
+          src="/images/notia-wordmark.png"
+          alt="Notia"
+        >
+      </div>
+
+      <button
+        class="account-button"
+        type="button"
+        aria-label="アカウントを開く"
+        title="アカウント"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <circle
+            cx="12"
+            cy="8"
+            r="3.5"
+          ></circle>
+
+          <path
+            d="M5 20c.7-4 3.2-6 7-6s6.3 2 7 6"
+          ></path>
+        </svg>
+      </button>
+    </header>
+
+    <section class="today-hero">
+      <p id="todayHeroDate"></p>
+
+      <h1 id="todayHeroGreeting">
+        今日もあなたのペースで進めていきましょう。
+      </h1>
+    </section>
+
+    <section class="today-briefing">
+      <img
+        src="/images/notia-icon.png"
+        alt=""
+        class="today-briefing-icon"
+      >
+
+      <div class="today-briefing-body">
+        <div
+          id="todayBriefingContent"
+          class="today-briefing-content"
+        ></div>
+      </div>
+    </section>
+  </div>
+
+  <main class="today-main-content">
+    <section class="today-timeline-section">
+      <div class="today-timeline-header">
+        <span class="today-timeline-label">
+          TODAY TIMELINE
+        </span>
+
+        <h2>今日のタイムライン</h2>
+      </div>
+
+      <section
+        id="timeline"
+        class="timeline"
+      ></section>
+    </section>
+
+    <section class="unscheduled">
+      <div class="today-timeline-header">
+        <span class="today-timeline-label">
+          UNSCHEDULED
+        </span>
+
+        <h2>時間未設定</h2>
+      </div>
+
+      <div
+        id="unscheduledList"
+        class="unscheduled-list"
+      ></div>
+    </section>
+  </main>
+
+<div
+  id="overdueNotice"
+  class="overdue-notice"
+  hidden
+>
+  <div class="overdue-notice-icon">
+    !
+  </div>
+
+  <p id="overdueNoticeText">
+    期限を過ぎたタスクがあります
+  </p>
+
+  <a
+    href="/tasks?filter=overdue"
+    class="overdue-notice-link"
+  >
+    確認する
+    <span aria-hidden="true">›</span>
+  </a>
+</div>
+
+  <nav class="bottom-nav">
+    <a
+      href="/"
+      aria-label="チャット"
+    >
+      <img
+        src="/images/nav/chat-unselected.png"
+        alt=""
+        class="bottom-nav-icon"
+      >
+      <span>チャット</span>
+    </a>
+
+    <a
+      href="/today"
+      class="active"
+      aria-current="page"
+      aria-label="Today"
+    >
+      <img
+        src="/images/nav/today-selected.png"
+        alt=""
+        class="today-nav-icon"
+      >
+      <span>Today</span>
+    </a>
+
+    <a
+      href="/tasks"
+      aria-label="タスク"
+    >
+      <img
+        src="/images/nav/task-unselected.png"
+        alt=""
+        class="bottom-nav-icon bottom-nav-icon-task"
+      >
+      <span>タスク</span>
+    </a>
+
+    <a
+      href="/calendar"
+      aria-label="カレンダー"
+    >
+      <svg
+        class="bottom-nav-icon"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <rect
+          x="4"
+          y="5"
+          width="16"
+          height="15"
+          rx="2"
+        ></rect>
+
+        <path
+          d="M8 3v4M16 3v4M4 9h16"
+        ></path>
+      </svg>
+
+      <span>カレンダー</span>
+    </a>
+  </nav>
+
+  <script src="/js/components/cardFactory.js"></script>
+  <script src="/js/today.js?v=2"></script>
+</body>
+</html>

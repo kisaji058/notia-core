@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  />
+  name="viewport"
+  content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+/>
 
   <title>Notia</title>
 
@@ -21,10 +21,76 @@
 
 <body class="chat-page">
   <main class="app">
-    <header>
-      <h1>Notia</h1>
-      <p>あなた専属のAI秘書です。</p>
-    </header>
+  <header class="chat-header">
+    <div class="chat-header-brand">
+      <img
+        class="chat-header-logo"
+        src="/images/notia-logo.png"
+        alt=""
+      />
+
+      <img
+        class="chat-header-wordmark"
+        src="/images/notia-wordmark.png"
+        alt="Notia"
+      />
+    </div>
+
+    <button
+  class="account-button"
+  type="button"
+  aria-label="アカウントを開く"
+  title="アカウント"
+>
+  <svg
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="8" r="3.5"></circle>
+    <path d="M5 20c.7-4 3.2-6 7-6s6.3 2 7 6"></path>
+  </svg>
+</button>
+  </header>
+
+  <section class="today-summary">
+  <p
+    id="todaySummaryGreeting"
+    class="today-summary-greeting"
+  >
+    おはようございます、成哉さん。
+  </p>
+
+  <p
+    id="todaySummaryDate"
+    class="today-summary-date"
+  ></p>
+
+  <a
+    class="today-summary-next"
+    href="/calendar"
+  >
+    <span class="today-summary-content">
+      <span class="today-summary-label">
+        次の予定
+      </span>
+
+      <span
+        id="todayNextSchedule"
+        class="today-summary-schedule"
+      >
+        予定を確認しています...
+      </span>
+    </span>
+
+    <svg
+      class="today-summary-chevron"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path d="m9 5 7 7-7 7" />
+    </svg>
+  </a>
+</section>
 
     <section
       id="chat"
@@ -40,43 +106,99 @@
       id="chatForm"
       class="input-area"
     >
+    <button
+  type="button"
+  class="attachment-button"
+  aria-label="ファイルを添付"
+>
+  <img
+  src="/images/notia-paperclip-transparent.png"
+  alt=""
+  aria-hidden="true"
+>
+</button>
       <input
         id="messageInput"
         type="text"
-        placeholder="メッセージを入力"
+        placeholder="Notiaに話しかける"
         autocomplete="off"
       />
 
-      <button type="submit">
-        送信
-      </button>
+      <button
+  type="submit"
+  class="send-button"
+  aria-label="メッセージを送信"
+>
+  <img
+    src="/images/notia-send-transparent.png"
+    alt=""
+    aria-hidden="true"
+  >
+</button>
     </form>
   </main>
 
   <nav class="bottom-nav">
-    <a
-      href="/"
-      class="active"
+  <a
+    href="/"
+    class="active"
+    aria-current="page"
+    aria-label="チャット"
+  >
+    <img
+      src="/images/nav/chat-selected.png"
+      alt=""
+      class="bottom-nav-icon today-nav-icon"
     >
-      💬<br />
-      チャット
-    </a>
+    <span>チャット</span>
+  </a>
 
-    <a href="/tasks">
-      ✓<br />
-      タスク
-    </a>
+  <a
+    href="/today"
+    aria-label="Today"
+  >
+    <img
+      src="/images/nav/today-unselected.png"
+      alt=""
+      class="bottom-nav-icon today-nav-icon"
+    >
+    <span>Today</span>
+  </a>
 
-    <a href="/calendar">
-      📅<br />
-      カレンダー
-    </a>
+  <a
+    href="/tasks"
+    aria-label="タスク"
+  >
+    <img
+  src="/images/nav/task-unselected.png"
+  alt=""
+  class="bottom-nav-icon bottom-nav-icon-task"
+>
+    <span>タスク</span>
+  </a>
 
-    <a href="/routines">
-      🔁<br />
-      ルーティーン
-    </a>
-  </nav>
+  <a
+    href="/calendar"
+    aria-label="カレンダー"
+  >
+    <svg
+      class="bottom-nav-icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <rect
+        x="4"
+        y="5"
+        width="16"
+        height="15"
+        rx="2"
+      ></rect>
+      <path d="M8 3v4M16 3v4M4 9h16"></path>
+    </svg>
+
+    <span>カレンダー</span>
+  </a>
+</nav>
 
   <script src="/js/components/cardFactory.js"></script>
   <script src="/js/app.js"></script>

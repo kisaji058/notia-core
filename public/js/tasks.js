@@ -1,7 +1,18 @@
+const taskPageParams =
+  new URLSearchParams(
+    window.location.search
+  );
+
+const requestedFilter =
+  taskPageParams.get("filter");
+
 const taskList = document.getElementById("taskList");
 let allTasks = [];
 let currentSort = "due_asc";
-let currentFilter = "all";
+let currentFilter =
+  requestedFilter === "overdue"
+    ? "overdue"
+    : "all";
 
 async function loadTasks() {
   try {
@@ -39,10 +50,11 @@ function getSortedTasks(tasks) {
 
   if (currentSort === "priority") {
     const priorityRank = {
-      high: 1,
-      normal: 2,
-      low: 3,
-    };
+  important: 1,
+  normal: 2,
+  high: 1,
+  low: 2,
+};
 
     return sortedTasks.sort((a, b) => {
       return (
@@ -82,9 +94,29 @@ function getSortedTasks(tasks) {
   });
 }
 
+function isOverdueTask(task) {
+  const today =
+    new Date().toLocaleDateString(
+      "sv-SE",
+      {
+        timeZone: "Asia/Tokyo",
+      }
+    );
+
+  return (
+    task.status === "active" &&
+    task.due_date &&
+    task.due_date < today
+  );
+}
+
 function getFilteredTasks(tasks) {
   if (currentFilter === "all") {
     return tasks;
+  }
+
+  if (currentFilter === "overdue") {
+    return tasks.filter(isOverdueTask);
   }
 
   return tasks.filter((task) => {

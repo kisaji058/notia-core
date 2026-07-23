@@ -99,12 +99,11 @@ function isTaskListRequest(message) {
 }
 
 function normalizePriority(priority) {
-  if (priority === "high") {
-    return "high";
-  }
-
-  if (priority === "low") {
-    return "low";
+  if (
+    priority === "important" ||
+    priority === "high"
+  ) {
+    return "important";
   }
 
   return "normal";
@@ -112,22 +111,24 @@ function normalizePriority(priority) {
 
 function getPriorityRank(priority) {
   const priorityRanks = {
-    high: 1,
+    important: 1,
     normal: 2,
-    low: 3,
   };
 
-  return priorityRanks[normalizePriority(priority)];
+  return priorityRanks[
+    normalizePriority(priority)
+  ];
 }
 
 function getPriorityIcon(priority) {
   const priorityIcons = {
-    high: "🔴",
-    normal: "🟡",
-    low: "🔵",
+    important: "🔴",
+    normal: "",
   };
 
-  return priorityIcons[normalizePriority(priority)];
+  return priorityIcons[
+    normalizePriority(priority)
+  ];
 }
 
 function sortTasks(tasks) {
@@ -243,21 +244,6 @@ function formatTasksForApi(tasks = []) {
 
 function formatSortedTasksForApi(tasks = []) {
   return formatTasksForApi(sortTasks(tasks));
-}
-
-function formatTasksForApi(tasks = []) {
-  if (!Array.isArray(tasks)) {
-    return [];
-  }
-
-  return tasks.map((task) => ({
-    ...task,
-    priority: normalizePriority(task.priority),
-    priority_icon: getPriorityIcon(task.priority),
-    priority_rank: getPriorityRank(task.priority),
-    due_date_label: formatDueDate(task.due_date),
-    due_date_group: getTaskGroup(task),
-  }));
 }
 
 module.exports = {

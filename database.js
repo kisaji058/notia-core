@@ -441,6 +441,25 @@ CREATE TABLE IF NOT EXISTS external_calendar_events (
 `).run();
 
 // =====================
+// events
+// =====================
+
+db.prepare(`
+CREATE TABLE IF NOT EXISTS events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  description TEXT,
+  event_date TEXT NOT NULL,
+  start_time TEXT,
+  end_time TEXT,
+  location TEXT,
+  status TEXT DEFAULT 'active',
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+)
+`).run();
+
+// =====================
 // task_calendar_links
 // =====================
 
@@ -1005,6 +1024,55 @@ function markTaskNotified(id) {
     .run(id);
 }
 
+function addEvent(
+  title,
+  description = "",
+  eventDate,
+  startTime = null,
+  endTime = null,
+  location = ""
+) {
+  const result = db.prepare(`
+    INSERT INTO events (
+      title,
+      description,
+      event_date,
+      start_time,
+      end_time,
+      location
+    )
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(
+    title,
+    description,
+    eventDate,
+    startTime,
+    endTime,
+    location
+  );
+
+  return result.lastInsertRowid;
+}
+
+function getEventsByDate(date) {
+  return db.prepare(`
+    SELECT *
+    FROM events
+    WHERE
+      status = 'active'
+      AND event_date = ?
+    ORDER BY
+      CASE
+        WHEN start_time IS NULL
+          OR start_time = ''
+        THEN 1
+        ELSE 0
+      END,
+      start_time ASC,
+      id ASC
+  `).all(date);
+}
+
 module.exports = {
   saveConversation,
   getRecentConversations,
@@ -1050,6 +1118,8 @@ saveRoutineGoogleEventId,
 getRoutineById,
 getNotificationTargets,
 markTaskNotified,
+addEvent,
+getEventsByDate,
 };
 
 

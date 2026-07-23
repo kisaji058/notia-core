@@ -12,6 +12,7 @@ const {
   saveConversation,
   getRecentConversations,
   getRoutineById,
+  getEventsByDate,
 } = require("./database");
 
 const {
@@ -34,13 +35,17 @@ const {
   createRoutine,
   updateRoutineById,
   deleteRoutineById,
+  getTodayRoutines,
 } = require("./database");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const notificationClients = new Set();
 
-const VALID_PRIORITIES = ["high", "normal", "low"];
+const VALID_PRIORITIES = [
+  "important",
+  "normal",
+];
 
 const VALID_NOTIFICATIONS = [
   "none",
@@ -138,6 +143,16 @@ app.get("/calendar", (req, res) => {
   );
 });
 
+app.get("/today", (req, res) => {
+  res.sendFile(
+    path.join(
+      __dirname,
+      "public",
+      "today.html"
+    )
+  );
+});
+
 app.get("/tasks/:id", (req, res) => {
   res.sendFile(
     path.join(__dirname, "public", "task.html")
@@ -223,9 +238,10 @@ app.get("/api/calendar", (req, res) => {
       });
     }
 
-    const tasks = taskListManager.formatTasksForApi(
-      getTasksByDate(date)
-    );
+    const tasks =
+      taskListManager.formatTasksForApi(
+        getTasksByDate(date)
+      );
 
     const externalEvents =
       getExternalCalendarEventsByDate(
@@ -244,7 +260,159 @@ app.get("/api/calendar", (req, res) => {
     );
 
     return res.status(500).json({
-      error: "カレンダーの取得に失敗しました。",
+      error:
+        "カレンダーの取得に失敗しました。",
+    });
+  }
+});
+
+app.get("/api/today", (req, res) => {
+  try {
+    const { date } = req.query;
+
+    if (!date) {
+      return res.status(400).json({
+        error: "date は必須です。",
+      });
+    }
+
+    const tasks =
+      taskListManager.formatTasksForApi(
+        getTasksByDate(date)
+      );
+
+    const overdueTasks =
+  taskListManager
+    .formatTasksForApi(
+      getActiveTasks()
+    )
+    .filter(
+      (task) =>
+        task.due_date &&
+        task.due_date < date
+    );
+
+    const normalizedTasks = tasks.map(
+  (task) => ({
+    id: task.id,
+    type: "task",
+    source: "notia",
+
+    title: task.title,
+    description: task.description,
+
+    startTime: task.due_time,
+    endTime: null,
+
+    subtitle:
+      task.priority === "important"
+        ? "重要タスク"
+        : "通常タスク",
+
+    location: null,
+
+    dueDate: task.due_date,
+    priority: task.priority,
+    status: task.status,
+  })
+);
+
+    const events =
+      getEventsByDate(date);
+
+    const externalEvents =
+      getExternalCalendarEventsByDate(
+        "google",
+        date
+      );
+
+    const routines =
+      getTodayRoutines();
+
+    const schedule = [
+      ...events.map((event) => ({
+        id: event.id,
+        type: "event",
+        source: "notia",
+        title: event.title,
+        description:
+          event.description,
+        startTime:
+          event.start_time,
+        endTime:
+          event.end_time,
+        subtitle: "Notia",
+        location:
+          event.location,
+      })),
+
+      ...externalEvents.map((event) => ({
+        id:
+          event.external_event_id,
+        type: "event",
+        source: "google",
+        title: event.title,
+        description:
+          event.description,
+
+        startTime: event.is_all_day
+          ? null
+          : event.start_datetime
+              ?.slice(11, 16),
+
+        endTime: event.is_all_day
+          ? null
+          : event.end_datetime
+              ?.slice(11, 16),
+
+        subtitle:
+          "Google Calendar",
+        location:
+          event.location,
+        isAllDay:
+          Boolean(event.is_all_day),
+      })),
+
+      ...routines.map((routine) => ({
+        id: routine.id,
+        type: "routine",
+        source: "notia",
+        title: routine.title,
+        description: null,
+        startTime:
+          routine.routine_time,
+        endTime: null,
+        subtitle:
+          "毎週のルーティーン",
+        location: null,
+      })),
+    ];
+
+    const timeline = [
+  ...normalizedTasks,
+  ...schedule,
+];
+
+timeline.sort((a, b) => {
+  const timeA = a.startTime ?? "99:99";
+  const timeB = b.startTime ?? "99:99";
+
+  return timeA.localeCompare(timeB);
+});
+
+    return res.json({
+  timeline,
+  overdueTasks,
+});
+  } catch (error) {
+    console.error(
+      "Today fetch error:",
+      error
+    );
+
+    return res.status(500).json({
+      error:
+        "Todayデータの取得に失敗しました。",
     });
   }
 });
@@ -891,7 +1059,8 @@ function runNotificationCheck() {
 
 for (const task of tasks) {
   console.log(
-    `・${task.title} (${task.due_date} ${task.due_time ?? ""})`
+    `・${task.title} (${task.dueDate} ${task.dueTime
+?? ""})`
   );
 
   const body =

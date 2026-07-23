@@ -70,7 +70,9 @@
 }
 
 .timeline {
-  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .time-slot {
@@ -196,9 +198,4 @@
 .google-event-card {
   border-left: 4px solid #4285f4;
   background: #eef4ff;
-}
-
-.google-event-card strong {
-  display: block;
-  margin-bottom: 2px;
 }
