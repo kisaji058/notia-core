@@ -8,11 +8,11 @@ const requestedFilter =
 
 const taskList = document.getElementById("taskList");
 let allTasks = [];
-let currentSort = "due_asc";
 let currentFilter =
   requestedFilter === "overdue"
     ? "overdue"
     : "all";
+let taskGroupSequence = 0;
 
 async function loadTasks() {
   try {
@@ -45,55 +45,6 @@ refreshTaskList();
   }
 }
 
-function getSortedTasks(tasks) {
-  const sortedTasks = [...tasks];
-
-  if (currentSort === "priority") {
-    const priorityRank = {
-  important: 1,
-  normal: 2,
-  high: 1,
-  low: 2,
-};
-
-    return sortedTasks.sort((a, b) => {
-      return (
-        (priorityRank[a.priority] ?? 2) -
-        (priorityRank[b.priority] ?? 2)
-      );
-    });
-  }
-
-  if (currentSort === "newest") {
-    return sortedTasks.sort((a, b) => {
-      return new Date(b.created_at) - new Date(a.created_at);
-    });
-  }
-
-  if (currentSort === "oldest") {
-    return sortedTasks.sort((a, b) => {
-      return new Date(a.created_at) - new Date(b.created_at);
-    });
-  }
-
-  // 期限が近い順
-  return sortedTasks.sort((a, b) => {
-    if (!a.due_date && !b.due_date) {
-      return 0;
-    }
-
-    if (!a.due_date) {
-      return 1;
-    }
-
-    if (!b.due_date) {
-      return -1;
-    }
-
-    return a.due_date.localeCompare(b.due_date);
-  });
-}
-
 function isOverdueTask(task) {
   const today =
     new Date().toLocaleDateString(
@@ -116,11 +67,24 @@ function getFilteredTasks(tasks) {
   }
 
   if (currentFilter === "overdue") {
-    return tasks.filter(isOverdueTask);
+    return tasks.filter(
+      isOverdueTask
+    );
+  }
+
+  if (currentFilter === "important") {
+    return tasks.filter((task) => {
+      return (
+        task.priority === "important" ||
+        task.priority === "high"
+      );
+    });
   }
 
   return tasks.filter((task) => {
-    return task.category === currentFilter;
+    return (
+      task.category === currentFilter
+    );
   });
 }
 
@@ -128,68 +92,345 @@ function refreshTaskList() {
   const filteredTasks =
     getFilteredTasks(allTasks);
 
-  const sortedTasks =
-    getSortedTasks(filteredTasks);
-
-  renderTaskList(sortedTasks);
+  renderTaskList(filteredTasks);
 }
 
-function renderTaskCard(task) {
-  const priorityIcon =
-  priorityIcons[task.priority] ??
-  priorityIcons.normal;
+function renderTaskCard(
+  task,
+  container = taskList
+) {
+  const isImportant =
+    task.priority === "important" ||
+    task.priority === "high";
 
-const card =
-  createTaskCard(task, {
-    priorityIcon,
-    dueDateText: formatDueDate(
-      task.due_date
-    ),
+  const isOverdue =
+    isOverdueTask(task);
+
+  const card = createTaskCard(task, {
+    priorityIcon: isImportant
+      ? "●"
+      : "",
+
+    dueDateText: isOverdue
+      ? formatTaskSectionDate(
+          task.due_date
+        )
+      : "",
+
+    timeText: task.due_time
+      ? String(task.due_time).slice(0, 5)
+      : "",
+
     categoryText:
       getCategoryLabel(
         task.category
       ),
+
+    overdueDate: isOverdue,
     showActions: true,
   });
 
+  if (isImportant) {
+    card.classList.add(
+      "task-card--important"
+    );
+  }
 
-  const taskInfo = card.querySelector(".task-info");
+  const taskInfo =
+    card.querySelector(".task-info");
+
   const completeButton =
-    card.querySelector(".complete-button");
+    card.querySelector(
+      ".complete-button"
+    );
+
   const deleteButton =
-    card.querySelector(".delete-button");
+    card.querySelector(
+      ".delete-button"
+    );
 
-  taskInfo.addEventListener("click", () => {
-    location.href = `/tasks/${task.id}`;
-  });
-
-  taskInfo.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      location.href = `/tasks/${task.id}`;
+  taskInfo.addEventListener(
+    "click",
+    () => {
+      location.href =
+        `/tasks/${task.id}`;
     }
+  );
+
+  taskInfo.addEventListener(
+    "keydown",
+    (event) => {
+      if (
+        event.key === "Enter" ||
+        event.key === " "
+      ) {
+        event.preventDefault();
+
+        location.href =
+          `/tasks/${task.id}`;
+      }
+    }
+  );
+
+  completeButton.addEventListener(
+    "click",
+    async () => {
+      await completeTask(
+        task.id,
+        completeButton
+      );
+    }
+  );
+
+  deleteButton.addEventListener(
+    "click",
+    async () => {
+      await deleteTask(
+        task,
+        deleteButton
+      );
+    }
+  );
+
+  container.appendChild(card);
+}
+
+function getTodayDateString() {
+  return new Date().toLocaleDateString(
+    "sv-SE",
+    {
+      timeZone: "Asia/Tokyo",
+    }
+  );
+}
+
+function formatTaskSectionDate(dateString) {
+  const date = new Date(
+    `${dateString}T00:00:00+09:00`
+  );
+
+  return date.toLocaleDateString(
+    "ja-JP",
+    {
+      timeZone: "Asia/Tokyo",
+      month: "numeric",
+      day: "numeric",
+      weekday: "short",
+    }
+  );
+}
+
+function getTaskGroupIcon(iconType) {
+  const icons = {
+    overdue: `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M12 7.5v6"></path>
+        <circle
+          cx="12"
+          cy="17"
+          r="0.9"
+          class="task-group-icon-dot"
+        ></circle>
+      </svg>
+    `,
+
+    today: `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M14.8 9.2l-1.9 3.7-3.7 1.9 1.9-3.7z"></path>
+      </svg>
+    `,
+
+    calendar: `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect
+          x="4"
+          y="5"
+          width="16"
+          height="15"
+          rx="2"
+        ></rect>
+        <path d="M8 3v4M16 3v4M4 9h16"></path>
+      </svg>
+    `,
+
+    unscheduled: `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="6" cy="12" r="1"></circle>
+        <circle cx="12" cy="12" r="1"></circle>
+        <circle cx="18" cy="12" r="1"></circle>
+      </svg>
+    `,
+  };
+
+  return icons[iconType] || icons.calendar;
+}
+
+function createTaskGroup(
+  title,
+  tasks,
+  options = {}
+) {
+  if (tasks.length === 0) {
+    return;
+  }
+
+  taskGroupSequence += 1;
+
+  const section =
+    document.createElement("section");
+
+  section.className =
+    "task-date-group";
+
+  if (options.overdue) {
+    section.classList.add(
+      "task-date-group--overdue"
+    );
+  }
+
+  const header =
+    document.createElement("div");
+
+  header.className =
+    "task-date-group-header";
+
+  const toggleButton =
+    document.createElement("button");
+
+  toggleButton.type = "button";
+  toggleButton.className =
+    "task-date-group-toggle";
+
+  const cardsId =
+    `task-group-${taskGroupSequence}`;
+
+  toggleButton.setAttribute(
+    "aria-expanded",
+    "true"
+  );
+
+  toggleButton.setAttribute(
+    "aria-controls",
+    cardsId
+  );
+
+  const iconType =
+    options.iconType || "calendar";
+
+  const icon =
+    document.createElement("span");
+
+  icon.className =
+    `task-date-group-icon task-date-group-icon--${iconType}`;
+
+  icon.innerHTML =
+    getTaskGroupIcon(iconType);
+
+  const heading =
+    document.createElement("span");
+
+  heading.className =
+    "task-date-group-title";
+
+  heading.textContent = title;
+
+  const count =
+    document.createElement("span");
+
+  count.className =
+    "task-date-group-count";
+
+  count.textContent =
+    `${tasks.length}件`;
+
+  const chevron =
+    document.createElement("span");
+
+  chevron.className =
+    "task-date-group-chevron";
+
+  chevron.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+
+  chevron.innerHTML = `
+    <svg viewBox="0 0 24 24">
+      <path d="M6 9l6 6 6-6"></path>
+    </svg>
+  `;
+
+  const cards =
+    document.createElement("div");
+
+  cards.id = cardsId;
+  cards.className =
+    "task-date-group-list";
+
+  toggleButton.appendChild(icon);
+  toggleButton.appendChild(heading);
+  toggleButton.appendChild(count);
+  toggleButton.appendChild(chevron);
+
+  header.appendChild(toggleButton);
+
+  section.appendChild(header);
+  section.appendChild(cards);
+
+  taskList.appendChild(section);
+
+  tasks.forEach((task) => {
+    renderTaskCard(task, cards);
   });
 
-  completeButton.addEventListener("click", async () => {
-    await completeTask(task.id, completeButton);
-  });
+  toggleButton.addEventListener(
+    "click",
+    () => {
+      const isExpanded =
+        toggleButton.getAttribute(
+          "aria-expanded"
+        ) === "true";
 
-  deleteButton.addEventListener("click", async () => {
-    await deleteTask(task, deleteButton);
-  });
+      toggleButton.setAttribute(
+        "aria-expanded",
+        String(!isExpanded)
+      );
 
-  taskList.appendChild(card);
+      cards.hidden = isExpanded;
+
+      section.classList.toggle(
+        "task-date-group--collapsed",
+        isExpanded
+      );
+    }
+  );
 }
 
 function renderTaskList(tasks) {
   taskList.innerHTML = "";
 
+  const taskProgressCount =
+    document.getElementById(
+      "taskProgressCount"
+    );
+
+  if (taskProgressCount) {
+    taskProgressCount.textContent =
+      tasks.length;
+  }
+
   if (tasks.length === 0) {
     taskList.innerHTML = `
       <div class="empty-state">
-        <p class="empty-title">未完了タスクはありません。</p>
+        <p class="empty-title">
+          未完了タスクはありません。
+        </p>
+
         <p class="empty-message">
-          チャットで話しかけると、Notiaがタスクを登録します。
+          チャットで話しかけると、
+          Notiaがタスクを登録します。
         </p>
       </div>
     `;
@@ -197,9 +438,80 @@ function renderTaskList(tasks) {
     return;
   }
 
+  const today = getTodayDateString();
+
+  const overdueTasks = [];
+  const todayTasks = [];
+  const futureTaskGroups = new Map();
+  const unscheduledTasks = [];
+
   tasks.forEach((task) => {
-    renderTaskCard(task);
+    if (!task.due_date) {
+      unscheduledTasks.push(task);
+      return;
+    }
+
+    if (task.due_date < today) {
+      overdueTasks.push(task);
+      return;
+    }
+
+    if (task.due_date === today) {
+      todayTasks.push(task);
+      return;
+    }
+
+    if (
+      !futureTaskGroups.has(
+        task.due_date
+      )
+    ) {
+      futureTaskGroups.set(
+        task.due_date,
+        []
+      );
+    }
+
+    futureTaskGroups
+      .get(task.due_date)
+      .push(task);
   });
+
+  createTaskGroup(
+  "期限超過",
+  overdueTasks,
+  {
+    overdue: true,
+    iconType: "overdue",
+  }
+);
+
+createTaskGroup(
+  "今日",
+  todayTasks,
+  {
+    iconType: "today",
+  }
+);
+
+  const futureDates = [
+    ...futureTaskGroups.keys(),
+  ].sort();
+
+  futureDates.forEach((dateString) => {
+    createTaskGroup(
+      formatTaskSectionDate(dateString),
+      futureTaskGroups.get(dateString)
+    );
+  });
+
+  createTaskGroup(
+  "期限未設定",
+  unscheduledTasks,
+  {
+    iconType: "unscheduled",
+  }
+);
 }
 
 async function completeTask(taskId, button) {
@@ -255,8 +567,10 @@ async function loadTaskPage() {
 
 loadTaskPage();
 
-const sortButton =
-  document.getElementById("sortButton");
+const addTaskButton =
+  document.getElementById(
+    "addTaskButton"
+  );
 
 const filterButton =
   document.getElementById("filterButton");
@@ -292,61 +606,218 @@ function closeSheet() {
   sheetModal.hidden = true;
 }
 
-sortButton.addEventListener("click", () => {
-  openSheet(
-    "並び替え",
-    `
-      <button
-        class="sheet-item"
-        type="button"
-        data-sort="due_asc"
-      >
-        期限が近い順
-      </button>
+addTaskButton.addEventListener(
+  "click",
+  () => {
+    openSheet(
+      "タスクを追加",
+      `
+        <form
+          id="addTaskForm"
+          class="task-create-form"
+        >
+          <label class="task-form-field">
+            <span>タスク名</span>
 
-      <button
-        class="sheet-item"
-        type="button"
-        data-sort="priority"
-      >
-        優先度順
-      </button>
+            <input
+              id="newTaskTitle"
+              name="title"
+              type="text"
+              maxlength="100"
+              placeholder="何をしますか？"
+              autocomplete="off"
+              required
+            >
+          </label>
 
-      <button
-        class="sheet-item"
-        type="button"
-        data-sort="newest"
-      >
-        新しい順
-      </button>
+          <label class="task-form-field">
+            <span>期限</span>
 
-      <button
-        class="sheet-item"
-        type="button"
-        data-sort="oldest"
-      >
-        古い順
-      </button>
-    `
-  );
+            <input
+              name="due_date"
+              type="date"
+            >
+          </label>
 
-  const sortItems =
-    sheetContent.querySelectorAll("[data-sort]");
+          <label class="task-form-field">
+  <span>時間（任意）</span>
 
-  sortItems.forEach((button) => {
-    if (button.dataset.sort === currentSort) {
-      button.classList.add("is-selected");
-      button.setAttribute("aria-current", "true");
-    }
+  <input
+    name="due_time"
+    type="time"
+  >
+</label>
 
-    button.addEventListener("click", () => {
-      currentSort = button.dataset.sort;
+          <label class="task-form-field">
+            <span>分類</span>
 
-      refreshTaskList();
-      closeSheet();
-    });
-  });
-});
+            <select name="category">
+              <option value="work">
+                仕事
+              </option>
+
+              <option value="school">
+                学校
+              </option>
+
+              <option value="shopping">
+                買い物
+              </option>
+
+              <option value="private">
+                プライベート
+              </option>
+
+              <option
+                value="other"
+                selected
+              >
+                その他
+              </option>
+            </select>
+          </label>
+
+          <label class="task-important-field">
+            <input
+              name="important"
+              type="checkbox"
+            >
+
+            <span>
+              重要タスクにする
+            </span>
+          </label>
+
+          <p
+            id="taskCreateError"
+            class="task-create-error"
+            hidden
+          ></p>
+
+          <button
+            id="saveNewTaskButton"
+            class="task-create-submit"
+            type="submit"
+          >
+            タスクを追加
+          </button>
+        </form>
+      `
+    );
+
+    const form =
+      document.getElementById(
+        "addTaskForm"
+      );
+
+    const titleInput =
+      document.getElementById(
+        "newTaskTitle"
+      );
+
+    const errorMessage =
+      document.getElementById(
+        "taskCreateError"
+      );
+
+    const saveButton =
+      document.getElementById(
+        "saveNewTaskButton"
+      );
+
+    titleInput.focus();
+
+    form.addEventListener(
+      "submit",
+      async (event) => {
+        event.preventDefault();
+
+        const formData =
+          new FormData(form);
+
+        const title = String(
+          formData.get("title") || ""
+        ).trim();
+
+        if (!title) {
+          titleInput.focus();
+          return;
+        }
+
+        const taskData = {
+          title,
+          due_date:
+            formData.get("due_date") ||
+            null,
+          due_time:
+    formData.get("due_time") ||
+    null,
+          priority:
+            formData.get("important") ===
+            "on"
+              ? "high"
+              : "normal",
+          category:
+            formData.get("category") ||
+            "other",
+          notification: "none",
+        };
+
+        try {
+          saveButton.disabled = true;
+          saveButton.textContent =
+            "追加中...";
+
+          errorMessage.hidden = true;
+
+          const res = await fetch(
+            "/api/tasks",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+              body: JSON.stringify(
+                taskData
+              ),
+            }
+          );
+
+          const result =
+            await res
+              .json()
+              .catch(() => ({}));
+
+          if (!res.ok) {
+            throw new Error(
+              result.error ||
+                `登録失敗: ${res.status}`
+            );
+          }
+
+          closeSheet();
+          await loadTasks();
+        } catch (error) {
+          console.error(
+            "Task creation error:",
+            error
+          );
+
+          errorMessage.textContent =
+            error.message ||
+            "タスクを追加できませんでした。";
+
+          errorMessage.hidden = false;
+
+          saveButton.disabled = false;
+          saveButton.textContent =
+            "タスクを追加";
+        }
+      }
+    );
+  }
+);
 
 filterButton.addEventListener("click", () => {
   openSheet(
@@ -359,6 +830,14 @@ filterButton.addEventListener("click", () => {
       >
         すべて
       </button>
+
+      <button
+  class="sheet-item"
+  type="button"
+  data-filter="important"
+>
+  重要タスク
+</button>
 
       <button
         class="sheet-item"
@@ -655,15 +1134,6 @@ settingsButton.addEventListener("click", async () => {
     "設定",
     `
       <div class="settings-section">
-        <div class="settings-item">
-          <div class="settings-title">
-            初期並び替え
-          </div>
-
-          <div class="settings-description">
-            ${getSortLabel(currentSort)}
-          </div>
-        </div>
 
         <div class="settings-item">
           <div class="settings-title">

@@ -78,7 +78,6 @@ function renderTask(task) {
   taskDueTime.value = task.due_time || "";
   taskCategory.value = task.category || "other";
   taskPriority.value =
-  taskPriority.value =
   task.priority === "high" ||
   task.priority === "important"
     ? "important"

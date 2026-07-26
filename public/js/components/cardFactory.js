@@ -14,6 +14,7 @@ function createTaskCard(task, options = {}) {
   dueDateText = "",
   categoryText = "",
   timeText = "",
+  overdueDate = false,
   showActions = true,
 } = options;
 
@@ -69,7 +70,7 @@ if (variant === "calendar") {
     "task-card calendar-task-card";
 
   const displayTime =
-    timeText || "時間未設定";
+    timeText || "未設定";
 
   card.innerHTML = `
     <div
@@ -123,10 +124,45 @@ if (variant === "calendar") {
       </div>
 
       <div class="task-meta">
-        <span class="task-date">
+        <span
+  class="
+    task-date
+    ${overdueDate
+      ? "task-date--overdue"
+      : ""}
+  "
+>
+  ${
+    overdueDate
+      ? `
+        <svg
+          class="task-date-calendar-icon"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <rect
+            x="4"
+            y="5"
+            width="16"
+            height="15"
+            rx="2"
+          ></rect>
+
+          <path
+            d="M8 3v4M16 3v4M4 9h16"
+          ></path>
+        </svg>
+      `
+      : ""
+  }
+
+  <span>
   ${escapeCardHtml(
-    dueDateText
+    overdueDate
+      ? dueDateText
+      : timeText || "未設定"
   )}
+</span>
 </span>
 
         <span class="task-category">
@@ -139,26 +175,34 @@ if (variant === "calendar") {
       showActions
         ? `
           <div class="task-actions">
-            <button
-              type="button"
-              class="complete-button"
-              aria-label="${escapeCardHtml(
-                task.title
-              )}を完了する"
-            >
-              完了
-            </button>
+  <button
+    type="button"
+    class="complete-button task-icon-button"
+    aria-label="${escapeCardHtml(
+      task.title
+    )}を完了する"
+    title="完了"
+  >
+    <img
+      src="/images/tasks/notia-chek-icon.png"
+      alt=""
+    >
+  </button>
 
-            <button
-              type="button"
-              class="delete-button"
-              aria-label="${escapeCardHtml(
-                task.title
-              )}を削除する"
-            >
-              🗑
-            </button>
-          </div>
+  <button
+    type="button"
+    class="delete-button task-icon-button"
+    aria-label="${escapeCardHtml(
+      task.title
+    )}を削除する"
+    title="削除"
+  >
+    <img
+      src="/images/tasks/notia-trash-icon-gray.png"
+      alt=""
+    >
+  </button>
+</div>
         `
         : ""
     }

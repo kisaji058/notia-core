@@ -21,6 +21,7 @@ const {
 const notificationManager = require("./src/managers/NotificationManager");
 
 const {
+  addTask,
   getActiveTasks,
   getTasksByDate,
   getExternalCalendarEventsByDate,
@@ -177,6 +178,81 @@ app.get(
     );
   }
 );
+
+app.post("/api/tasks", (req, res) => {
+  try {
+    const {
+      title,
+      description = "",
+      due_date: dueDate = null,
+      due_time: dueTime = null,
+      priority = "normal",
+      category = "other",
+      notification = "none",
+    } = req.body;
+
+    const normalizedTitle =
+      String(title || "").trim();
+
+    if (!normalizedTitle) {
+      return res.status(400).json({
+        error: "タスク名を入力してください",
+      });
+    }
+
+    if (
+      !VALID_PRIORITIES.includes(priority)
+    ) {
+      return res.status(400).json({
+        error: "優先度が不正です",
+      });
+    }
+
+    if (
+      !VALID_CATEGORIES.includes(category)
+    ) {
+      return res.status(400).json({
+        error: "分類が不正です",
+      });
+    }
+
+    if (
+      !VALID_NOTIFICATIONS.includes(
+        notification
+      )
+    ) {
+      return res.status(400).json({
+        error: "通知設定が不正です",
+      });
+    }
+
+    const taskId = addTask(
+      normalizedTitle,
+      String(description || "").trim(),
+      dueDate || null,
+      priority,
+      category,
+      dueTime || null,
+      notification
+    );
+
+    const task = getTaskById(taskId);
+
+    return res.status(201).json({
+      success: true,
+      task,
+    });
+  } catch (error) {
+    console.error(
+      "Task creation error:",
+      error
+    );
+
+    return res.status(500).json({
+      error: "タスクの登録に失敗しました",
+    });
+  }
+});
 
 
 app.post("/api/chat", async (req, res) => {

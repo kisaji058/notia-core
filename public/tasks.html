@@ -4,10 +4,49 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Notia タスク一覧</title>
-  <link rel="stylesheet" href="/css/common.css" />
-<link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/css/chat.css">
+<link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
+
+  <header class="chat-header">
+  <div class="chat-header-brand">
+    <img
+      class="chat-header-logo"
+      src="/images/notia-logo.png"
+      alt=""
+    >
+
+    <img
+      class="chat-header-wordmark"
+      src="/images/notia-wordmark.png"
+      alt="Notia"
+    >
+  </div>
+
+  <button
+    class="account-button"
+    type="button"
+    aria-label="アカウントを開く"
+    title="アカウント"
+  >
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <circle
+        cx="12"
+        cy="8"
+        r="3.5"
+      ></circle>
+
+      <path
+        d="M5 20c.7-4 3.2-6 7-6s6.3 2 7 6"
+      ></path>
+    </svg>
+  </button>
+</header>
   
 <div
   id="sheetOverlay"
@@ -41,22 +80,26 @@
   ></div>
 </div>
 
-  <main class="app">
+  <main class="app task-app">
     <header class="task-header">
-  <div class="task-header-text">
-    <h1>タスク一覧</h1>
-    <p>未完了タスクを確認できます。</p>
-  </div>
+  <div class="task-progress-row">
+  <p class="task-progress-text">
+    <strong id="taskProgressCount">0</strong>
+    件のタスクが進行中
+  </p>
+
+  <button
+    id="addTaskButton"
+    class="task-add-button"
+    type="button"
+  >
+    <span aria-hidden="true">＋</span>
+    <span>タスクを追加</span>
+  </button>
+</div>
 
   <div class="task-header-actions">
-  <button
-    id="sortButton"
-    type="button"
-    aria-label="並び替え"
-  >
-    <span>↕</span>
-    <span>並び替え</span>
-  </button>
+
 
   <button
     id="filterButton"
@@ -68,10 +111,10 @@
   </button>
 
   <button
-    id="settingsButton"
-    type="button"
-    aria-label="設定"
-  >
+  id="settingsButton"
+  type="button"
+  hidden
+>
     <span>⚙</span>
     <span>設定</span>
   </button>
@@ -96,27 +139,67 @@
 </section>
 
 <nav class="bottom-nav">
-  <a href="/">
-    💬<br>
-    チャット
-  </a>
-
-  <a href="/tasks"
-   class="active">
-   
-    ✓<br>
-    タスク
+  <a
+    href="/"
+    aria-label="チャット"
+  >
+    <img
+      src="/images/nav/chat-unselected.png"
+      alt=""
+      class="bottom-nav-icon"
+    >
+    <span>チャット</span>
   </a>
 
   <a
-    href="/calendar">
-    📅<br>
-    カレンダー
+    href="/today"
+    aria-label="Today"
+  >
+    <img
+      src="/images/nav/today-unselected.png"
+      alt=""
+      class="today-nav-icon"
+    >
+    <span>Today</span>
   </a>
 
-  <a href="/routines">
-    🔁<br>
-    ルーティーン
+  <a
+    href="/tasks"
+    class="active"
+    aria-current="page"
+    aria-label="タスク"
+  >
+    <img
+      src="/images/nav/task-selected.png"
+      alt=""
+      class="bottom-nav-icon bottom-nav-icon-task"
+    >
+    <span>タスク</span>
+  </a>
+
+  <a
+    href="/calendar"
+    aria-label="カレンダー"
+  >
+    <svg
+      class="bottom-nav-icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <rect
+        x="4"
+        y="5"
+        width="16"
+        height="15"
+        rx="2"
+      ></rect>
+
+      <path
+        d="M8 3v4M16 3v4M4 9h16"
+      ></path>
+    </svg>
+
+    <span>カレンダー</span>
   </a>
 </nav>
 
