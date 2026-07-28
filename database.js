@@ -7,19 +7,11 @@ const db = new Database("notia.db");
 // =====================
 
 db.prepare(`
-CREATE TABLE IF NOT EXISTS tasks (
+CREATE TABLE IF NOT EXISTS conversations (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  title TEXT NOT NULL,
-  description TEXT,
-  due_date TEXT,
-  due_time TEXT,
-  priority TEXT DEFAULT 'normal',
-  category TEXT DEFAULT 'other',
-  notification TEXT DEFAULT 'none',
-  notified_at TEXT,
-  status TEXT DEFAULT 'active',
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  completed_at TEXT
+  role TEXT NOT NULL,
+  message TEXT NOT NULL,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
 )
 `).run();
 
