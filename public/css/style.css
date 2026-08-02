@@ -595,26 +595,36 @@ header a:hover {
   width: 100%;
   max-width: 760px;
   margin: 0 auto;
-  padding: 20px 20px 0;
+  padding: 14px 20px 20px;
   box-sizing: border-box;
-  border-bottom: none;
+
+  background: #e8f1ef;
+  border-bottom: 1px solid #d5e2df;
+}
+
+.task-detail-header-row {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
 }
 
 .task-detail-back {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
 
-  min-height: 40px;
+  width: 44px;
+  height: 44px;
   padding: 0;
+
+  color: #202124;
+  font-size: 26px;
+  font-weight: 500;
+  text-decoration: none;
 
   background: transparent;
   border: none;
-
-  color: #202124;
-  font-size: 16px;
-  font-weight: 600;
-  text-decoration: none;
+  border-radius: 50%;
 }
 
 .task-detail-back:visited {
@@ -622,7 +632,31 @@ header a:hover {
 }
 
 .task-detail-back:hover {
-  text-decoration: underline;
+  background: rgba(47, 111, 104, 0.08);
+  text-decoration: none;
+}
+
+.task-detail-heading {
+  margin: 0;
+
+  color: #0f2f66;
+  font-size: 21px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.task-detail-header-spacer {
+  width: 44px;
+  height: 44px;
+}
+
+.task-detail-subtitle {
+  margin: -10px 0 0;
+
+  color: #687a77;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
 }
 
 .task-detail-section {
@@ -635,7 +669,14 @@ header a:hover {
 .task-form {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 22px;
+}
+
+/* タスク／予定 切り替え */
+
+.task-type-option input:focus-visible + span {
+  outline: 2px solid #4c8f86;
+  outline-offset: 2px;
 }
 
 .field-group {
@@ -658,33 +699,9 @@ header a:hover {
 
 /* タスク名 */
 
-.task-title-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 56px;
-  align-items: center;
-  gap: 14px;
-}
-
-.task-title-input {
-  width: 100%;
-  min-width: 0;
-  height: 74px;
-  padding: 0 20px;
-
-  border: 1px solid #d7d9d8;
-  border-radius: 14px;
-
-  background: #fff;
-  color: #202124;
-
-  font: inherit;
-  font-size: 30px;
-  font-weight: 700;
-}
-
 .notification-button {
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   padding: 0;
 
   display: inline-flex;
@@ -738,30 +755,9 @@ select.field-control {
   line-height: normal;
 }
 
-/* 説明 */
-
-.task-description-input {
-  width: 100%;
-  min-height: 180px;
-  padding: 16px;
-
-  border: 1px solid #d7d9d8;
-  border-radius: 12px;
-
-  background: #fff;
-  color: #202124;
-
-  font: inherit;
-  font-size: 16px;
-  line-height: 1.7;
-  resize: vertical;
-}
-
 /* フォーカス */
 
-.task-title-input:focus,
-.field-control:focus,
-.task-description-input:focus {
+.field-control:focus {
   outline: 2px solid rgba(80, 130, 255, 0.25);
   outline-offset: 1px;
 }
@@ -770,8 +766,8 @@ select.field-control {
 
 @media (max-width: 640px) {
   .task-detail-header {
-    padding: 16px 16px 0;
-  }
+  padding: 16px 16px 10px;
+}
 
   .task-detail-section {
     padding: 20px 16px 40px;
@@ -784,17 +780,6 @@ select.field-control {
   .field-row {
     grid-template-columns: 1fr;
     gap: 22px;
-  }
-
-  .task-title-row {
-    grid-template-columns: minmax(0, 1fr) 48px;
-    gap: 10px;
-  }
-
-  .task-title-input {
-    height: 64px;
-    padding: 0 16px;
-    font-size: 24px;
   }
 
   .notification-button {
@@ -867,6 +852,7 @@ select.field-control {
 
   z-index: 1000;
   padding: 20px;
+  box-sizing: border-box;
 }
 
 .sheet-header {
@@ -1210,7 +1196,7 @@ select.field-control {
   font: inherit;
   font-weight: 700;
 
-  background: #4f8f86;
+  background: #2FA99D;
   border: 0;
   border-radius: 14px;
 
@@ -1547,4 +1533,195 @@ select.field-control {
   outline: 2px solid #2aa79b;
   outline-offset: 4px;
   border-radius: 4px;
+}
+
+/* ===== Task Page Fixed Header ===== */
+
+html,
+body.tasks-page {
+  height: 100%;
+}
+
+body.tasks-page {
+  display: flex;
+  flex-direction: column;
+
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
+body.tasks-page > .chat-header {
+  position: relative;
+  flex-shrink: 0;
+  z-index: 30;
+}
+
+body.tasks-page .task-app {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+
+  min-height: 0;
+  height: auto;
+  overflow: hidden;
+}
+
+body.tasks-page .task-header {
+  position: relative;
+  flex-shrink: 0;
+  z-index: 20;
+
+  background: #F6F8F6;
+}
+
+body.tasks-page .task-page {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+
+  padding-bottom:
+    calc(96px + env(safe-area-inset-bottom, 0px));
+}
+
+/* ===== Task Notification Toggle ===== */
+
+.task-notification-toggle {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  width: 100%;
+  min-height: 72px;
+  padding: 0 20px;
+
+  background: #f8fbfa;
+  border: 1px solid #cbdedb;
+  border-radius: 18px;
+
+  color: #344b49;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+
+  cursor: pointer;
+  appearance: none;
+}
+
+.task-notification-icon {
+  flex: 0 0 34px;
+
+  width: 34px;
+  height: 34px;
+
+  object-fit: contain;
+}
+
+.task-notification-toggle[aria-pressed="true"] {
+  background: #eef9f7;
+  border-color: #2fa99d;
+  color: #237d75;
+}
+
+/* ===== Task Create Form Balance ===== */
+
+/* 分類 */
+.task-create-form .task-form-field select {
+  width: 100%;
+  height: 52px;
+  min-height: 52px;
+  padding: 0 44px 0 16px;
+
+  background: #f8fbfa;
+  border: 1px solid #cbdedb;
+  border-radius: 18px;
+
+  color: #344b49;
+  font: inherit;
+  font-size: 16px;
+
+  appearance: auto;
+}
+
+/* 通知を小さくする */
+.task-create-form .task-notification-toggle {
+  height: 60px;
+  min-height: 60px;
+  padding: 0 16px;
+  border-radius: 14px;
+}
+
+/* ゴングも少し小さくする */
+.task-create-form .task-notification-icon {
+  width: 27px;
+  height: 27px;
+  flex: 0 0 27px;
+}
+
+/* 重要タスク */
+.task-create-form label:has(
+  input[name="important"]
+) {
+  min-height: 60px;
+  padding: 0 20px;
+  border-radius: 18px;
+
+}
+
+.task-create-form label:has(
+  input[name="important"]
+) span {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.notification-button svg {
+  width: 26px;
+  height: 26px;
+
+  fill: none;
+  stroke: #667572;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.notification-button[aria-pressed="true"] svg {
+  stroke: #2f6f68;
+}
+
+/* スマホで新規タスクフォームが横にはみ出す問題を修正 */
+.sheet-modal .sheet-content,
+.sheet-modal .task-create-form,
+.sheet-modal .task-form-field {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.task-create-form input[type="text"],
+.task-create-form input[type="date"],
+.task-create-form input[type="time"],
+.task-create-form select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Safariの日時入力が横にはみ出す問題を修正 */
+.task-create-form input[type="date"],
+.task-create-form input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+
+  inline-size: 100%;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+
+  overflow: hidden;
+  font-size: 16px;
 }

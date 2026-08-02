@@ -23,14 +23,16 @@ const notificationManager = require("./src/managers/NotificationManager");
 const {
   addTask,
   getActiveTasks,
-  getTasksByDate,
-  getExternalCalendarEventsByDate,
+getTasksByDate,
+getCompletedTasksByDate,
+getExternalCalendarEventsByDate,
   getRecentlyCompletedTasks,
   getTaskById,
   updateTaskById,
   completeTask,
   restoreTaskById,
   deleteTaskById,
+    convertTaskToEvent,
   getGoogleIntegration,
   getActiveRoutines,
   createRoutine,
@@ -51,8 +53,13 @@ const VALID_PRIORITIES = [
 const VALID_NOTIFICATIONS = [
   "none",
   "same_day",
+  "at_time",
+  "10_minutes_before",
+  "30_minutes_before",
+  "1_hour_before",
   "day_before",
 ];
+
 const VALID_CATEGORIES = [
   "work",
   "school",
@@ -315,9 +322,10 @@ app.get("/api/calendar", (req, res) => {
     }
 
     const tasks =
-      taskListManager.formatTasksForApi(
-        getTasksByDate(date)
-      );
+  taskListManager.formatTasksForApi([
+    ...getTasksByDate(date),
+    ...getCompletedTasksByDate(date),
+  ]);
 
     const externalEvents =
       getExternalCalendarEventsByDate(
@@ -353,9 +361,10 @@ app.get("/api/today", (req, res) => {
     }
 
     const tasks =
-      taskListManager.formatTasksForApi(
-        getTasksByDate(date)
-      );
+  taskListManager.formatTasksForApi([
+    ...getTasksByDate(date),
+    ...getCompletedTasksByDate(date),
+  ]);
 
     const overdueTasks =
   taskListManager
@@ -721,6 +730,131 @@ app.post("/api/tasks/:id/complete", (req, res) => {
     });
   }
 });
+
+app.post(
+  "/api/tasks/:id/convert-to-event",
+  (req, res) => {
+    try {
+      const task =
+        getTaskById(req.params.id);
+
+      if (!task) {
+        return res.status(404).json({
+          error:
+            "タスクが見つかりません。",
+        });
+      }
+
+      const {
+        title,
+        description,
+        dueDate,
+        dueTime,
+      } = req.body || {};
+
+      if (
+        title !== undefined &&
+        (
+          typeof title !== "string" ||
+          !title.trim()
+        )
+      ) {
+        return res.status(400).json({
+          error:
+            "予定名を入力してください。",
+        });
+      }
+
+      const eventDate =
+        dueDate !== undefined
+          ? dueDate
+          : task.due_date;
+
+      if (!eventDate) {
+        return res.status(400).json({
+          error:
+            "予定へ変更するには日付が必要です。",
+        });
+      }
+
+      if (
+        !/^\d{4}-\d{2}-\d{2}$/.test(
+          eventDate
+        )
+      ) {
+        return res.status(400).json({
+          error:
+            "日付の形式が正しくありません。",
+        });
+      }
+
+      if (
+        dueTime !== undefined &&
+        dueTime !== null &&
+        dueTime !== "" &&
+        !/^([01]\d|2[0-3]):[0-5]\d$/.test(
+          dueTime
+        )
+      ) {
+        return res.status(400).json({
+          error:
+            "時間の形式が正しくありません。",
+        });
+      }
+
+      const result =
+        convertTaskToEvent(
+          req.params.id,
+          {
+            title:
+              title !== undefined
+                ? title.trim()
+                : undefined,
+            description:
+              description !== undefined
+                ? String(
+                    description
+                  ).trim()
+                : undefined,
+            eventDate,
+            startTime:
+              dueTime !== undefined
+                ? dueTime || null
+                : undefined,
+          }
+        );
+
+      if (!result.ok) {
+        if (
+          result.reason ===
+          "date_required"
+        ) {
+          return res.status(400).json({
+            error:
+              "予定へ変更するには日付が必要です。",
+          });
+        }
+
+        return res.status(404).json({
+          error:
+            "タスクが見つかりません。",
+        });
+      }
+
+      return res.json({
+        ok: true,
+        eventId: result.eventId,
+      });
+    } catch (error) {
+      console.error(error);
+
+      return res.status(500).json({
+        error:
+          "予定への変更に失敗しました。",
+      });
+    }
+  }
+);
 
 app.post("/api/tasks/:id/restore", (req, res) => {
   try {
@@ -1139,10 +1273,26 @@ for (const task of tasks) {
 ?? ""})`
   );
 
-  const body =
-  task.notification === "day_before"
-    ? `明日は「${task.title}」があります。`
-    : `「${task.title}」の時間です。`;
+  const body = {
+  same_day:
+    `本日は「${task.title}」があります。`,
+
+  day_before:
+    `明日は「${task.title}」があります。`,
+
+  at_time:
+    `「${task.title}」の時間です。`,
+
+  "10_minutes_before":
+    `「${task.title}」は10分後です。`,
+
+  "30_minutes_before":
+    `「${task.title}」は30分後です。`,
+
+  "1_hour_before":
+    `「${task.title}」は1時間後です。`,
+}[task.notification] ||
+  `「${task.title}」のお知らせです。`;
 
 broadcastNotification(
   "Notia",

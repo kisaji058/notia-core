@@ -381,9 +381,30 @@ function createTaskGroup(
 
   taskList.appendChild(section);
 
-  tasks.forEach((task) => {
-    renderTaskCard(task, cards);
-  });
+  const sortedTasks = [...tasks].sort(
+  (taskA, taskB) => {
+    const timeA = taskA.due_time;
+    const timeB = taskB.due_time;
+
+    if (!timeA && !timeB) {
+      return 0;
+    }
+
+    if (!timeA) {
+      return 1;
+    }
+
+    if (!timeB) {
+      return -1;
+    }
+
+    return timeA.localeCompare(timeB);
+  }
+);
+
+sortedTasks.forEach((task) => {
+  renderTaskCard(task, cards);
+});
 
   toggleButton.addEventListener(
     "click",
@@ -688,6 +709,114 @@ addTaskButton.addEventListener(
             </span>
           </label>
 
+          <button
+  id="notificationToggle"
+  class="task-notification-toggle"
+  type="button"
+  aria-pressed="false"
+>
+  <img
+    id="notificationIcon"
+    class="task-notification-icon"
+    src="/images/tasks/notia-gong-off.png"
+    alt=""
+  >
+
+  <span id="notificationText">
+    通知しない
+  </span>
+</button>
+
+<input
+  id="notificationValue"
+  name="notification"
+  type="hidden"
+  value="none"
+>
+
+<div
+  id="newTaskNotificationSheetOverlay"
+  class="sheet-overlay"
+  hidden
+></div>
+
+<section
+  id="newTaskNotificationSheet"
+  class="sheet-modal"
+  aria-labelledby="newTaskNotificationSheetTitle"
+  hidden
+>
+  <div
+    class="sheet-handle"
+    aria-hidden="true"
+  ></div>
+
+  <h2
+    id="newTaskNotificationSheetTitle"
+    class="sheet-title"
+  >
+    通知タイミング
+  </h2>
+
+  <div class="notification-sheet-options">
+    <button
+      class="sheet-item new-task-notification-sheet-item"
+      type="button"
+      data-notification-value="none"
+    >
+      通知なし
+    </button>
+
+    <button
+      class="sheet-item new-task-notification-sheet-item"
+      type="button"
+      data-notification-value="at_time"
+    >
+      予定時刻
+    </button>
+
+    <button
+      class="sheet-item new-task-notification-sheet-item"
+      type="button"
+      data-notification-value="10_minutes_before"
+    >
+      10分前
+    </button>
+
+    <button
+      class="sheet-item new-task-notification-sheet-item"
+      type="button"
+      data-notification-value="30_minutes_before"
+    >
+      30分前
+    </button>
+
+    <button
+      class="sheet-item new-task-notification-sheet-item"
+      type="button"
+      data-notification-value="1_hour_before"
+    >
+      1時間前
+    </button>
+
+    <button
+      class="sheet-item new-task-notification-sheet-item"
+      type="button"
+      data-notification-value="day_before"
+    >
+      前日
+    </button>
+  </div>
+
+  <button
+    id="closeNewTaskNotificationSheetButton"
+    class="sheet-cancel-button"
+    type="button"
+  >
+    キャンセル
+  </button>
+</section>
+
           <p
             id="taskCreateError"
             class="task-create-error"
@@ -704,6 +833,156 @@ addTaskButton.addEventListener(
         </form>
       `
     );
+
+    const notificationToggle =
+  document.getElementById(
+    "notificationToggle"
+  );
+
+const notificationIcon =
+  document.getElementById(
+    "notificationIcon"
+  );
+
+const notificationText =
+  document.getElementById(
+    "notificationText"
+  );
+
+const notificationValue =
+  document.getElementById(
+    "notificationValue"
+  );
+
+const dueTimeInput =
+  document.querySelector(
+    '#addTaskForm input[name="due_time"]'
+  );
+
+const notificationSheetOverlay =
+  document.getElementById(
+    "newTaskNotificationSheetOverlay"
+  );
+
+const notificationSheet =
+  document.getElementById(
+    "newTaskNotificationSheet"
+  );
+
+const closeNotificationSheetButton =
+  document.getElementById(
+    "closeNewTaskNotificationSheetButton"
+  );
+
+const notificationSheetItems =
+  document.querySelectorAll(
+    ".new-task-notification-sheet-item"
+  );
+
+const timeRequiredNotifications = [
+  "at_time",
+  "10_minutes_before",
+  "30_minutes_before",
+  "1_hour_before",
+];
+
+function updateNewTaskNotificationButton() {
+  const isOn =
+    notificationValue.value !== "none";
+
+  const label = {
+    none: "通知なし",
+    at_time: "予定時刻",
+    "10_minutes_before": "10分前",
+    "30_minutes_before": "30分前",
+    "1_hour_before": "1時間前",
+    day_before: "前日",
+  }[notificationValue.value] || "通知なし";
+
+  notificationText.textContent = label;
+
+  notificationToggle.setAttribute(
+    "aria-pressed",
+    String(isOn)
+  );
+
+  notificationIcon.src = isOn
+    ? "/images/tasks/notia-gong-on.png"
+    : "/images/tasks/notia-gong-off.png";
+}
+
+function openNewTaskNotificationSheet() {
+  const hasDueTime =
+    Boolean(dueTimeInput?.value);
+
+  notificationSheetItems.forEach(
+    (item) => {
+      const requiresTime =
+        timeRequiredNotifications.includes(
+          item.dataset.notificationValue
+        );
+
+      item.disabled =
+        requiresTime && !hasDueTime;
+    }
+  );
+
+  notificationSheetOverlay.hidden = false;
+  notificationSheet.hidden = false;
+}
+
+function closeNewTaskNotificationSheet() {
+  notificationSheetOverlay.hidden = true;
+  notificationSheet.hidden = true;
+}
+
+notificationToggle.addEventListener(
+  "click",
+  openNewTaskNotificationSheet
+);
+
+notificationSheetOverlay.addEventListener(
+  "click",
+  closeNewTaskNotificationSheet
+);
+
+closeNotificationSheetButton.addEventListener(
+  "click",
+  closeNewTaskNotificationSheet
+);
+
+notificationSheetItems.forEach((item) => {
+  item.addEventListener("click", () => {
+    const value =
+      item.dataset.notificationValue;
+
+    if (!value) {
+      return;
+    }
+
+    notificationValue.value = value;
+
+    updateNewTaskNotificationButton();
+    closeNewTaskNotificationSheet();
+  });
+});
+
+dueTimeInput?.addEventListener(
+  "input",
+  () => {
+    if (
+      !dueTimeInput.value &&
+      timeRequiredNotifications.includes(
+        notificationValue.value
+      )
+    ) {
+      notificationValue.value = "none";
+      updateNewTaskNotificationButton();
+    }
+  }
+);
+
+updateNewTaskNotificationButton();
 
     const form =
       document.getElementById(
@@ -753,14 +1032,15 @@ addTaskButton.addEventListener(
     formData.get("due_time") ||
     null,
           priority:
-            formData.get("important") ===
-            "on"
-              ? "high"
-              : "normal",
+  formData.get("important") === "on"
+    ? "important"
+    : "normal",
           category:
             formData.get("category") ||
             "other",
-          notification: "none",
+          notification:
+  formData.get("notification") ||
+  "none",
         };
 
         try {

@@ -926,6 +926,7 @@ console.log(
 return this.safeParse(retryResponse);
   }
 
+  
   async analyzeConfirmation(userMessage, context = {}) {
   const today = new Date().toLocaleDateString("sv-SE", {
     timeZone: "Asia/Tokyo",
@@ -1016,6 +1017,100 @@ ${userMessage}
     };
   }
 }
+  async analyzeDueTimeConfirmation(
+    userMessage,
+    context = {}
+  ) {
+    const systemPrompt = `
+あなたはNotiaの時間確認応答判定器です。
+
+現在、Notiaは登録済みタスクの時間を
+ユーザーに確認しています。
+
+ユーザーの返答を、次のJSON形式で分類してください。
+
+{
+  "confirmationIntent": "set_due_time | no_due_time | cancel | unclear",
+  "dueTime": "HH:mm | null"
+}
+
+判断ルール:
+
+- 「18時」「22時48分」「午後3時半」など、
+  正確な時刻を指定している
+  → set_due_time
+
+- 「指定しなくていい」「そのままでいい」
+  「今はいらない」「あとで決める」
+  「時間は決めていない」など、
+  タスクは残したまま時間を設定しない
+  → no_due_time
+
+- 「やっぱりやめる」「もういい」
+  「時間設定を取り消して」など、
+  今回の時間設定操作を終了する
+  → cancel
+
+- 「夜くらい」「たぶん夕方」など、
+  正確な時刻も意図も判断できない
+  → unclear
+
+重要:
+
+- 時刻を推測してはいけません。
+- 正確な時刻が分かる場合だけ、
+  dueTimeをHH:mm形式で返してください。
+- no_due_time、cancel、unclearの場合、
+  dueTimeは必ずnullにしてください。
+- 現在の確認状態を考慮してください。
+- JSONのみ返してください。
+`;
+
+    const userPrompt = `
+現在の確認状態:
+${JSON.stringify(context, null, 2)}
+
+ユーザー発言:
+${userMessage}
+`;
+
+    const response = await chatWithNotia(
+      userPrompt,
+      [],
+      systemPrompt
+    );
+
+    try {
+      const parsed = JSON.parse(response);
+
+      const validIntents = [
+        "set_due_time",
+        "no_due_time",
+        "cancel",
+        "unclear",
+      ];
+
+      return {
+        confirmationIntent:
+          validIntents.includes(
+            parsed.confirmationIntent
+          )
+            ? parsed.confirmationIntent
+            : "unclear",
+        dueTime: parsed.dueTime ?? null,
+      };
+    } catch (error) {
+      console.error(
+        "時間確認応答の解析に失敗:",
+        error
+      );
+
+      return {
+        confirmationIntent: "unclear",
+        dueTime: null,
+      };
+    }
+  }
 
   safeParse(text) {
   try {

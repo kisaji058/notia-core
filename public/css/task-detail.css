@@ -1,0 +1,722 @@
+/* ===== 項目タイプ ===== */
+
+.task-type-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  margin: 0;
+  padding: 9px 16px 10px;
+
+  background: #ffffff;
+  border: none;
+  border-radius: 18px;
+  box-shadow:
+    inset 0 0 0 1px #dbe6e3,
+    0 4px 14px rgba(44, 82, 76, 0.06);
+}
+
+.task-type-label,
+.task-type-note {
+  margin: 0;
+}
+
+.task-type-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+
+  margin: 0;
+  padding: 4px;
+
+  background: #e8f0ee;
+  border-radius: 14px;
+}
+
+.task-type-option {
+  position: relative;
+  cursor: pointer;
+}
+
+.task-type-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.task-type-option span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 38px;
+  padding: 0 14px;
+
+  color: #687a77;
+  font-size: 15px;
+  font-weight: 700;
+
+  border-radius: 10px;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.task-type-option input:checked + span {
+  color: #ffffff;
+  background: #2FA99D;
+  box-shadow: 0 2px 8px rgba(43, 91, 84, 0.12);
+}
+
+.task-type-option input:focus-visible + span {
+  outline: 2px solid #4c8f86;
+  outline-offset: 2px;
+}
+
+.task-type-note {
+  color: #87928f;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+/* ===== 項目タイトル ===== */
+
+.task-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  padding: 12px 16px 14px;
+
+  background: #ffffff;
+  border: 1px solid #dbe6e3;
+  border-radius: 18px;
+  box-shadow: 0 4px 14px rgba(44, 82, 76, 0.06);
+}
+
+.task-title-row {
+  display: block;
+}
+
+.task-title-group .field-label {
+  font-size: 14px;
+}
+
+.task-title-input {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 0 5px;
+
+  border: none;
+  border-bottom: 1px solid #d5dfdd;
+  border-radius: 0;
+
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+
+  color: #202124;
+  font: inherit;
+  font-size: 18px;
+}
+
+.task-title-input:focus {
+  border-bottom-color: #2aaaa3;
+}
+
+/* ===== 整理 ===== */
+
+.task-organize-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  padding: 12px 16px;
+
+  background: #ffffff;
+  border: 1px solid #dbe6e3;
+  border-radius: 18px;
+  box-shadow: 0 4px 14px rgba(44, 82, 76, 0.06);
+}
+
+.task-organize-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.task-organize-item,
+.task-organize-list .task-notification-field {
+  display: grid;
+  grid-template-columns: 22px 42px minmax(0, 1fr) 12px;
+  align-items: center;
+  gap: 10px;
+
+  min-height: 48px;
+}
+
+.task-organize-item + .task-organize-item,
+.task-organize-item + .task-notification-field {
+  border-top: 1px solid #e3e9e7;
+}
+
+.task-organize-icon {
+  width: 20px;
+  height: 20px;
+
+  fill: none;
+  stroke: #2f8f87;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.task-organize-label {
+  color: #65716f;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.task-organize-control {
+  width: 100%;
+  padding: 0;
+
+  border: none;
+  outline: none;
+  appearance: none;
+
+  background: transparent;
+  color: #202124;
+
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: right;
+  text-align-last: right;
+}
+
+.task-organize-chevron {
+  color: #9aa5a2;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.task-organize-list
+  .task-notification-field
+  .notification-button {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  padding: 0;
+
+  justify-content: flex-end;
+  gap: 0;
+
+  border: none;
+  border-radius: 0;
+  background: transparent;
+
+  color: #202124;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.task-organize-list
+  .task-notification-field
+  .notification-button:hover {
+  background: transparent;
+}
+
+.task-notification-field
+  .notification-button
+  > svg {
+  display: none;
+}
+
+/* ===== 優先度切り替え ===== */
+
+.task-priority-item {
+  grid-template-columns:
+    22px 42px minmax(0, 1fr);
+}
+
+.task-priority-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+
+  justify-self: end;
+
+  width: min(100%, 200px);
+  padding: 3px;
+
+  background: #e8f0ee;
+  border-radius: 11px;
+}
+
+.task-priority-option {
+  position: relative;
+  cursor: pointer;
+}
+
+.task-priority-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.task-priority-option span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 34px;
+  padding: 0 12px;
+
+  color: #687a77;
+  font-size: 13px;
+  font-weight: 700;
+
+  border-radius: 8px;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.task-priority-option input:checked + span {
+  color: #ffffff;
+  background: #2FA99D;
+  box-shadow: 0 2px 7px rgba(43, 91, 84, 0.12);
+}
+
+.task-priority-option input:focus-visible + span {
+  outline: 2px solid #4c8f86;
+  outline-offset: 1px;
+}
+
+/* ===== 説明・備考 ===== */
+
+.task-description-group {
+    min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  padding: 10px 16px 8px;
+
+  background: #ffffff;
+  border: 1px solid #dbe6e3;
+  border-radius: 18px;
+  box-shadow: 0 4px 14px rgba(44, 82, 76, 0.06);
+}
+
+.task-description-group textarea {
+  min-height: 40px;
+  resize: vertical;
+}
+
+.task-card-title {
+  margin: 0;
+
+  color: #0f2f66;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.task-description-input {
+  width: 100%;
+  height: 32px;
+  min-height: 32px;
+  padding: 3px 0;
+
+  border: none;
+  border-bottom: 1px solid #cfdad7;
+  border-radius: 0;
+
+  background: transparent;
+  color: #202124;
+
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  resize: none;
+}
+
+.task-description-input:focus {
+  outline: none;
+  border-bottom-color: #4c8f86;
+}
+
+/* ===== 操作ボタン ===== */
+
+.task-action-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  width: 100%;
+  margin-top: auto;
+  padding: 0;
+
+  background: transparent;
+}
+
+.task-save-area {
+  width: 100%;
+}
+
+.task-save-button {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 16px;
+
+  color: #ffffff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+
+  background: #2aa79b;
+  border: 1.5px solid #2aa79b;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(47, 111, 104, 0.18);
+
+  cursor: pointer;
+}
+
+.task-detail-actions {
+  position: relative;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+
+  min-height: 44px;
+}
+
+/* 中央の仕切り線 */
+.task-detail-actions::before {
+  content: "";
+
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 50%;
+
+  width: 1px;
+  background: #dfe6e4;
+  transform: translateX(-50%);
+}
+
+.task-complete-button,
+.task-delete-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 12px;
+
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+
+  background: transparent;
+  border: none;
+
+  cursor: pointer;
+}
+
+.task-complete-button {
+  color: #2f6f68;
+}
+
+.task-delete-button {
+  color: #737d7a;
+}
+
+.task-action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+
+  width: 30px;
+  height: 30px;
+
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+}
+
+.task-action-icon svg {
+  width: 19px;
+  height: 19px;
+
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.task-save-button:hover {
+  background: #278f85;
+  border-color: #278f85;
+}
+
+.task-complete-button:hover {
+  background: #edf5f3;
+}
+
+.task-delete-button:hover {
+  color: #c45d57;
+  background: #fff4f3;
+}
+
+.task-save-button:disabled,
+.task-complete-button:disabled,
+.task-delete-button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* ===== 全体の縦幅調整 ===== */
+
+.task-detail-section {
+  padding: 14px 20px 24px;
+}
+
+.task-form {
+  gap: 8.5px;
+}
+
+/* ===== ヘッダーの縦幅調整 ===== */
+
+.task-detail-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  padding: 6px 20px 10px;
+}
+
+.task-detail-section {
+  padding-bottom: 150px;
+}
+
+/* ===== 画面全体を固定 ===== */
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  width: 100%;
+  height: 100dvh;
+  margin: 0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.task-detail-header {
+  flex: 0 0 auto;
+}
+
+body > main {
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.task-detail-section {
+  height: auto;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.task-form {
+  height: auto;
+  min-height: 100%;
+}
+
+.task-action-area {
+  flex: 0 0 auto;
+  margin-top: auto;
+}
+
+/* ===== カード見出しの統一 ===== */
+
+.task-type-label,
+.task-title-group .field-label,
+.task-card-title,
+.task-description-group .field-label {
+ color:#0f2f66;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+/* ===== 日時カード ===== */
+
+.task-date-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  padding: 12px 16px;
+
+  background: #ffffff;
+  border: 1px solid #dbe6e3;
+  border-radius: 18px;
+  box-shadow: 0 4px 14px rgba(44, 82, 76, 0.06);
+}
+
+.task-date-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.task-date-item {
+  position: relative;
+
+  display: grid;
+  grid-template-columns:
+    22px 42px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+
+  min-height: 54px;
+}
+
+.task-date-item + .task-date-item {
+  border-top: 1px solid #e3e9e7;
+}
+
+.task-date-icon {
+  width: 22px;
+  height: 22px;
+
+  fill: none;
+  stroke: #2f8f87;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.task-date-label {
+  color: #65716f;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.task-date-button {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr) 12px;
+  align-items: center;
+  gap: 8px;
+
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+
+  color: #202124;
+  background: transparent;
+  border: none;
+
+  font: inherit;
+  cursor: pointer;
+}
+
+.task-date-value {
+  justify-self: end;
+
+  color: #202124;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.task-date-value.is-placeholder {
+  color: #a0aaa7;
+}
+
+.task-date-chevron {
+  color: #9aa5a2;
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+/* 実際のdate・time入力を行全体に重ねる */
+.task-date-picker-source {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+
+  opacity: 0;
+  border: none;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+/* Safariの選択領域を行全体に広げる */
+.task-date-picker-source::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+  margin: 0;
+
+  cursor: pointer;
+}
+/* ===== 通知行ボタン ===== */
+
+.task-notification-field {
+  width: 100%;
+  margin: 0;
+
+  color: inherit;
+  font: inherit;
+  text-align: left;
+
+  background: transparent;
+  border: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.task-notification-field .notification-button {
+  min-width: 0;
+  padding: 0;
+
+  color: #687a77;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: right;
+
+  background: transparent;
+  border: none;
+  pointer-events: none;
+}
+
+.task-notification-field .task-organize-chevron {
+  pointer-events: none;
+}

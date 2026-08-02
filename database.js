@@ -229,6 +229,22 @@ function getTasksByDate(date) {
   `).all(date);
 }
 
+function getCompletedTasksByDate(date) {
+  return db.prepare(`
+    SELECT *
+    FROM tasks
+    WHERE status = 'completed'
+      AND due_date = ?
+    ORDER BY
+      CASE
+        WHEN due_time IS NULL OR due_time = '' THEN 1
+        ELSE 0
+      END,
+      due_time ASC,
+      id ASC
+  `).all(date);
+}
+
 function getNotificationTargets(date) {
   const tomorrow = new Date(
   `${date}T00:00:00+09:00`
@@ -246,25 +262,46 @@ const tomorrowDate =
     }
   );
   return db.prepare(`
-    SELECT *
-    FROM tasks
-    WHERE status = 'active'
-  AND notified_at IS NULL
-  AND (
-    (notification = 'same_day'
-      AND due_date = ?)
-    OR
-    (notification = 'day_before'
-      AND due_date = ?)
-  )
-    ORDER BY
-      CASE
-        WHEN due_time IS NULL OR due_time = '' THEN 1
-        ELSE 0
-      END,
-      due_time ASC,
-      id ASC
-  `).all(date, tomorrowDate);
+  SELECT *
+  FROM tasks
+  WHERE status = 'active'
+    AND notified_at IS NULL
+    AND (
+      (
+        notification = 'same_day'
+        AND due_date = ?
+      )
+      OR
+      (
+        notification = 'day_before'
+        AND due_date = ?
+      )
+      OR
+      (
+        notification IN (
+          'at_time',
+          '10_minutes_before',
+          '30_minutes_before',
+          '1_hour_before'
+        )
+        AND due_date IN (?, ?)
+      )
+    )
+  ORDER BY
+    CASE
+      WHEN due_time IS NULL
+        OR due_time = ''
+      THEN 1
+      ELSE 0
+    END,
+    due_time ASC,
+    id ASC
+`).all(
+  date,
+  tomorrowDate,
+  date,
+  tomorrowDate
+);
 }
 
 function getRecentlyCompletedTasks(limit = 5) {
@@ -1046,6 +1083,69 @@ function addEvent(
   return result.lastInsertRowid;
 }
 
+function convertTaskToEvent(
+  taskId,
+  eventData = {}
+) {
+  const convert = db.transaction(() => {
+    const task = getTaskById(taskId);
+
+    if (!task) {
+      return {
+        ok: false,
+        reason: "not_found",
+      };
+    }
+
+    const eventDate =
+      eventData.eventDate !== undefined
+        ? eventData.eventDate
+        : task.due_date;
+
+    if (!eventDate) {
+      return {
+        ok: false,
+        reason: "date_required",
+      };
+    }
+
+    const eventId = addEvent(
+      eventData.title !== undefined
+        ? eventData.title
+        : task.title,
+      eventData.description !== undefined
+        ? eventData.description
+        : task.description || "",
+      eventDate,
+      eventData.startTime !== undefined
+        ? eventData.startTime
+        : task.due_time,
+      eventData.endTime !== undefined
+        ? eventData.endTime
+        : null,
+      eventData.location !== undefined
+        ? eventData.location
+        : ""
+    );
+
+    const deleted =
+      deleteTaskById(taskId);
+
+    if (!deleted) {
+      throw new Error(
+        "変換元タスクの削除に失敗しました。"
+      );
+    }
+
+    return {
+      ok: true,
+      eventId,
+    };
+  });
+
+  return convert();
+}
+
 function getEventsByDate(date) {
   return db.prepare(`
     SELECT *
@@ -1084,6 +1184,7 @@ module.exports = {
   getRecentlyCompletedTasks,
   restoreTaskById,
   getTasksByDate,
+  getCompletedTasksByDate,
 
   saveIntegrationTokens,
   getIntegrationTokens,
@@ -1112,6 +1213,7 @@ getNotificationTargets,
 markTaskNotified,
 addEvent,
 getEventsByDate,
+  convertTaskToEvent,
 };
 
 

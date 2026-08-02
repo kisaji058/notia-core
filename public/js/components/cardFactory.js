@@ -327,6 +327,10 @@ function createTimelineCard(item) {
       item.subtitle === "重要タスク"
     );
 
+  const isCompletedTask =
+  item.type === "task" &&
+  item.status === "completed";
+
   return `
     <article class="timeline-item">
       <time class="timeline-item-time">
@@ -340,9 +344,12 @@ function createTimelineCard(item) {
       <div
   class="
     timeline-item-content
-    ${isImportantTask
-      ? "timeline-item-content--important"
-      : ""}
+${isImportantTask
+  ? "timeline-item-content--important"
+  : ""}
+${isCompletedTask
+  ? "timeline-item-content--completed"
+  : ""}
   "
 >
         <div
@@ -407,9 +414,20 @@ function createUnscheduledCard(item) {
       item.priority === "high" ||
       item.subtitle === "重要タスク"
     );
+  
+  const isCompletedTask =
+  item.type === "task" &&
+  item.status === "completed";
 
   return `
-    <article class="unscheduled-item">
+    <article
+  class="
+    unscheduled-item
+    ${isCompletedTask
+      ? "unscheduled-item--completed"
+      : ""}
+  "
+>
       <div class="unscheduled-item-icon">
         <img
           src="/images/nav/task-selected.png"

@@ -3,13 +3,20 @@ const {
   markTaskNotified,
 } = require("../../database");
 
+const NOTIFICATION_OFFSETS = {
+  at_time: 0,
+  "10_minutes_before": 10,
+  "30_minutes_before": 30,
+  "1_hour_before": 60,
+};
+
 class NotificationManager {
   getTargets(date) {
     return getNotificationTargets(date);
   }
 
-  getToday() {
-    return new Date().toLocaleDateString(
+  getToday(date = new Date()) {
+    return date.toLocaleDateString(
       "sv-SE",
       {
         timeZone: "Asia/Tokyo",
@@ -17,18 +24,84 @@ class NotificationManager {
     );
   }
 
-  checkNotifications() {
-  const today = this.getToday();
+  getTomorrow(date = new Date()) {
+    const tomorrow = new Date(
+      date.getTime() + 24 * 60 * 60 * 1000
+    );
 
-  const tasks =
-    this.getTargets(today);
-
-  for (const task of tasks) {
-    markTaskNotified(task.id);
+    return this.getToday(tomorrow);
   }
 
-  return tasks;
-}
+  isNotificationDue(task, now) {
+    if (task.notification === "same_day") {
+      return task.due_date === this.getToday(now);
+    }
+
+    if (task.notification === "day_before") {
+      return task.due_date === this.getTomorrow(now);
+    }
+
+    const offsetMinutes =
+      NOTIFICATION_OFFSETS[
+        task.notification
+      ];
+
+    if (
+      offsetMinutes === undefined ||
+      !task.due_date ||
+      !task.due_time
+    ) {
+      return false;
+    }
+
+    const dueTime =
+      String(task.due_time).slice(0, 5);
+
+    const dueAt = new Date(
+      `${task.due_date}T${dueTime}:00+09:00`
+    );
+
+    if (
+      Number.isNaN(dueAt.getTime())
+    ) {
+      return false;
+    }
+
+    const notificationAt =
+      dueAt.getTime() -
+      offsetMinutes * 60 * 1000;
+
+    const difference =
+      now.getTime() - notificationAt;
+
+    return (
+      difference >= 0 &&
+      difference < 2 * 60 * 1000
+    );
+  }
+
+  checkNotifications() {
+    const now = new Date();
+    const today = this.getToday(now);
+
+    const tasks =
+      this.getTargets(today);
+
+    const notificationTasks =
+      tasks.filter((task) =>
+        this.isNotificationDue(
+          task,
+          now
+        )
+      );
+
+    for (const task of notificationTasks) {
+      markTaskNotified(task.id);
+    }
+
+    return notificationTasks;
+  }
 }
 
-module.exports = new NotificationManager();
+module.exports =
+  new NotificationManager();

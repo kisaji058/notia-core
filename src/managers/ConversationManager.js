@@ -14,17 +14,64 @@ if (
   session.mode === "waiting_due_time" &&
   session.targetTaskId
 ) {
-  const wantsNoDueTime =
-    ConversationIntentHelper.isNoDueTime(message);
+  let wantsNoDueTime =
+  ConversationIntentHelper.isNoDueTime(message);
 
-  const wantsCancel =
-    !wantsNoDueTime &&
-    ConversationIntentHelper.isCancel(message);
+let wantsCancel =
+  !wantsNoDueTime &&
+  ConversationIntentHelper.isCancel(message);
 
-  const analyzedDueTime =
-    analysis.updates?.dueTime ??
-    analysis.dueTime ??
-    null;
+let analyzedDueTime =
+  ConversationIntentHelper.parseDueTime(message) ??
+  analysis.updates?.dueTime ??
+  analysis.dueTime ??
+  null;
+
+// ローカル判定で判断できなかった場合だけ、
+// Notiaが返答の意味を判断する
+if (
+  !wantsNoDueTime &&
+  !wantsCancel &&
+  !analyzedDueTime
+) {
+  const confirmation =
+    await conversationAnalyzer
+      .analyzeDueTimeConfirmation(
+        message,
+        {
+          mode: session.mode,
+          task: {
+            id: session.targetTaskId,
+            title:
+              session.targetTaskTitle || null,
+          },
+        }
+      );
+
+  if (
+    confirmation.confirmationIntent ===
+    "no_due_time"
+  ) {
+    wantsNoDueTime = true;
+  }
+
+  if (
+    confirmation.confirmationIntent ===
+    "cancel"
+  ) {
+    wantsCancel = true;
+  }
+
+  if (
+    confirmation.confirmationIntent ===
+    "set_due_time"
+  ) {
+    analyzedDueTime =
+      ConversationIntentHelper.parseDueTime(
+        confirmation.dueTime
+      );
+  }
+}
 
   if (wantsNoDueTime || wantsCancel) {
     sessionManager.clear(userId);

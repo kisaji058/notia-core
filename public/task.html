@@ -2,19 +2,38 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Notia タスク詳細</title>
   <link rel="stylesheet" href="/css/common.css" />
 <link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/task-detail.css" />
 </head>
 
 <body>
   <main class="app">
     <header class="task-detail-header">
-  <a class="task-detail-back" href="/tasks">
-    <span aria-hidden="true">←</span>
-    <span>タスク一覧</span>
-  </a>
+  <div class="task-detail-header-row">
+    <a
+      class="task-detail-back"
+      href="/tasks"
+      aria-label="タスク一覧へ戻る"
+    >
+      <span aria-hidden="true">＜</span>
+    </a>
+
+    <h1 class="task-detail-heading">
+      項目を編集
+    </h1>
+
+    <span
+      class="task-detail-header-spacer"
+      aria-hidden="true"
+    ></span>
+  </div>
+
+  <p class="task-detail-subtitle">
+    予定を整えて、次の一歩へ。
+  </p>
 </header>
 
     <section class="task-detail-section">
@@ -23,81 +42,250 @@
       </p>
 
       <form id="taskForm" class="task-form" hidden>
-        <label class="field-group task-title-group">
-  <span class="field-label">タスク名</span>
-
-  <div class="task-title-row">
-    <input
-      id="taskTitle"
-      class="task-title-input"
-      type="text"
-      autocomplete="off"
-    />
-
-    <button
-      type="button"
-      id="notificationButton"
-      class="notification-button"
-      aria-label="通知を切り替える"
-      aria-pressed="false"
-    >
-      🔕
-    </button>
-  </div>
-</label>
-
-        <div class="field-row">
-          <label class="field-group">
-            <span class="field-label">期日</span>
-
-            <input
-              id="taskDueDate"
-              class="field-control"
-              type="date"
-            />
-          </label>
-
-          <label class="field-group">
-            <span class="field-label">時間</span>
-
-            <input
-              id="taskDueTime"
-              class="field-control"
-              type="time"
-            />
-          </label>
-        </div>
-
-        <label class="field-group">
-          <span class="field-label">分類</span>
-
-          <select
-            id="taskCategory"
-            class="field-control"
-          >
-            <option value="work">仕事</option>
-            <option value="school">学校</option>
-            <option value="shopping">買い物</option>
-            <option value="private">プライベート</option>
-            <option value="other">その他</option>
-          </select>
-        </label>
-
-        <label class="field-group">
-          <span class="field-label">優先度</span>
-
-          <select
-  id="taskPriority"
-  class="field-control priority-select"
+         <section
+  class="field-group task-type-group"
+  aria-labelledby="taskTypeLabel"
 >
-  <option value="important">🔴 重要</option>
-  <option value="normal">通常</option>
-</select>
+  <h2
+    id="taskTypeLabel"
+    class="field-label task-type-label"
+  >
+    項目タイプ
+  </h2>   
 
-        </label>
+  <div class="task-type-switch">
+    <label class="task-type-option">
+      <input
+        id="taskTypeTask"
+        type="radio"
+        name="taskType"
+        value="task"
+        checked
+      />
+      <span>タスク</span>
+    </label>
 
-        <label class="field-group">
-          <span class="field-label">説明・備考</span>
+    <label class="task-type-option">
+      <input
+        id="taskTypeEvent"
+        type="radio"
+        name="taskType"
+        value="event"
+      />
+      <span>予定</span>
+    </label>
+  </div>
+
+  <p class="task-type-note">
+    タスクと予定は、いつでも切り替えられます
+  </p>
+  </section>
+       <label class="field-group task-title-group">
+  <span class="field-label">タイトル</span>
+
+  <input
+    id="taskTitle"
+    class="task-title-input"
+    type="text"
+    autocomplete="off"
+  />
+</label> 
+
+     <section class="task-date-card">
+  <h2 class="task-card-title">日時</h2>
+
+  <div class="task-date-list">
+    <div class="task-date-item">
+      <svg
+        class="task-date-icon"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <path d="M8 3v4M16 3v4M3 10h18" />
+      </svg>
+
+      <span class="task-date-label">期日</span>
+
+      <button
+        id="taskDueDateButton"
+        class="task-date-button"
+        type="button"
+        aria-label="期日を選択"
+      >
+        <span
+          id="taskDueDateDisplay"
+          class="task-date-value is-placeholder"
+        >
+          yyyy/mm/dd
+        </span>
+
+        <span class="task-date-chevron" aria-hidden="true">
+          ›
+        </span>
+      </button>
+
+      <input
+        id="taskDueDate"
+        class="task-date-picker-source"
+        type="date"
+        tabindex="-1"
+        aria-label="期日"
+      />
+    </div>
+
+    <div class="task-date-item">
+      <svg
+        class="task-date-icon"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v6l4 2" />
+      </svg>
+
+      <span class="task-date-label">時間</span>
+
+      <button
+        id="taskDueTimeButton"
+        class="task-date-button"
+        type="button"
+        aria-label="時間を選択"
+      >
+        <span
+          id="taskDueTimeDisplay"
+          class="task-date-value is-placeholder"
+        >
+          00:00
+        </span>
+
+        <span class="task-date-chevron" aria-hidden="true">
+          ›
+        </span>
+      </button>
+
+      <input
+        id="taskDueTime"
+        class="task-date-picker-source"
+        type="time"
+        tabindex="-1"
+        aria-label="時間"
+      />
+    </div>
+  </div>
+</section>
+
+<section class="task-organize-card">
+  <h2 class="task-card-title">整理</h2>
+
+  <div class="task-organize-list">
+    <label class="task-organize-item">
+      <svg
+        class="task-organize-icon"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path d="M20 13 11 22 2 13V3h10l8 8a1.4 1.4 0 0 1 0 2Z" />
+        <circle cx="7" cy="8" r="1.5" />
+      </svg>
+
+      <span class="task-organize-label">分類</span>
+
+      <select
+        id="taskCategory"
+        class="task-organize-control"
+      >
+        <option value="work">仕事</option>
+        <option value="school">学校</option>
+        <option value="shopping">買い物</option>
+        <option value="private">プライベート</option>
+        <option value="other">その他</option>
+      </select>
+
+      <span class="task-organize-chevron" aria-hidden="true">
+        ›
+      </span>
+    </label>
+
+   <div class="task-organize-item task-priority-item">
+  <svg
+    class="task-organize-icon"
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+  >
+    <path d="M5 21V4" />
+    <path d="M5 5c4-3 7 3 13 0v9c-6 3-9-3-13 0" />
+  </svg>
+
+  <span class="task-organize-label">
+    優先度
+  </span>
+
+  <div
+    class="task-priority-switch"
+    role="radiogroup"
+    aria-label="優先度"
+  >
+    <label class="task-priority-option">
+      <input
+        id="taskPriorityNormal"
+        type="radio"
+        name="taskPriority"
+        value="normal"
+      />
+      <span>通常</span>
+    </label>
+
+    <label class="task-priority-option">
+      <input
+        id="taskPriorityImportant"
+        type="radio"
+        name="taskPriority"
+        value="important"
+      />
+      <span>重要</span>
+    </label>
+  </div>
+</div>
+
+   <button
+  id="notificationButton"
+  class="task-organize-item task-notification-field"
+  type="button"
+  aria-pressed="false"
+>
+  <svg
+    class="task-organize-icon"
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+  >
+    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+    <path d="M10 21h4" />
+  </svg>
+
+  <span class="task-organize-label">
+    通知
+  </span>
+
+  <span
+    id="notificationButtonContent"
+    class="notification-button"
+  >
+  </span>
+
+  <span
+    class="task-organize-chevron"
+    aria-hidden="true"
+  >
+    ›
+  </span>
+</button>
+
+  </div>
+</section>
+
+        <label class="field-group task-description-group">
+  <span class="field-label">説明・備考</span>
 
           <textarea
             id="taskDescription"
@@ -106,18 +294,146 @@
           ></textarea>
         </label>
 
-        <label class="field-group">
-          <span class="field-label">通知タイミング</span>
+        <label class="field-group" hidden>
+  <span class="field-label">通知タイミング</span>
 
           <select
-            id="taskNotification"
-            class="field-control"
-          >
-            <option value="none">通知なし</option>
-            <option value="same_day">当日</option>
-            <option value="day_before">前日</option>
-          </select>
+  id="taskNotification"
+  class="field-control"
+>
+  <option value="none">通知なし</option>
+  <option value="at_time">予定時刻</option>
+  <option value="10_minutes_before">10分前</option>
+  <option value="30_minutes_before">30分前</option>
+  <option value="1_hour_before">1時間前</option>
+  <option value="day_before">前日</option>
+</select>
         </label>
+        <div
+  id="notificationSheetOverlay"
+  class="sheet-overlay"
+  hidden
+></div>
+
+<section
+  id="notificationSheet"
+  class="sheet-modal"
+  aria-labelledby="notificationSheetTitle"
+  hidden
+>
+  <div class="sheet-handle" aria-hidden="true"></div>
+
+  <h2
+    id="notificationSheetTitle"
+    class="sheet-title"
+  >
+    通知タイミング
+  </h2>
+
+  <div class="notification-sheet-options">
+    <button
+      class="sheet-item notification-sheet-item"
+      type="button"
+      data-notification-value="none"
+    >
+      通知なし
+    </button>
+
+    <button
+      class="sheet-item notification-sheet-item"
+      type="button"
+      data-notification-value="at_time"
+    >
+      予定時刻
+    </button>
+
+    <button
+      class="sheet-item notification-sheet-item"
+      type="button"
+      data-notification-value="10_minutes_before"
+    >
+      10分前
+    </button>
+
+    <button
+      class="sheet-item notification-sheet-item"
+      type="button"
+      data-notification-value="30_minutes_before"
+    >
+      30分前
+    </button>
+
+    <button
+      class="sheet-item notification-sheet-item"
+      type="button"
+      data-notification-value="1_hour_before"
+    >
+      1時間前
+    </button>
+
+    <button
+      class="sheet-item notification-sheet-item"
+      type="button"
+      data-notification-value="day_before"
+    >
+      前日
+    </button>
+  </div>
+
+  <button
+    id="closeNotificationSheetButton"
+    class="sheet-cancel-button"
+    type="button"
+  >
+    キャンセル
+  </button>
+</section>
+       <div class="task-action-area">
+  <div class="task-save-area">
+    <button
+      id="saveTaskButton"
+      class="task-save-button"
+      type="button"
+    >
+      ✓ 変更を保存
+    </button>
+  </div>
+
+  <div class="task-detail-actions">
+  <button
+    id="completeTaskButton"
+    class="task-complete-button"
+    type="button"
+  >
+    <span class="task-action-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24">
+        <path d="M7 12.5l3.2 3.2L17.5 8.5"></path>
+      </svg>
+    </span>
+
+    <span>完了にする</span>
+  </button>
+
+  <button
+    id="deleteTaskButton"
+    class="task-delete-button"
+    type="button"
+  >
+    <span class="task-action-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24">
+        <path d="M8 8v10"></path>
+        <path d="M12 8v10"></path>
+        <path d="M16 8v10"></path>
+        <path d="M5 5h14"></path>
+        <path d="M9 5V3h6v2"></path>
+        <path d="M6 5l1 16h10l1-16"></path>
+      </svg>
+    </span>
+
+    <span>削除</span>
+  </button>
+</div>
+</div>
       </form>
     </section>
   </main>
