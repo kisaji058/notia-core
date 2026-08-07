@@ -1,39 +1,63 @@
+.routines-page {
+  min-height: 100dvh;
+  padding-bottom: 0;
+  background: #f6f8f6;
+}
+
+.routine-main {
+  width: min(100%, 720px);
+  margin: 0 auto;
+  padding: 24px 16px
+    calc(
+      var(--bottom-nav-height) +
+      var(--safe-area-bottom) +
+      28px
+    );
+}
+
 .routine-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-
   margin-bottom: 24px;
 }
 
 .routine-header-text h1 {
   margin: 0 0 6px;
+  color: #24364f;
   font-size: 28px;
+  line-height: 1.2;
 }
 
 .routine-header-text p {
   margin: 0;
-  color: #6b7280;
+  color: #71807e;
   font-size: 14px;
+  line-height: 1.6;
 }
 
 .add-routine-button {
   flex-shrink: 0;
-
-  border: none;
+  min-height: 44px;
+  padding: 0 17px;
+  color: #ffffff;
+  background: #2fa99d;
+  border: 0;
   border-radius: 999px;
-
-  padding: 10px 16px;
-
+  box-shadow: 0 4px 12px rgba(47, 169, 157, 0.18);
   font-size: 14px;
   font-weight: 700;
-
-  cursor: pointer;
 }
 
-.routine-section {
-  padding-bottom: 96px;
+.add-routine-button:active {
+  transform: scale(0.98);
+}
+
+.add-routine-button:focus-visible,
+.routine-card:focus-visible {
+  outline: 2px solid #168f85;
+  outline-offset: 3px;
 }
 
 #routineList {
@@ -42,16 +66,24 @@
 }
 
 .routine-card {
-  border: 1px solid #e5e7eb;
-  border-radius: 18px;
-
+  width: 100%;
   padding: 18px;
-
+  color: #24364f;
   background: #ffffff;
+  border: 1px solid #d8e4e1;
+  border-radius: 18px;
+  box-shadow: 0 4px 14px rgba(36, 54, 79, 0.05);
+  text-align: left;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
 
-  box-shadow:
-    0 4px 14px
-    rgba(0, 0, 0, 0.05);
+.routine-card:hover {
+  border-color: #b9d9d5;
+  box-shadow: 0 7px 18px rgba(36, 54, 79, 0.08);
+  transform: translateY(-1px);
 }
 
 .routine-card-top {
@@ -59,41 +91,34 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-
   margin-bottom: 14px;
 }
 
 .routine-day-badge {
   display: inline-flex;
   align-items: center;
-
   min-height: 30px;
-
   padding: 5px 11px;
-
+  color: #24364f;
+  background: #e8f4f1;
   border-radius: 999px;
-
-  background: #eef7f2;
-
   font-size: 13px;
   font-weight: 700;
 }
 
 .routine-category {
-  color: #6b7280;
+  color: #71807e;
   font-size: 12px;
 }
 
 .routine-title {
   margin: 0 0 8px;
-
   font-size: 19px;
   line-height: 1.5;
 }
 
 .routine-time {
   margin: 0;
-
   color: #374151;
   font-size: 14px;
   font-weight: 600;
@@ -101,11 +126,9 @@
 
 .routine-status {
   margin: 40px 0;
-
-  text-align: center;
-
-  color: #6b7280;
+  color: #71807e;
   font-size: 14px;
+  text-align: center;
 }
 
 .routine-error {
@@ -114,31 +137,30 @@
 
 .routine-empty {
   padding: 40px 20px;
-
-  border: 1px dashed #d1d5db;
-  border-radius: 18px;
-
-  text-align: center;
-
   background: #ffffff;
+  border: 1px dashed #c8d9d5;
+  border-radius: 18px;
+  text-align: center;
 }
 
 .routine-empty-title {
   margin: 0 0 8px;
-
   font-size: 17px;
   font-weight: 700;
 }
 
 .routine-empty-description {
   margin: 0;
-
-  color: #6b7280;
+  color: #71807e;
   font-size: 14px;
   line-height: 1.7;
 }
 
 @media (max-width: 640px) {
+  .routine-main {
+    padding-top: 20px;
+  }
+
   .routine-header {
     align-items: center;
   }
@@ -147,19 +169,11 @@
     font-size: 24px;
   }
 
-  .add-routine-button {
-    padding: 9px 14px;
-  }
-
   .routine-card {
     padding: 16px;
   }
 
   .routine-title {
     font-size: 18px;
-  }
-
-  .bottom-nav a {
-    font-size: 11px;
   }
 }

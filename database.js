@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   priority TEXT DEFAULT 'normal',
   category TEXT DEFAULT 'other',
   notification TEXT DEFAULT 'none',
+  item_type TEXT DEFAULT 'task',
   status TEXT DEFAULT 'active',
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   completed_at TEXT
@@ -44,7 +45,9 @@ CREATE TABLE IF NOT EXISTS routines (
   category TEXT DEFAULT 'other',
   google_calendar_enabled INTEGER DEFAULT 0,
   status TEXT DEFAULT 'active',
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  memo TEXT,
+  days_of_week TEXT NOT NULL
 )
 `).run();
 
@@ -100,6 +103,13 @@ if (!hasColumn("tasks", "notification")) {
   `).run();
 }
 
+if (!hasColumn("tasks", "item_type")) {
+  db.prepare(`
+    ALTER TABLE tasks
+    ADD COLUMN item_type TEXT DEFAULT 'task'
+  `).run();
+}
+
 if (!hasColumn("tasks", "notified_at")) {
   db.prepare(`
     ALTER TABLE tasks
@@ -113,6 +123,28 @@ if (!hasColumn("routines", "google_event_id")) {
     ADD COLUMN google_event_id TEXT
   `).run();
 }
+
+if (!hasColumn("routines", "memo")) {
+  db.exec(`
+    ALTER TABLE routines
+    ADD COLUMN memo TEXT
+  `);
+}
+
+if (!hasColumn("routines", "days_of_week")) {
+  db.exec(`
+    ALTER TABLE routines
+    ADD COLUMN days_of_week TEXT
+  `);
+}
+
+// 既存の単一曜日データを複数曜日形式へ引き継ぐ。
+db.prepare(`
+  UPDATE routines
+  SET days_of_week = CAST(day_of_week AS TEXT)
+  WHERE days_of_week IS NULL
+    OR TRIM(days_of_week) = ''
+`).run();
 // =====================
 // integrations
 // =====================
@@ -178,7 +210,8 @@ function addTask(
   priority = "normal",
   category = "other",
   dueTime = null,
-  notification = "none"
+  notification = "none",
+  itemType = "task"
 ) {
   const result = db.prepare(`
     INSERT INTO tasks (
@@ -188,9 +221,10 @@ function addTask(
       due_time,
       priority,
       category,
-      notification
+      notification,
+      item_type
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     title,
     description,
@@ -198,7 +232,8 @@ function addTask(
     dueTime,
     priority,
     category,
-    notification
+    notification,
+    itemType
   );
 
   return result.lastInsertRowid;
@@ -229,6 +264,29 @@ function getTasksByDate(date) {
   `).all(date);
 }
 
+function getTasksByDateRange(
+  startDate,
+  endDate
+) {
+  return db.prepare(`
+    SELECT *
+    FROM tasks
+    WHERE status = 'active'
+      AND due_date BETWEEN ? AND ?
+    ORDER BY
+      due_date ASC,
+      CASE
+        WHEN due_time IS NULL OR due_time = '' THEN 1
+        ELSE 0
+      END,
+      due_time ASC,
+      id ASC
+  `).all(
+    startDate,
+    endDate
+  );
+}
+
 function getCompletedTasksByDate(date) {
   return db.prepare(`
     SELECT *
@@ -243,6 +301,29 @@ function getCompletedTasksByDate(date) {
       due_time ASC,
       id ASC
   `).all(date);
+}
+
+function getCompletedTasksByDateRange(
+  startDate,
+  endDate
+) {
+  return db.prepare(`
+    SELECT *
+    FROM tasks
+    WHERE status = 'completed'
+      AND due_date BETWEEN ? AND ?
+    ORDER BY
+      due_date ASC,
+      CASE
+        WHEN due_time IS NULL OR due_time = '' THEN 1
+        ELSE 0
+      END,
+      due_time ASC,
+      id ASC
+  `).all(
+    startDate,
+    endDate
+  );
 }
 
 function getNotificationTargets(date) {
@@ -428,6 +509,11 @@ if (updates.category !== undefined) {
 if (updates.notification !== undefined) {
   fields.push("notification = ?");
   values.push(updates.notification);
+}
+
+if (updates.itemType !== undefined) {
+  fields.push("item_type = ?");
+  values.push(updates.itemType);
 }
 
   if (fields.length === 0) {
@@ -765,6 +851,46 @@ function getExternalCalendarEventsByDate(
   );
 }
 
+function getExternalCalendarEventsByDateRange(
+  provider,
+  startDate,
+  endDate
+) {
+  return db.prepare(`
+    SELECT *
+    FROM external_calendar_events
+    WHERE provider = ?
+      AND (
+        (
+          is_all_day = 1
+          AND substr(start_datetime, 1, 10) <= ?
+          AND substr(end_datetime, 1, 10) > ?
+        )
+        OR (
+          (is_all_day IS NULL OR is_all_day != 1)
+          AND substr(start_datetime, 1, 10)
+            BETWEEN ? AND ?
+        )
+      )
+      AND (
+        status IS NULL
+        OR status != 'cancelled'
+      )
+    ORDER BY
+      CASE
+        WHEN is_all_day = 1 THEN 0
+        ELSE 1
+      END,
+      start_datetime ASC
+  `).all(
+    provider,
+    endDate,
+    startDate,
+    startDate,
+    endDate
+  );
+}
+
 function deleteExternalCalendarEventsByProvider(
   provider
 ) {
@@ -853,42 +979,104 @@ function updateIntegrationLastSync(provider) {
   return result.changes > 0;
 }
 
+function normalizeDaysOfWeek(
+  daysOfWeek,
+  fallbackDayOfWeek = null
+) {
+  const source = Array.isArray(daysOfWeek)
+    ? daysOfWeek
+    : typeof daysOfWeek === "string"
+      ? daysOfWeek.split(",")
+      : [fallbackDayOfWeek];
+
+  const normalized = [
+    ...new Set(
+      source
+        .map((day) => Number(day))
+        .filter(
+          (day) =>
+            Number.isInteger(day) &&
+            day >= 0 &&
+            day <= 6
+        )
+    ),
+  ].sort((a, b) => a - b);
+
+  if (normalized.length === 0) {
+    throw new Error(
+      "ルーティーンには曜日が1つ以上必要です。"
+    );
+  }
+
+  return normalized;
+}
+
+function normalizeRoutineRow(routine) {
+  if (!routine) {
+    return routine;
+  }
+
+  const daysOfWeek = normalizeDaysOfWeek(
+    routine.days_of_week,
+    routine.day_of_week
+  );
+
+  return {
+    ...routine,
+    day_of_week: daysOfWeek[0],
+    days_of_week: daysOfWeek,
+  };
+}
+
 function createRoutine({
   title,
   dayOfWeek,
+  daysOfWeek,
   routineTime = null,
   category = "other",
   googleCalendarEnabled = false,
+  memo = "",
 }) {
+  const normalizedDays = normalizeDaysOfWeek(
+    daysOfWeek,
+    dayOfWeek
+  );
+
   const result = db
     .prepare(`
       INSERT INTO routines (
         title,
         day_of_week,
+        days_of_week,
         routine_time,
         category,
-        google_calendar_enabled
+        google_calendar_enabled,
+        memo
       )
-      VALUES (?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `)
     .run(
       title,
-      dayOfWeek,
+      normalizedDays[0],
+      normalizedDays.join(","),
       routineTime,
       category,
-      googleCalendarEnabled ? 1 : 0
+      googleCalendarEnabled ? 1 : 0,
+      memo
     );
 
   return getRoutineById(result.lastInsertRowid);
 }
 
 function getRoutineById(id) {
-  return db.prepare(`
+  const routine = db.prepare(`
     SELECT *
     FROM routines
     WHERE id = ?
       AND status = 'active'
   `).get(id);
+
+  return normalizeRoutineRow(routine);
 }
 
 function getActiveRoutines() {
@@ -906,7 +1094,8 @@ function getActiveRoutines() {
         routine_time ASC,
         created_at ASC
     `)
-    .all();
+    .all()
+    .map(normalizeRoutineRow);
 }
 
 function getRoutinesByDayOfWeek(dayOfWeek) {
@@ -914,9 +1103,13 @@ function getRoutinesByDayOfWeek(dayOfWeek) {
     .prepare(`
       SELECT *
       FROM routines
-      WHERE
-        day_of_week = ?
-        AND status = 'active'
+      WHERE status = 'active'
+        AND (
+          ',' || COALESCE(
+            NULLIF(days_of_week, ''),
+            CAST(day_of_week AS TEXT)
+          ) || ','
+        ) LIKE '%,' || ? || ',%'
       ORDER BY
         CASE
           WHEN routine_time IS NULL THEN 1
@@ -925,7 +1118,8 @@ function getRoutinesByDayOfWeek(dayOfWeek) {
         routine_time ASC,
         created_at ASC
     `)
-    .all(dayOfWeek);
+    .all(String(dayOfWeek))
+    .map(normalizeRoutineRow);
 }
 
 function archiveRoutineById(id) {
@@ -954,24 +1148,9 @@ function getCurrentDayOfWeek() {
 }
 
 function getTodayRoutines() {
-  const today = new Date();
-
-  const dayOfWeek =
-    today.getDay();
-
-  return db
-    .prepare(`
-      SELECT *
-      FROM routines
-      WHERE
-        status='active'
-      AND
-        day_of_week=?
-      ORDER BY
-        routine_time ASC,
-        id ASC
-    `)
-    .all(dayOfWeek);
+  return getRoutinesByDayOfWeek(
+    getCurrentDayOfWeek()
+  );
 }
 
 function updateRoutineById(
@@ -979,28 +1158,39 @@ function updateRoutineById(
   {
     title,
     dayOfWeek,
+    daysOfWeek,
     routineTime,
     category,
     googleCalendarEnabled,
+    memo = "",
   }
 ) {
+  const normalizedDays = normalizeDaysOfWeek(
+    daysOfWeek,
+    dayOfWeek
+  );
+
   return db
     .prepare(`
       UPDATE routines
       SET
         title = ?,
         day_of_week = ?,
+        days_of_week = ?,
         routine_time = ?,
         category = ?,
-        google_calendar_enabled = ?
+        google_calendar_enabled = ?,
+        memo = ?
       WHERE id = ?
     `)
     .run(
       title,
-      dayOfWeek,
+      normalizedDays[0],
+      normalizedDays.join(","),
       routineTime,
       category,
       googleCalendarEnabled ? 1 : 0,
+      memo,
       id
     );
 }
@@ -1026,7 +1216,7 @@ function getUnsyncedGoogleRoutines() {
       day_of_week,
       routine_time,
       id
-  `).all();
+  `).all().map(normalizeRoutineRow);
 }
 
 function saveRoutineGoogleEventId(
@@ -1081,6 +1271,62 @@ function addEvent(
   );
 
   return result.lastInsertRowid;
+}
+
+function getEventById(id) {
+  return db.prepare(`
+    SELECT *
+    FROM events
+    WHERE id = ?
+    LIMIT 1
+  `).get(id);
+}
+
+function updateEventById(
+  id,
+  {
+    title,
+    description,
+    event_date,
+    start_time,
+    end_time,
+    location,
+    status,
+  }
+) {
+  const result = db.prepare(`
+    UPDATE events
+    SET
+      title = ?,
+      description = ?,
+      event_date = ?,
+      start_time = ?,
+      end_time = ?,
+      location = ?,
+      status = ?,
+      updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `).run(
+    title,
+    description ?? null,
+    event_date,
+    start_time ?? null,
+    end_time ?? null,
+    location ?? null,
+    status ?? "active",
+    id
+  );
+
+  return result.changes > 0;
+}
+
+function deleteEventById(id) {
+  const result = db.prepare(`
+    DELETE FROM events
+    WHERE id = ?
+  `).run(id);
+
+  return result.changes > 0;
 }
 
 function convertTaskToEvent(
@@ -1146,6 +1392,66 @@ function convertTaskToEvent(
   return convert();
 }
 
+function convertEventToTask(
+  eventId,
+  taskData = {}
+) {
+  const convert = db.transaction(() => {
+    const event = getEventById(eventId);
+
+    if (!event) {
+      return {
+        ok: false,
+        reason: "not_found",
+      };
+    }
+
+    const dueDate =
+      taskData.dueDate !== undefined
+        ? taskData.dueDate
+        : event.event_date;
+
+    if (!dueDate) {
+      return {
+        ok: false,
+        reason: "date_required",
+      };
+    }
+
+    const taskId = addTask(
+      taskData.title !== undefined
+        ? taskData.title
+        : event.title,
+      taskData.description !== undefined
+        ? taskData.description
+        : event.description || "",
+      dueDate,
+      taskData.priority || "normal",
+      taskData.category || "other",
+      taskData.dueTime !== undefined
+        ? taskData.dueTime
+        : event.start_time,
+      taskData.notification || "none"
+    );
+
+    const deleted =
+      deleteEventById(eventId);
+
+    if (!deleted) {
+      throw new Error(
+        "変換元予定の削除に失敗しました。"
+      );
+    }
+
+    return {
+      ok: true,
+      taskId,
+    };
+  });
+
+  return convert();
+}
+
 function getEventsByDate(date) {
   return db.prepare(`
     SELECT *
@@ -1163,6 +1469,32 @@ function getEventsByDate(date) {
       start_time ASC,
       id ASC
   `).all(date);
+}
+
+function getEventsByDateRange(
+  startDate,
+  endDate
+) {
+  return db.prepare(`
+    SELECT *
+    FROM events
+    WHERE
+      status = 'active'
+      AND event_date BETWEEN ? AND ?
+    ORDER BY
+      event_date ASC,
+      CASE
+        WHEN start_time IS NULL
+          OR start_time = ''
+        THEN 1
+        ELSE 0
+      END,
+      start_time ASC,
+      id ASC
+  `).all(
+    startDate,
+    endDate
+  );
 }
 
 module.exports = {
@@ -1183,14 +1515,17 @@ module.exports = {
   deleteTaskById,
   getRecentlyCompletedTasks,
   restoreTaskById,
-  getTasksByDate,
+    getTasksByDate,
+  getTasksByDateRange,
   getCompletedTasksByDate,
+  getCompletedTasksByDateRange,
 
   saveIntegrationTokens,
   getIntegrationTokens,
   deleteIntegration,
     saveExternalCalendarEvent,
-  getExternalCalendarEventsByDate,
+    getExternalCalendarEventsByDate,
+  getExternalCalendarEventsByDateRange,
   deleteExternalCalendarEventsByProvider,
   saveTaskCalendarLink,
   getTaskCalendarLink,
@@ -1212,9 +1547,11 @@ getRoutineById,
 getNotificationTargets,
 markTaskNotified,
 addEvent,
+getEventById,
 getEventsByDate,
+getEventsByDateRange,
+updateEventById,
+deleteEventById,
   convertTaskToEvent,
+  convertEventToTask,
 };
-
-
-

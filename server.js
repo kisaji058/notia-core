@@ -12,7 +12,13 @@ const {
   saveConversation,
   getRecentConversations,
   getRoutineById,
+  addEvent,
+  getEventById,
   getEventsByDate,
+  getEventsByDateRange,
+  updateEventById,
+  deleteEventById,
+  convertEventToTask,
 } = require("./database");
 
 const {
@@ -23,9 +29,12 @@ const notificationManager = require("./src/managers/NotificationManager");
 const {
   addTask,
   getActiveTasks,
-getTasksByDate,
-getCompletedTasksByDate,
-getExternalCalendarEventsByDate,
+  getTasksByDate,
+  getTasksByDateRange,
+  getCompletedTasksByDate,
+  getCompletedTasksByDateRange,
+  getExternalCalendarEventsByDate,
+  getExternalCalendarEventsByDateRange,
   getRecentlyCompletedTasks,
   getTaskById,
   updateTaskById,
@@ -67,6 +76,44 @@ const VALID_CATEGORIES = [
   "shopping",
   "other",
 ];
+
+function normalizeRoutineDays(
+  daysOfWeek,
+  fallbackDayOfWeek
+) {
+  const source = Array.isArray(daysOfWeek)
+    ? daysOfWeek
+    : [fallbackDayOfWeek];
+
+  const normalized = [
+    ...new Set(source.map((day) => Number(day))),
+  ].sort((a, b) => a - b);
+
+  if (
+    normalized.length === 0 ||
+    normalized.some(
+      (day) =>
+        !Number.isInteger(day) ||
+        day < 0 ||
+        day > 6
+    )
+  ) {
+    return null;
+  }
+
+  return normalized;
+}
+
+function getRoutineDays(routine) {
+  return normalizeRoutineDays(
+    Array.isArray(routine.days_of_week)
+      ? routine.days_of_week
+      : typeof routine.days_of_week === "string"
+        ? routine.days_of_week.split(",")
+        : null,
+    routine.day_of_week
+  ) || [];
+}
 
 app.get(
   "/api/notifications/stream",
@@ -171,6 +218,269 @@ app.get("/tasks-completed", (req, res) => {
   res.sendFile(
     path.join(__dirname, "public", "tasks-completed.html")
   );
+});
+
+// =====================
+// Notia events API
+// =====================
+
+app.get("/api/events/:id", (req, res) => {
+  try {
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({
+        error: "予定IDが正しくありません。",
+      });
+    }
+
+    const event = getEventById(id);
+
+    if (!event) {
+      return res.status(404).json({
+        error: "予定が見つかりません。",
+      });
+    }
+
+    return res.json(event);
+  } catch (error) {
+    console.error("予定取得エラー:", error);
+
+    return res.status(500).json({
+      error: "予定の取得に失敗しました。",
+    });
+  }
+});
+
+app.post("/api/events", (req, res) => {
+  try {
+    const {
+      title,
+      description,
+      eventDate,
+      startTime,
+      endTime,
+      location,
+    } = req.body;
+
+    if (
+      typeof title !== "string" ||
+      !title.trim()
+    ) {
+      return res.status(400).json({
+        error: "予定のタイトルを入力してください。",
+      });
+    }
+
+    if (
+      typeof eventDate !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(eventDate)
+    ) {
+      return res.status(400).json({
+        error: "日付が正しくありません。",
+      });
+    }
+
+    const timePattern =
+      /^([01]\d|2[0-3]):[0-5]\d$/;
+
+    if (
+      startTime &&
+      !timePattern.test(startTime)
+    ) {
+      return res.status(400).json({
+        error: "開始時刻が正しくありません。",
+      });
+    }
+
+    if (
+      endTime &&
+      !timePattern.test(endTime)
+    ) {
+      return res.status(400).json({
+        error: "終了時刻が正しくありません。",
+      });
+    }
+
+    if (
+      startTime &&
+      endTime &&
+      endTime < startTime
+    ) {
+      return res.status(400).json({
+        error:
+          "終了時刻は開始時刻以降にしてください。",
+      });
+    }
+
+    const eventId = addEvent(
+      title.trim(),
+      typeof description === "string"
+        ? description.trim()
+        : "",
+      eventDate,
+      startTime || null,
+      endTime || null,
+      typeof location === "string"
+        ? location.trim()
+        : ""
+    );
+
+    const event = getEventById(
+      Number(eventId)
+    );
+
+    return res.status(201).json({
+      success: true,
+      event,
+    });
+  } catch (error) {
+    console.error("予定登録エラー:", error);
+
+    return res.status(500).json({
+      error: "予定の登録に失敗しました。",
+    });
+  }
+});
+
+app.put("/api/events/:id", (req, res) => {
+  try {
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({
+        error: "予定IDが正しくありません。",
+      });
+    }
+
+    if (!getEventById(id)) {
+      return res.status(404).json({
+        error: "予定が見つかりません。",
+      });
+    }
+
+    const {
+      title,
+      description,
+      eventDate,
+      startTime,
+      endTime,
+      location,
+    } = req.body;
+
+    if (
+      typeof title !== "string" ||
+      !title.trim()
+    ) {
+      return res.status(400).json({
+        error: "予定のタイトルを入力してください。",
+      });
+    }
+
+    if (
+      typeof eventDate !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(eventDate)
+    ) {
+      return res.status(400).json({
+        error: "日付が正しくありません。",
+      });
+    }
+
+    const timePattern =
+      /^([01]\d|2[0-3]):[0-5]\d$/;
+
+    if (
+      startTime &&
+      !timePattern.test(startTime)
+    ) {
+      return res.status(400).json({
+        error: "開始時刻が正しくありません。",
+      });
+    }
+
+    if (
+      endTime &&
+      !timePattern.test(endTime)
+    ) {
+      return res.status(400).json({
+        error: "終了時刻が正しくありません。",
+      });
+    }
+
+    if (
+      startTime &&
+      endTime &&
+      endTime < startTime
+    ) {
+      return res.status(400).json({
+        error:
+          "終了時刻は開始時刻以降にしてください。",
+      });
+    }
+
+    const updated = updateEventById(id, {
+      title: title.trim(),
+      description:
+        typeof description === "string"
+          ? description.trim()
+          : "",
+      event_date: eventDate,
+      start_time: startTime || null,
+      end_time: endTime || null,
+      location:
+        typeof location === "string"
+          ? location.trim()
+          : "",
+      status: "active",
+    });
+
+    if (!updated) {
+      return res.status(404).json({
+        error: "予定が見つかりません。",
+      });
+    }
+
+    return res.json({
+      success: true,
+      event: getEventById(id),
+    });
+  } catch (error) {
+    console.error("予定更新エラー:", error);
+
+    return res.status(500).json({
+      error: "予定の更新に失敗しました。",
+    });
+  }
+});
+
+app.delete("/api/events/:id", (req, res) => {
+  try {
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({
+        error: "予定IDが正しくありません。",
+      });
+    }
+
+    if (!getEventById(id)) {
+      return res.status(404).json({
+        error: "予定が見つかりません。",
+      });
+    }
+
+    deleteEventById(id);
+
+    return res.json({
+      success: true,
+    });
+  } catch (error) {
+    console.error("予定削除エラー:", error);
+
+    return res.status(500).json({
+      error: "予定の削除に失敗しました。",
+    });
+  }
 });
 
 app.get(
@@ -311,30 +621,137 @@ app.post("/api/calendar/sync", async (req, res) => {
   }
 });
 
+function expandRoutinesByDate(
+  routines,
+  startDate,
+  endDate
+) {
+  const expanded = [];
+
+  const current = new Date(
+    `${startDate}T00:00:00Z`
+  );
+
+  const end = new Date(
+    `${endDate}T00:00:00Z`
+  );
+
+  while (current <= end) {
+    const date = current
+      .toISOString()
+      .slice(0, 10);
+
+    const dayOfWeek =
+      current.getUTCDay();
+
+    for (const routine of routines) {
+      if (getRoutineDays(routine).includes(dayOfWeek)) {
+        expanded.push({
+          ...routine,
+          routine_date: date,
+        });
+      }
+    }
+
+    current.setUTCDate(
+      current.getUTCDate() + 1
+    );
+  }
+
+  return expanded;
+}
+
 app.get("/api/calendar", (req, res) => {
   try {
-    const { date } = req.query;
+    const {
+      date,
+      startDate,
+      endDate,
+    } = req.query;
 
-    if (!date) {
+    // 日表示
+    if (date) {
+      const tasks =
+        taskListManager.formatTasksForApi([
+          ...getTasksByDate(date),
+          ...getCompletedTasksByDate(date),
+        ]);
+
+      const events =
+        getEventsByDate(date);
+
+      const routines =
+        expandRoutinesByDate(
+          getActiveRoutines(),
+          date,
+          date
+        );
+
+      const externalEvents =
+        getExternalCalendarEventsByDate(
+          "google",
+          date
+        );
+
+      return res.json({
+        tasks,
+        events,
+        routines,
+        externalEvents,
+      });
+    }
+
+    // 週・月表示
+    if (!startDate || !endDate) {
       return res.status(400).json({
-        error: "date は必須です。",
+        error:
+          "date、またはstartDateとendDateが必要です。",
+      });
+    }
+
+    if (startDate > endDate) {
+      return res.status(400).json({
+        error:
+          "startDateはendDate以前にしてください。",
       });
     }
 
     const tasks =
-  taskListManager.formatTasksForApi([
-    ...getTasksByDate(date),
-    ...getCompletedTasksByDate(date),
-  ]);
+      taskListManager.formatTasksForApi([
+        ...getTasksByDateRange(
+          startDate,
+          endDate
+        ),
+        ...getCompletedTasksByDateRange(
+          startDate,
+          endDate
+        ),
+      ]);
+
+    const events =
+      getEventsByDateRange(
+        startDate,
+        endDate
+      );
+
+    const routines =
+      expandRoutinesByDate(
+        getActiveRoutines(),
+        startDate,
+        endDate
+      );
 
     const externalEvents =
-      getExternalCalendarEventsByDate(
+      getExternalCalendarEventsByDateRange(
         "google",
-        date
+        startDate,
+        endDate
       );
 
     return res.json({
       tasks,
+      events,
+      routines,
       externalEvents,
     });
   } catch (error) {
@@ -856,6 +1273,132 @@ app.post(
   }
 );
 
+app.post(
+  "/api/events/:id/convert-to-task",
+  (req, res) => {
+    try {
+      const event =
+        getEventById(req.params.id);
+
+      if (!event) {
+        return res.status(404).json({
+          error:
+            "予定が見つかりません。",
+        });
+      }
+
+      const {
+        title,
+        description,
+        eventDate,
+        startTime,
+      } = req.body || {};
+
+      if (
+        title !== undefined &&
+        (
+          typeof title !== "string" ||
+          !title.trim()
+        )
+      ) {
+        return res.status(400).json({
+          error:
+            "タスク名を入力してください。",
+        });
+      }
+
+      const dueDate =
+        eventDate !== undefined
+          ? eventDate
+          : event.event_date;
+
+      if (
+        !dueDate ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(
+          dueDate
+        )
+      ) {
+        return res.status(400).json({
+          error:
+            "期限の日付が正しくありません。",
+        });
+      }
+
+      if (
+        startTime !== undefined &&
+        startTime !== null &&
+        startTime !== "" &&
+        !/^([01]\d|2[0-3]):[0-5]\d$/.test(
+          startTime
+        )
+      ) {
+        return res.status(400).json({
+          error:
+            "時間の形式が正しくありません。",
+        });
+      }
+
+      const result =
+        convertEventToTask(
+          req.params.id,
+          {
+            title:
+              title !== undefined
+                ? title.trim()
+                : undefined,
+
+            description:
+              description !== undefined
+                ? String(
+                    description
+                  ).trim()
+                : undefined,
+
+            dueDate,
+
+            dueTime:
+              startTime !== undefined
+                ? startTime || null
+                : undefined,
+
+            priority: "normal",
+            category: "other",
+            notification: "none",
+          }
+        );
+
+      if (!result.ok) {
+        if (
+          result.reason ===
+          "date_required"
+        ) {
+          return res.status(400).json({
+            error:
+              "タスクへ変更するには期限が必要です。",
+          });
+        }
+
+        return res.status(404).json({
+          error:
+            "予定が見つかりません。",
+        });
+      }
+
+      return res.json({
+        ok: true,
+        taskId: result.taskId,
+      });
+    } catch (error) {
+      console.error(error);
+
+      return res.status(500).json({
+        error:
+          "タスクへの変更に失敗しました。",
+      });
+    }
+  }
+);
+
 app.post("/api/tasks/:id/restore", (req, res) => {
   try {
     const task = getTaskById(req.params.id);
@@ -1013,9 +1556,11 @@ app.post(
       const {
         title,
         dayOfWeek,
+        daysOfWeek,
         routineTime,
         category,
         googleCalendarEnabled,
+        memo,
       } = req.body;
 
       if (
@@ -1028,15 +1573,14 @@ app.post(
         });
       }
 
-      const normalizedDayOfWeek =
-        Number(dayOfWeek);
+      const normalizedDaysOfWeek =
+        normalizeRoutineDays(
+          daysOfWeek,
+          dayOfWeek
+        );
 
       if (
-        !Number.isInteger(
-          normalizedDayOfWeek
-        ) ||
-        normalizedDayOfWeek < 0 ||
-        normalizedDayOfWeek > 6
+        !normalizedDaysOfWeek
       ) {
         return res.status(400).json({
           error:
@@ -1065,16 +1609,22 @@ app.post(
           ? category
           : "other";
 
-      const result =
+      const routine =
         createRoutine({
           title:
             title.trim(),
           dayOfWeek:
-            normalizedDayOfWeek,
+            normalizedDaysOfWeek[0],
+          daysOfWeek:
+            normalizedDaysOfWeek,
           routineTime:
             routineTime || null,
           category:
             normalizedCategory,
+          memo:
+  typeof memo === "string"
+    ? memo.trim().slice(0, 2000)
+    : "",
           googleCalendarEnabled:
             Boolean(
               googleCalendarEnabled
@@ -1084,9 +1634,8 @@ app.post(
       return res.status(201).json({
         success: true,
         routineId:
-          Number(
-            result.lastInsertRowid
-          ),
+          Number(routine.id),
+        routine,
       });
     } catch (error) {
       console.error(
@@ -1122,9 +1671,11 @@ app.put(
       const {
         title,
         dayOfWeek,
+        daysOfWeek,
         routineTime,
         category,
         googleCalendarEnabled,
+        memo,
       } = req.body;
 
       if (
@@ -1137,15 +1688,14 @@ app.put(
         });
       }
 
-      const normalizedDayOfWeek =
-        Number(dayOfWeek);
+      const normalizedDaysOfWeek =
+        normalizeRoutineDays(
+          daysOfWeek,
+          dayOfWeek
+        );
 
       if (
-        !Number.isInteger(
-          normalizedDayOfWeek
-        ) ||
-        normalizedDayOfWeek < 0 ||
-        normalizedDayOfWeek > 6
+        !normalizedDaysOfWeek
       ) {
         return res.status(400).json({
           error:
@@ -1175,23 +1725,28 @@ app.put(
           : "other";
 
       const result =
-        updateRoutineById(
-          id,
-          {
-            title:
-              title.trim(),
-            dayOfWeek:
-              normalizedDayOfWeek,
-            routineTime:
-              routineTime || null,
-            category:
-              normalizedCategory,
-            googleCalendarEnabled:
-              Boolean(
-                googleCalendarEnabled
-              ),
-          }
-        );
+  updateRoutineById(
+    id,
+    {
+      title: title.trim(),
+      dayOfWeek:
+        normalizedDaysOfWeek[0],
+      daysOfWeek:
+        normalizedDaysOfWeek,
+      routineTime:
+        routineTime || null,
+      category:
+        normalizedCategory,
+      memo:
+        typeof memo === "string"
+          ? memo.trim().slice(0, 2000)
+          : "",
+      googleCalendarEnabled:
+        Boolean(
+          googleCalendarEnabled
+        ),
+    }
+  );
 
       if (
         !result ||
@@ -1226,6 +1781,7 @@ if (
 
       return res.json({
         success: true,
+        routine,
       });
     } catch (error) {
       console.error(

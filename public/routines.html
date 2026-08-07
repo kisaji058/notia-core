@@ -1,65 +1,23 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0"
-  />
-
+  >
   <title>Notia ルーティーン一覧</title>
 
-  <link
-    rel="stylesheet"
-    href="/css/common.css"
-  />
-
-  <link
-    rel="stylesheet"
-    href="/css/routines.css"
-  />
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/routines.css">
 </head>
 
-<body>
-  <div
-  id="sheetOverlay"
-  class="sheet-overlay"
-  hidden
-></div>
-
-<div
-  id="sheetModal"
-  class="sheet-modal"
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="sheetTitle"
-  hidden
->
-  <div class="sheet-header">
-    <h3 id="sheetTitle"></h3>
-
-    <button
-      id="closeSheetButton"
-      type="button"
-      aria-label="シートを閉じる"
-    >
-      ✕
-    </button>
-  </div>
-
-  <div
-    id="sheetContent"
-    class="sheet-content"
-  ></div>
-</div>
-  <main class="app">
+<body class="routines-page">
+  <main class="routine-main">
     <header class="routine-header">
       <div class="routine-header-text">
         <h1>ルーティーン</h1>
-
-        <p>
-          毎週の予定や習慣を確認できます。
-        </p>
+        <p>毎週の予定や習慣を確認できます。</p>
       </div>
 
       <button
@@ -72,40 +30,66 @@
     </header>
 
     <section
-      class="routine-section routine-page"
+      class="routine-section"
+      aria-label="登録済みルーティーン"
     >
       <div id="routineList">
-        <p class="routine-status">
-          読み込み中...
-        </p>
+        <p class="routine-status">読み込み中...</p>
       </div>
     </section>
-
-    <nav class="bottom-nav">
-      <a href="/">
-        💬<br />
-        チャット
-      </a>
-
-      <a href="/tasks">
-        ✓<br />
-        タスク
-      </a>
-
-      <a href="/calendar">
-        📅<br />
-        カレンダー
-      </a>
-
-      <a
-        href="/routines"
-        class="active"
-      >
-        🔁<br />
-        ルーティーン
-      </a>
-    </nav>
   </main>
+
+  <nav class="bottom-nav">
+    <a href="/" aria-label="チャット">
+      <img
+        src="/images/nav/chat-unselected.png"
+        alt=""
+        class="bottom-nav-icon"
+      >
+      <span>チャット</span>
+    </a>
+
+    <a href="/today" aria-label="Today">
+      <img
+        src="/images/nav/today-unselected.png"
+        alt=""
+        class="bottom-nav-icon today-nav-icon"
+      >
+      <span>Today</span>
+    </a>
+
+    <a href="/tasks" aria-label="タスク">
+      <img
+        src="/images/nav/task-unselected.png"
+        alt=""
+        class="bottom-nav-icon bottom-nav-icon-task"
+      >
+      <span>タスク</span>
+    </a>
+
+    <a
+      href="/calendar"
+      class="active"
+      aria-current="page"
+      aria-label="カレンダー"
+    >
+      <svg
+        class="bottom-nav-icon"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <rect
+          x="4"
+          y="5"
+          width="16"
+          height="15"
+          rx="2"
+        ></rect>
+        <path d="M8 3v4M16 3v4M4 9h16"></path>
+      </svg>
+      <span>カレンダー</span>
+    </a>
+  </nav>
 
   <script src="/js/components/cardFactory.js"></script>
   <script src="/js/routines.js"></script>

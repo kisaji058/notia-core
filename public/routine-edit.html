@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+  <title>Notia ルーティーン編集</title>
+
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/routine-edit.css">
+</head>
+
+<body class="routine-edit-page">
+  <header class="chat-header">
+    <div class="chat-header-brand">
+      <img
+        class="chat-header-logo"
+        src="/images/notia-logo.png"
+        alt=""
+      >
+      <img
+        class="chat-header-wordmark"
+        src="/images/notia-wordmark.png"
+        alt="Notia"
+      >
+    </div>
+
+    <button
+      class="account-button"
+      type="button"
+      aria-label="アカウントを開く"
+      title="アカウント"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="8" r="3.5"></circle>
+        <path d="M5 20c.7-4 3.2-6 7-6s6.3 2 7 6"></path>
+      </svg>
+    </button>
+  </header>
+
+  <main class="routine-edit-main">
+    <a class="routine-back-link" href="/calendar">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m15 5-7 7 7 7"></path>
+      </svg>
+      <span>カレンダーへ戻る</span>
+    </a>
+
+    <div class="routine-edit-heading">
+      <p class="routine-edit-kicker">ROUTINE</p>
+      <h1 id="pageTitle">ルーティーン編集</h1>
+      <p id="pageDescription">
+        毎週くり返す予定や習慣を設定します。
+      </p>
+    </div>
+
+    <p
+      id="pageStatus"
+      class="routine-page-status"
+      role="status"
+      aria-live="polite"
+    >
+      読み込み中...
+    </p>
+
+    <form id="routineForm" class="routine-form" hidden>
+      <section class="routine-form-card">
+        <div class="routine-field">
+          <label for="routineTitle">タイトル</label>
+          <input
+            id="routineTitle"
+            type="text"
+            maxlength="100"
+            placeholder="例：ジム"
+            autocomplete="off"
+            required
+          >
+        </div>
+
+        <fieldset class="routine-field routine-day-field">
+          <legend>曜日</legend>
+          <p class="routine-field-help">
+            複数の曜日を選択できます
+          </p>
+
+          <div class="routine-day-options">
+            <label class="routine-day-option">
+              <input type="checkbox" name="routineDay" value="0">
+              <span>日</span>
+            </label>
+            <label class="routine-day-option">
+              <input type="checkbox" name="routineDay" value="1">
+              <span>月</span>
+            </label>
+            <label class="routine-day-option">
+              <input type="checkbox" name="routineDay" value="2">
+              <span>火</span>
+            </label>
+            <label class="routine-day-option">
+              <input type="checkbox" name="routineDay" value="3">
+              <span>水</span>
+            </label>
+            <label class="routine-day-option">
+              <input type="checkbox" name="routineDay" value="4">
+              <span>木</span>
+            </label>
+            <label class="routine-day-option">
+              <input type="checkbox" name="routineDay" value="5">
+              <span>金</span>
+            </label>
+            <label class="routine-day-option">
+              <input type="checkbox" name="routineDay" value="6">
+              <span>土</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <div class="routine-field">
+          <label for="routineTime">時間</label>
+          <input id="routineTime" type="time">
+
+          <label class="routine-toggle-row" for="noRoutineTime">
+            <span>
+              <strong>時間を設定しない</strong>
+              <small>時刻を決めず、その日のルーティーンとして表示</small>
+            </span>
+            <span class="routine-switch">
+              <input id="noRoutineTime" type="checkbox">
+              <span class="routine-switch-track" aria-hidden="true"></span>
+            </span>
+          </label>
+        </div>
+
+        <div class="routine-field">
+          <label for="routineCategory">分類</label>
+          <select id="routineCategory">
+            <option value="work">仕事</option>
+            <option value="school">学校</option>
+            <option value="shopping">買い物</option>
+            <option value="private">プライベート</option>
+            <option value="other">その他</option>
+          </select>
+        </div>
+
+        <div class="routine-field">
+          <label class="routine-toggle-row" for="googleEnabled">
+            <span>
+              <strong>Googleカレンダーにも表示</strong>
+              <small>次回の同期時に繰り返し予定として反映</small>
+            </span>
+            <span class="routine-switch">
+              <input id="googleEnabled" type="checkbox">
+              <span class="routine-switch-track" aria-hidden="true"></span>
+            </span>
+          </label>
+        </div>
+
+        <div class="routine-field">
+          <label for="routineMemo">メモ</label>
+          <textarea
+            id="routineMemo"
+            rows="4"
+            maxlength="2000"
+            placeholder="持ち物や補足など（任意）"
+          ></textarea>
+        </div>
+      </section>
+
+      <div class="routine-form-actions">
+        <button
+          id="saveRoutineButton"
+          class="routine-save-button"
+          type="submit"
+        >
+          変更を保存
+        </button>
+
+        <button
+          id="deleteRoutineButton"
+          class="routine-delete-button"
+          type="button"
+        >
+          ルーティーンを削除
+        </button>
+      </div>
+    </form>
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="/" aria-label="チャット">
+      <img
+        src="/images/nav/chat-unselected.png"
+        alt=""
+        class="bottom-nav-icon"
+      >
+      <span>チャット</span>
+    </a>
+
+    <a href="/today" aria-label="Today">
+      <img
+        src="/images/nav/today-unselected.png"
+        alt=""
+        class="bottom-nav-icon today-nav-icon"
+      >
+      <span>Today</span>
+    </a>
+
+    <a href="/tasks" aria-label="タスク">
+      <img
+        src="/images/nav/task-unselected.png"
+        alt=""
+        class="bottom-nav-icon bottom-nav-icon-task"
+      >
+      <span>タスク</span>
+    </a>
+
+    <a
+      href="/calendar"
+      class="active"
+      aria-current="page"
+      aria-label="カレンダー"
+    >
+      <svg
+        class="bottom-nav-icon"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <rect
+          x="4"
+          y="5"
+          width="16"
+          height="15"
+          rx="2"
+        ></rect>
+        <path d="M8 3v4M16 3v4M4 9h16"></path>
+      </svg>
+      <span>カレンダー</span>
+    </a>
+  </nav>
+
+  <script src="/js/routine-edit.js"></script>
+</body>
+</html>

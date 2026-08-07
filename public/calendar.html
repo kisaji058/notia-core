@@ -12,14 +12,85 @@
   <link rel="stylesheet" href="/css/calendar.css">
 </head>
 
-<body>
-  <header class="calendar-header">
+<body class="calendar-page">
+  <header class="chat-header">
+  <div class="chat-header-brand">
+    <img
+      class="chat-header-logo"
+      src="/images/notia-logo.png"
+      alt=""
+    >
+
+    <img
+      class="chat-header-wordmark"
+      src="/images/notia-wordmark.png"
+      alt="Notia"
+    >
+  </div>
+
+  <button
+    class="account-button"
+    type="button"
+    aria-label="アカウントを開く"
+    title="アカウント"
+  >
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <circle
+        cx="12"
+        cy="8"
+        r="3.5"
+      ></circle>
+
+      <path
+        d="M5 20c.7-4 3.2-6 7-6s6.3 2 7 6"
+      ></path>
+    </svg>
+  </button>
+</header>
+  <section class="calendar-controls">
+  <div
+    class="calendar-view-switch"
+    aria-label="カレンダー表示切り替え"
+  >
+    <button
+      class="calendar-view-button"
+      type="button"
+      data-calendar-view="month"
+    >
+      月
+    </button>
+
+    <button
+      class="calendar-view-button"
+      type="button"
+      data-calendar-view="week"
+    >
+      週
+    </button>
+
+    <button
+      class="calendar-view-button active"
+      type="button"
+      data-calendar-view="day"
+      aria-pressed="true"
+    >
+      日
+    </button>
+  </div>
+
+  <div class="calendar-date-nav">
     <button
       id="prevDayButton"
+      class="calendar-date-nav-button"
       type="button"
       aria-label="前の日へ"
     >
-      ←
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m15 5-7 7 7 7"></path>
+      </svg>
     </button>
 
     <div class="calendar-date-area">
@@ -33,33 +104,114 @@
           aria-label="表示する日付を選択"
         >
       </div>
-
-      <button
-        id="todayButton"
-        class="today-button"
-        type="button"
-      >
-        今日に戻る
-      </button>
     </div>
 
     <button
       id="nextDayButton"
+      class="calendar-date-nav-button"
       type="button"
       aria-label="次の日へ"
     >
-      →
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m9 5 7 7-7 7"></path>
+      </svg>
     </button>
-  </header>
 
-  <section class="calendar-sync-area">
+    <button
+      id="todayButton"
+      class="today-button"
+      type="button"
+    >
+      今日
+    </button>
+  </div>
+</section>
+
+  <div class="calendar-scroll-area">
+
+<main class="calendar-main">
+  <!-- 月表示 -->
+  <section
+    id="monthView"
+    class="calendar-view-panel month-view"
+    aria-label="月表示"
+    hidden
+  >
+    <div
+      id="monthWeekdays"
+      class="month-weekdays"
+    ></div>
+
+    <div
+      id="monthGrid"
+      class="month-grid"
+    ></div>
+  </section>
+
+  <!-- 週表示 -->
+  <section
+    id="weekView"
+    class="calendar-view-panel week-view"
+    aria-label="週表示"
+    hidden
+  >
+  <div
+  id="weekSummary"
+  class="week-summary"
+  aria-label="1週間の予定"
+></div>
+    <div
+      id="weekGrid"
+      class="week-grid"
+    ></div>
+  </section>
+
+  <!-- 日表示 -->
+  <section
+  id="dayView"
+  class="calendar-view-panel day-view"
+  aria-label="日表示"
+>
+  <section class="unscheduled">
+    <h2>時間未設定</h2>
+
+    <div id="unscheduledList"></div>
+  </section>
+
+  <section
+    id="timeline"
+    class="timeline"
+  ></section>
+</section>
+
+<section
+  class="calendar-add-actions"
+  aria-label="カレンダー操作"
+>
   <button
-    id="syncButton"
-    class="calendar-sync-button"
+    id="addEventButton"
+    class="calendar-add-button calendar-add-button--event"
     type="button"
   >
-    ↻ 同期
+    ＋ 予定を追加
   </button>
+
+  <div class="calendar-add-secondary-row">
+    <a
+  class="calendar-add-button calendar-add-button--routine"
+  href="/routine-edit.html?new=1"
+    >
+      ＋ ルーティーンを追加
+    </a>
+
+    <button
+      id="syncButton"
+      class="calendar-sync-button"
+      type="button"
+    >
+      ↻ 同期
+    </button>
+  </div>
 
   <p
     id="syncStatus"
@@ -68,41 +220,106 @@
   ></p>
 </section>
 
-  <main>
-    <section
-      id="timeline"
-      class="timeline"
-    ></section>
+</main>
 
-    <section class="unscheduled">
-      <h2>時間未設定</h2>
+</div>
 
-      <div id="unscheduledList"></div>
-    </section>
-  </main>
+<div
+  id="eventSheetOverlay"
+  class="sheet-overlay"
+  hidden
+></div>
+
+<div
+  id="eventSheetModal"
+  class="sheet-modal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="eventSheetTitle"
+  hidden
+>
+  <div class="sheet-header">
+    <h3 id="eventSheetTitle">
+      予定を追加
+    </h3>
+
+    <button
+      id="closeEventSheetButton"
+      type="button"
+      aria-label="予定編集を閉じる"
+    >
+      ✕
+    </button>
+  </div>
+
+  <div
+    id="eventSheetContent"
+    class="sheet-content"
+  ></div>
+</div>
 
   <nav class="bottom-nav">
-  <a href="/">
-    💬<br>
-    チャット
+  <a
+    href="/"
+    aria-label="チャット"
+  >
+    <img
+      src="/images/nav/chat-unselected.png"
+      alt=""
+      class="bottom-nav-icon"
+    >
+    <span>チャット</span>
   </a>
 
-  <a href="/tasks">
-    ✓<br>
-    タスク
+  <a
+    href="/today"
+    aria-label="Today"
+  >
+    <img
+      src="/images/nav/today-unselected.png"
+      alt=""
+      class="bottom-nav-icon today-nav-icon"
+    >
+    <span>Today</span>
+  </a>
+
+  <a
+    href="/tasks"
+    aria-label="タスク"
+  >
+    <img
+      src="/images/nav/task-unselected.png"
+      alt=""
+      class="bottom-nav-icon bottom-nav-icon-task"
+    >
+    <span>タスク</span>
   </a>
 
   <a
     href="/calendar"
     class="active"
+    aria-current="page"
+    aria-label="カレンダー"
   >
-    📅<br>
-    カレンダー
-  </a>
+    <svg
+      class="bottom-nav-icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <rect
+        x="4"
+        y="5"
+        width="16"
+        height="15"
+        rx="2"
+      ></rect>
 
-  <a href="/routines">
-    🔁<br>
-    ルーティーン
+      <path
+        d="M8 3v4M16 3v4M4 9h16"
+      ></path>
+    </svg>
+
+    <span>カレンダー</span>
   </a>
 </nav>
 
