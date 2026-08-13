@@ -11,76 +11,110 @@ class ConversationManager {
 // 1. 時間確認待ちへの回答
 // =====================
 if (
-  session.mode === "waiting_due_time" &&
-  session.targetTaskId
+  session.mode === "waiting_due_time"
 ) {
+  const pendingTasks =
+    Array.isArray(session.pendingTasks)
+      ? session.pendingTasks
+      : session.targetTaskId
+        ? [
+            {
+              id: session.targetTaskId,
+              title:
+                session.targetTaskTitle ||
+                "タスク",
+            },
+          ]
+        : [];
+
+  const currentTaskIndex =
+    session.currentTaskIndex ?? 0;
+
+  const currentTask =
+    pendingTasks[currentTaskIndex];
+
+  if (!currentTask) {
+    sessionManager.clear(userId);
+
+    return {
+      handled: false,
+      systemHint: "",
+      analysis,
+    };
+  }
+
   let wantsNoDueTime =
-  ConversationIntentHelper.isNoDueTime(message);
+    ConversationIntentHelper.isNoDueTime(
+      message
+    );
 
-let wantsCancel =
-  !wantsNoDueTime &&
-  ConversationIntentHelper.isCancel(message);
+  let wantsCancel =
+    !wantsNoDueTime &&
+    ConversationIntentHelper.isCancel(
+      message
+    );
 
-let analyzedDueTime =
-  ConversationIntentHelper.parseDueTime(message) ??
-  analysis.updates?.dueTime ??
-  analysis.dueTime ??
-  null;
-
-// ローカル判定で判断できなかった場合だけ、
-// Notiaが返答の意味を判断する
-if (
-  !wantsNoDueTime &&
-  !wantsCancel &&
-  !analyzedDueTime
-) {
-  const confirmation =
-    await conversationAnalyzer
-      .analyzeDueTimeConfirmation(
-        message,
-        {
-          mode: session.mode,
-          task: {
-            id: session.targetTaskId,
-            title:
-              session.targetTaskTitle || null,
-          },
-        }
-      );
+  let analyzedDueTime =
+    ConversationIntentHelper.parseDueTime(
+      message
+    ) ??
+    analysis.updates?.dueTime ??
+    analysis.dueTime ??
+    null;
 
   if (
-    confirmation.confirmationIntent ===
-    "no_due_time"
+    !wantsNoDueTime &&
+    !wantsCancel &&
+    !analyzedDueTime
   ) {
-    wantsNoDueTime = true;
+    const confirmation =
+      await conversationAnalyzer
+        .analyzeDueTimeConfirmation(
+          message,
+          {
+            mode: session.mode,
+            task: {
+              id: currentTask.id,
+              title:
+                currentTask.title ||
+                null,
+            },
+          }
+        );
+
+    if (
+      confirmation.confirmationIntent ===
+      "no_due_time"
+    ) {
+      wantsNoDueTime = true;
+    }
+
+    if (
+      confirmation.confirmationIntent ===
+      "cancel"
+    ) {
+      wantsCancel = true;
+    }
+
+    if (
+      confirmation.confirmationIntent ===
+      "set_due_time"
+    ) {
+      analyzedDueTime =
+        ConversationIntentHelper
+          .parseDueTime(
+            confirmation.dueTime
+          );
+    }
   }
 
-  if (
-    confirmation.confirmationIntent ===
-    "cancel"
-  ) {
-    wantsCancel = true;
-  }
-
-  if (
-    confirmation.confirmationIntent ===
-    "set_due_time"
-  ) {
-    analyzedDueTime =
-      ConversationIntentHelper.parseDueTime(
-        confirmation.dueTime
-      );
-  }
-}
-
-  if (wantsNoDueTime || wantsCancel) {
+  if (wantsCancel) {
     sessionManager.clear(userId);
 
     return {
       handled: true,
-      reply: wantsCancel
-        ? "承知しました。時間の設定を取りやめました。"
-        : "承知しました。時間は未定のままにしておきます。",
+      reply:
+        "承知しました。時間の設定を取りやめました。",
       analysis: {
         ...analysis,
         intent: "general_chat",
@@ -89,7 +123,10 @@ if (
     };
   }
 
-  if (!analyzedDueTime) {
+  if (
+    !wantsNoDueTime &&
+    !analyzedDueTime
+  ) {
     return {
       handled: true,
       reply: [
@@ -101,19 +138,62 @@ if (
     };
   }
 
-  const fixedAnalysis = {
-    ...analysis,
-    intent: "task_update",
-    targetTaskId: session.targetTaskId,
-    targetTaskTitle:
-      session.targetTaskTitle || null,
-    updates: {
-      dueTime: analyzedDueTime,
-    },
-  };
+  let result = null;
 
-  const result =
-    taskManager.handle(fixedAnalysis);
+  if (!wantsNoDueTime) {
+    const fixedAnalysis = {
+      ...analysis,
+      intent: "task_update",
+      targetTaskId:
+        currentTask.id,
+      targetTaskTitle:
+        currentTask.title || null,
+      updates: {
+        dueTime: analyzedDueTime,
+      },
+    };
+
+    result =
+      taskManager.handle(
+        fixedAnalysis
+      );
+  }
+
+  const nextTaskIndex =
+    currentTaskIndex + 1;
+
+  const nextTask =
+    pendingTasks[nextTaskIndex];
+
+  const currentReply =
+    wantsNoDueTime
+      ? `「${currentTask.title}」は時間未定のままにしておきます。`
+      : `「${currentTask.title}」の時間を${analyzedDueTime}に設定しました。`;
+
+  if (nextTask) {
+    sessionManager.set(
+      userId,
+      {
+        mode:
+          "waiting_due_time",
+        pendingTasks,
+        currentTaskIndex:
+          nextTaskIndex,
+      }
+    );
+
+    return {
+      handled: true,
+      reply: [
+        currentReply,
+        "",
+        `続いて「${nextTask.title}」の時間は決まっていますか？`,
+        "未定の場合は「未定」と言ってください。",
+      ].join("\n"),
+      analysis,
+      taskResult: result,
+    };
+  }
 
   sessionManager.clear(userId);
 
@@ -121,11 +201,11 @@ if (
     handled: true,
     reply: [
       "承知しました。",
-      `「${session.targetTaskTitle || "タスク"}」の時間を${analyzedDueTime}に設定しました。`,
+      currentReply,
       "",
       "必要であれば、通知も設定できます。",
     ].join("\n"),
-    analysis: fixedAnalysis,
+    analysis,
     taskResult: result,
   };
 }

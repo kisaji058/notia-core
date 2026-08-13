@@ -51,7 +51,8 @@ class TaskManager {
       continue;
     }
   
-  const taskKey = `${task.title}::${task.dueDate || ""}`;
+  const taskKey =
+  `${task.title}::${task.dueDate || ""}::${task.dueTime || ""}`;
 
 if (processedTaskKeys.has(taskKey)) {
   console.log(
@@ -67,7 +68,8 @@ processedTaskKeys.add(taskKey);
     const existingTasks =
   findActiveTasks(
     task.title,
-    task.dueDate || null
+    task.dueDate || null,
+    task.dueTime || null
   );
 
     if (existingTasks.length > 0) {

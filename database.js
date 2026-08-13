@@ -429,28 +429,38 @@ function completeTask(id) {
 
 function findActiveTasks(
   title = null,
-  dueDate = null
+  dueDate = null,
+  dueTime = null
 ) {
   if (title) {
     return db.prepare(`
       SELECT *
-FROM tasks
-WHERE status = 'active'
-  AND title = ?
-  AND (
-    due_date = ?
-    OR (
-      due_date IS NULL
-      AND ? IS NULL
-    )
-  )
-ORDER BY id DESC
+      FROM tasks
+      WHERE status = 'active'
+        AND title = ?
+        AND (
+          due_date = ?
+          OR (
+            due_date IS NULL
+            AND ? IS NULL
+          )
+        )
+        AND (
+          due_time = ?
+          OR (
+            (due_time IS NULL OR due_time = '')
+            AND (? IS NULL OR ? = '')
+          )
+        )
+      ORDER BY id DESC
     `).all(
-  title,
-  dueDate,
-  dueDate
-);
-
+      title,
+      dueDate,
+      dueDate,
+      dueTime,
+      dueTime,
+      dueTime
+    );
   }
 
   return db.prepare(`

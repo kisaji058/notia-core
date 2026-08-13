@@ -241,21 +241,31 @@ const taskReply =
 
   if (
   taskResult?.created &&
-  analysis.dueDate &&
-  !analysis.dueTime &&
-  taskResult.createdTasks?.length > 0
+  Array.isArray(taskResult.createdTasks)
 ) {
-  const createdTask =
-    taskResult.createdTasks[0];
+  const pendingDueTimeTasks =
+    taskResult.createdTasks
+      .filter(
+        (task) =>
+          task.dueDate &&
+          !task.dueTime
+      )
+      .map((task) => ({
+        id: task.id,
+        title: task.title,
+      }));
 
-  const sessionManager =
-    require("../session/SessionManager");
+  if (pendingDueTimeTasks.length > 0) {
+    const sessionManager =
+      require("../session/SessionManager");
 
-  sessionManager.set("default", {
-    mode: "waiting_due_time",
-    targetTaskId: createdTask.id,
-    targetTaskTitle: createdTask.title,
-  });
+    sessionManager.set("default", {
+      mode: "waiting_due_time",
+      pendingTasks:
+        pendingDueTimeTasks,
+      currentTaskIndex: 0,
+    });
+  }
 }
 
 if (taskReply) {

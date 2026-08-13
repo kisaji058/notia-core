@@ -370,18 +370,6 @@ ${isCompletedTask
               item.title
             )}
           </h3>
-
-          ${
-            subtitle
-              ? `
-                <p class="timeline-item-subtitle">
-                  ${escapeCardHtml(
-                    subtitle
-                  )}
-                </p>
-              `
-              : ""
-          }
         </div>
 
         <div class="timeline-item-right">
@@ -441,16 +429,6 @@ function createUnscheduledCard(item) {
             item.title
           )}
         </h3>
-
-        ${
-          isImportantTask
-            ? `
-              <p>
-                重要タスク
-              </p>
-            `
-            : ""
-        }
       </div>
 
       <div class="timeline-item-right">

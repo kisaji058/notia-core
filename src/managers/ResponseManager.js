@@ -376,12 +376,22 @@ function createTaskAdvice(
 
   // 日付は決まったが、時間が未設定
   if (
-    taskResult.created &&
-    analysis.dueDate &&
-    !analysis.dueTime
-  ) {
-    return "時間は決まっていますか？";
+  taskResult.created &&
+  Array.isArray(
+    taskResult.createdTasks
+  )
+) {
+  const firstUntimedTask =
+    taskResult.createdTasks.find(
+      (task) =>
+        task.dueDate &&
+        !task.dueTime
+    );
+
+  if (firstUntimedTask) {
+    return `「${firstUntimedTask.title}」の時間は決まっていますか？`;
   }
+}
 
   // 日付と時間が最初から決まっている
   if (
