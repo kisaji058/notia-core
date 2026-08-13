@@ -50,9 +50,7 @@ console.log(
   account.email
 );
 
-    res.send(
-      "Google Calendarとの接続に成功しました。"
-    );
+    res.redirect("/calendar");
   } catch (error) {
     console.error(
       "Google OAuth callback error:",
@@ -64,42 +62,5 @@ console.log(
     );
   }
 });
-
-// Google Calendarの予定取得
-router.get(
-  "/google/callback",
-  async (req, res) => {
-    try {
-      const { code } = req.query;
-
-      if (!code) {
-        return res.status(400).send(
-          "認証コードがありません。"
-        );
-      }
-
-      const account =
-        await googleProvider.connect(code);
-
-      console.log(
-        "Google OAuth completed:",
-        account.email
-      );
-
-      res.send(
-        "Google Calendarとの接続に成功しました。"
-      );
-    } catch (error) {
-      console.error(
-        "Google OAuth callback error:",
-        error
-      );
-
-      res.status(500).send(
-        "Google Calendarとの接続に失敗しました。"
-      );
-    }
-  }
-);
 
 module.exports = router;
