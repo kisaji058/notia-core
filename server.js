@@ -228,7 +228,39 @@ app.get("/api/integrations", (req, res) => {
 app.use("/auth", googleAuthRouter);
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
+app.use(
+  express.static(
+    path.join(__dirname, "public"),
+    {
+      etag: true,
+      maxAge: 0,
+
+      setHeaders: (res, filePath) => {
+        if (
+          filePath.endsWith(".html")
+        ) {
+          res.setHeader(
+            "Cache-Control",
+            "no-cache"
+          );
+
+          return;
+        }
+
+        if (
+          /\.(css|js|png|jpg|jpeg|webp|svg|ico)$/i.test(
+            filePath
+          )
+        ) {
+          res.setHeader(
+            "Cache-Control",
+            "public, max-age=3600"
+          );
+        }
+      },
+    }
+  )
+);
 
 app.get("/api/notification-settings", (req, res) => {
   try {
