@@ -596,8 +596,34 @@ heading.textContent =
   detailLink.className =
     "task-created-card-link";
 
+  if (itemType === "event") {
+  const params =
+    new URLSearchParams();
+
+  params.set(
+    "eventId",
+    String(task.id)
+  );
+
+  const eventDate =
+    task.due_date ??
+    task.dueDate;
+
+  if (eventDate) {
+    params.set(
+      "date",
+      eventDate
+    );
+  }
+
   detailLink.href =
-    `/tasks/${encodeURIComponent(task.id)}`;
+    `/calendar?${params.toString()}`;
+} else {
+  detailLink.href =
+    `/tasks/${encodeURIComponent(
+      task.id
+    )}`;
+}
 
   detailLink.textContent =
     "詳細を見る";

@@ -77,24 +77,35 @@ if (task.itemType === "event") {
   }
 
   const eventId = addEvent(
-    task.title,
-    task.description || "",
-    task.dueDate,
-    task.dueTime || null,
-    null,
-    ""
-  );
+  task.title,
+  task.description || "",
+  task.dueDate,
+  task.dueTime || null,
+  null,
+  "",
+  task.priority || "normal",
+  task.category || "other",
+  task.notification || "none"
+);
 
   console.log("✅ 予定登録:", task.title);
 
   createdTasks.push({
-    id: eventId,
-    title: task.title,
-    description: task.description || "",
-    dueDate: task.dueDate,
-    dueTime: task.dueTime || null,
-    itemType: "event",
-  });
+  id: eventId,
+  title: task.title,
+  description:
+    task.description || "",
+  dueDate: task.dueDate,
+  dueTime:
+    task.dueTime || null,
+  priority:
+    task.priority || "normal",
+  category:
+    task.category || "other",
+  notification:
+    task.notification || "none",
+  itemType: "event",
+});
 
   continue;
 }

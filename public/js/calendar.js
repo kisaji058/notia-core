@@ -63,6 +63,27 @@ const todayString = new Date().toLocaleDateString("sv-SE", {
 let selectedDate = todayString;
 let currentView = "day";
 
+const calendarParams =
+  new URLSearchParams(
+    window.location.search
+  );
+
+const requestedDate =
+  calendarParams.get("date");
+
+if (
+  requestedDate &&
+  /^\d{4}-\d{2}-\d{2}$/.test(
+    requestedDate
+  )
+) {
+  selectedDate =
+    requestedDate;
+}
+
+let pendingEventId =
+  calendarParams.get("eventId");
+
 function createTimeline() {
   timeline.innerHTML = "";
 
@@ -2944,19 +2965,36 @@ async function loadCalendar() {
       data.externalEvents ?? [];
 
     if (currentView === "day") {
-      renderCalendar(
-        tasks,
-        events,
-        routines,
-        externalEvents
+  renderCalendar(
+    tasks,
+    events,
+    routines,
+    externalEvents
+  );
+
+  if (pendingEventId !== null) {
+    const targetEvent =
+      events.find(
+        (event) =>
+          String(event.id) ===
+          String(pendingEventId)
       );
 
-      setTimeout(() => {
-        scrollToCurrentTime();
-      }, 50);
+    if (targetEvent) {
+      pendingEventId = null;
 
-      return;
+      openEventSheet(
+        targetEvent
+      );
     }
+  }
+
+  setTimeout(() => {
+    scrollToCurrentTime();
+  }, 50);
+
+  return;
+}
 
     if (currentView === "week") {
       renderWeek(

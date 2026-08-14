@@ -52,34 +52,136 @@ function createTaskCreatedReply(
   taskResult,
   analysis
 ) {
+  const createdTasks =
+    Array.isArray(
+      taskResult.createdTasks
+    )
+      ? taskResult.createdTasks
+      : [];
+
+  // 複数件作成
+  if (createdTasks.length > 1) {
+    const lines = [
+      "承知しました。",
+    ];
+
+    for (const task of createdTasks) {
+      const title =
+        task.title || "名称未設定";
+
+      const dueText =
+        formatDueDateForReply(
+          task.dueDate
+        );
+
+      const timeText =
+        formatDueTimeForReply(
+          task.dueTime
+        );
+
+      const typeText =
+        task.itemType === "event"
+          ? "予定"
+          : "タスク";
+
+      let scheduleText = "";
+
+      if (dueText && timeText) {
+        scheduleText =
+          `${dueText} ${timeText}の`;
+      } else if (dueText) {
+        scheduleText =
+          task.itemType === "event"
+            ? `${dueText}の`
+            : `${dueText}までの`;
+      } else if (timeText) {
+        scheduleText =
+          `${timeText}の`;
+      }
+
+      if (scheduleText) {
+        lines.push(
+          `「${title}」を${scheduleText}${typeText}として登録しました。`
+        );
+      } else {
+        lines.push(
+          `「${title}」を${typeText}として登録しました。`
+        );
+      }
+    }
+
+    const notifications =
+      createdTasks
+        .map(
+          (task) =>
+            task.notification ||
+            "none"
+        );
+
+    const allSameNotification =
+      notifications.length > 0 &&
+      notifications.every(
+        (value) =>
+          value === notifications[0]
+      );
+
+    if (
+      allSameNotification &&
+      notifications[0] === "day_before"
+    ) {
+      lines.push(
+        "どちらも前日に通知します。"
+      );
+    }
+
+    return lines.join("\n");
+  }
+
+  // 1件作成
+  const createdTask =
+    createdTasks[0];
+
   const title =
+    createdTask?.title ||
     analysis.title ||
     taskResult.title ||
     "タスク";
 
+  const dueDate =
+    createdTask?.dueDate ??
+    analysis.dueDate;
+
+  const dueTime =
+    createdTask?.dueTime ??
+    analysis.dueTime;
+
   const dueText =
     formatDueDateForReply(
-      analysis.dueDate
+      dueDate
     );
 
   const timeText =
     formatDueTimeForReply(
-      analysis.dueTime
+      dueTime
     );
 
   let scheduleText = "";
 
   if (dueText && timeText) {
-    scheduleText = `${dueText} ${timeText}で`;
+    scheduleText =
+      `${dueText} ${timeText}で`;
   } else if (dueText) {
-    scheduleText = `${dueText}までのタスクとして`;
+    scheduleText =
+      `${dueText}までのタスクとして`;
   } else if (timeText) {
-    scheduleText = `${timeText}で`;
+    scheduleText =
+      `${timeText}で`;
   }
 
-  const reply = scheduleText
-    ? `承知しました。\n「${title}」を${scheduleText}登録しました。`
-    : `承知しました。\n「${title}」を登録しました。`;
+  const reply =
+    scheduleText
+      ? `承知しました。\n「${title}」を${scheduleText}登録しました。`
+      : `承知しました。\n「${title}」を登録しました。`;
 
   return appendAdvice(
     reply,

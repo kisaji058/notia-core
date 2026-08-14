@@ -427,9 +427,19 @@ task_createの場合:
 - priorityは通常normal。
 - 今日中、緊急、至急、重要などはimportant。
 - categoryを判断できる場合は分類する。
+- ユーザーが時刻を指定した場合は、
+  対応するtasks要素のdueTimeに必ずHH:mm形式で入れる。
+- 時刻が指定されていない場合のみdueTimeをnullにする。
+- 複数のタスク・予定がある場合は、
+  それぞれの行動に対応する日時を各tasks要素へ個別に設定する。
+- eventの場合も時刻はdueTimeへ入れる。
 - 判断できない場合はcategoryをnullにする。
 - notificationの指定がなければnullにする。
 - updatesのすべての項目はnullにする。
+- ユーザーが通知を指定した場合は、
+  対応するtasks要素のnotificationへ必ず設定する。
+- 複数のタスク・予定にまとめて通知指定がある場合は、
+  指定対象となる各tasks要素へnotificationを設定する。
 
 カテゴリの判断例:
 
