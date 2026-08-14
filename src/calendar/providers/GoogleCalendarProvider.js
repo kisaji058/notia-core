@@ -299,50 +299,105 @@ async function createEventFromTask(task) {
     );
   }
 
-  if (!task.due_date || !task.due_time) {
+  if (!task.due_date) {
     throw new Error(
-      "日付と時間があるタスクだけ同期できます。"
+      "日付があるタスクだけ同期できます。"
     );
   }
 
   const calendar =
     getAuthenticatedCalendar();
 
-  const startDateTime =
-    `${task.due_date}T${task.due_time}:00+09:00`;
+  let start;
+  let end;
 
-  const start =
-    new Date(startDateTime);
+  // =====================
+  // 時間あり
+  // =====================
 
-  if (Number.isNaN(start.getTime())) {
-    throw new Error(
-      "タスクの日時形式が正しくありません。"
-    );
+  if (task.due_time) {
+    const startDateTime =
+      `${task.due_date}T${task.due_time}:00+09:00`;
+
+    const startDate =
+      new Date(startDateTime);
+
+    if (
+      Number.isNaN(
+        startDate.getTime()
+      )
+    ) {
+      throw new Error(
+        "タスクの日時形式が正しくありません。"
+      );
+    }
+
+    const endDate =
+      new Date(
+        startDate.getTime() +
+        60 * 60 * 1000
+      );
+
+    start = {
+      dateTime:
+        startDate.toISOString(),
+      timeZone: "Asia/Tokyo",
+    };
+
+    end = {
+      dateTime:
+        endDate.toISOString(),
+      timeZone: "Asia/Tokyo",
+    };
   }
 
-  const end = new Date(
-    start.getTime() + 60 * 60 * 1000
-  );
+  // =====================
+  // 時間なし → 終日予定
+  // =====================
+
+  else {
+    const endDate =
+      new Date(
+        `${task.due_date}T00:00:00Z`
+      );
+
+    endDate.setUTCDate(
+      endDate.getUTCDate() + 1
+    );
+
+    const nextDate =
+      endDate
+        .toISOString()
+        .slice(0, 10);
+
+    start = {
+      date: task.due_date,
+    };
+
+    end = {
+      date: nextDate,
+    };
+  }
 
   const response =
     await calendar.events.insert({
       calendarId: "primary",
+
       requestBody: {
         summary: task.title,
+
         description:
           task.description || "",
-        start: {
-          dateTime: start.toISOString(),
-          timeZone: "Asia/Tokyo",
-        },
-        end: {
-          dateTime: end.toISOString(),
-          timeZone: "Asia/Tokyo",
-        },
+
+        start,
+
+        end,
+
         extendedProperties: {
           private: {
             source: "notia",
-            notiaTaskId: String(task.id),
+            notiaTaskId:
+              String(task.id),
           },
         },
       },
@@ -352,11 +407,16 @@ async function createEventFromTask(task) {
     "Google event created:",
     {
       id: response.data.id,
-      summary: response.data.summary,
-      start: response.data.start,
-      end: response.data.end,
-      htmlLink: response.data.htmlLink,
-      organizer: response.data.organizer,
+      summary:
+        response.data.summary,
+      start:
+        response.data.start,
+      end:
+        response.data.end,
+      htmlLink:
+        response.data.htmlLink,
+      organizer:
+        response.data.organizer,
     }
   );
 

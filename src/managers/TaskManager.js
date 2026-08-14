@@ -1,5 +1,6 @@
 const {
   addTask,
+  addEvent,
   findActiveTasks,
   updateTaskById,
   completeTaskById,
@@ -39,6 +40,7 @@ class TaskManager {
             priority: analysis.priority,
             category: analysis.category,
             notification: analysis.notification,
+            itemType: analysis.itemType,
           },
         ];
 
@@ -65,6 +67,38 @@ if (processedTaskKeys.has(taskKey)) {
 
 processedTaskKeys.add(taskKey);
 
+if (task.itemType === "event") {
+  if (!task.dueDate) {
+    console.log(
+      "予定の日付がないため登録をスキップ:",
+      task.title
+    );
+    continue;
+  }
+
+  const eventId = addEvent(
+    task.title,
+    task.description || "",
+    task.dueDate,
+    task.dueTime || null,
+    null,
+    ""
+  );
+
+  console.log("✅ 予定登録:", task.title);
+
+  createdTasks.push({
+    id: eventId,
+    title: task.title,
+    description: task.description || "",
+    dueDate: task.dueDate,
+    dueTime: task.dueTime || null,
+    itemType: "event",
+  });
+
+  continue;
+}
+
     const existingTasks =
   findActiveTasks(
     task.title,
@@ -85,7 +119,10 @@ processedTaskKeys.add(taskKey);
   task.priority || "normal",
   task.category || "other",
   task.dueTime || null,
-  task.notification || "none"
+  task.notification || "none",
+  task.itemType === "event"
+    ? "event"
+    : "task"
 );
 
     console.log("✅ タスク登録:", task.title);
@@ -99,6 +136,10 @@ processedTaskKeys.add(taskKey);
       priority: task.priority || "normal",
       category: task.category || "other",
       notification: task.notification || "none",
+      itemType:
+  task.itemType === "event"
+    ? "event"
+    : "task",
     });
   }
 

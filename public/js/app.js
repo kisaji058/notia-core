@@ -1,6 +1,17 @@
 const chat = document.getElementById("chat");
 const chatForm = document.getElementById("chatForm");
 const messageInput = document.getElementById("messageInput");
+const attachmentButton =
+  document.querySelector(
+    ".attachment-button"
+  );
+
+const attachmentInput =
+  document.getElementById(
+    "attachmentInput"
+  );
+
+let selectedAttachment = null;
 const sendButton =
   chatForm.querySelector(
     'button[type="submit"]'
@@ -10,6 +21,79 @@ const todayNextSchedule =
     "todayNextSchedule"
   );
 let isSending = false;
+
+function clearAttachmentPreview() {
+  selectedAttachment = null;
+
+  if (attachmentInput) {
+    attachmentInput.value = "";
+  }
+
+  document
+    .querySelector(
+      ".attachment-preview"
+    )
+    ?.remove();
+}
+
+function showAttachmentPreview(file) {
+  document
+    .querySelector(
+      ".attachment-preview"
+    )
+    ?.remove();
+
+  const preview =
+    document.createElement("div");
+
+  preview.className =
+    "attachment-preview";
+
+  const fileName =
+    document.createElement("span");
+
+  fileName.className =
+    "attachment-preview-name";
+
+  fileName.textContent =
+    file.name;
+
+  const removeButton =
+    document.createElement("button");
+
+  removeButton.type =
+    "button";
+
+  removeButton.className =
+    "attachment-preview-remove";
+
+  removeButton.setAttribute(
+    "aria-label",
+    "添付を解除"
+  );
+
+  removeButton.textContent = "×";
+
+  removeButton.addEventListener(
+    "click",
+    () => {
+      clearAttachmentPreview();
+    }
+  );
+
+  preview.appendChild(
+    fileName
+  );
+
+  preview.appendChild(
+    removeButton
+  );
+
+  chatForm.insertBefore(
+    preview,
+    messageInput
+  );
+}
 
 function getJapanDateString(date = new Date()) {
   return date.toLocaleDateString(
@@ -469,8 +553,15 @@ function addCreatedTaskCard(task) {
   heading.className =
     "task-created-card-heading";
 
-  heading.textContent =
-    "タスクを登録しました";
+  const itemType =
+  task.item_type ??
+  task.itemType ??
+  "task";
+
+heading.textContent =
+  itemType === "event"
+    ? "予定を登録しました"
+    : "タスクを登録しました";
 
   const title =
     document.createElement("p");
@@ -479,9 +570,13 @@ function addCreatedTaskCard(task) {
     "task-created-card-title";
 
   title.textContent =
-    task.title ||
-    task.task_name ||
-    "名称未設定のタスク";
+  task.title ||
+  task.task_name ||
+  (
+    itemType === "event"
+      ? "名称未設定の予定"
+      : "名称未設定のタスク"
+  );
 
   const due =
     document.createElement("p");
@@ -533,6 +628,1189 @@ function addCreatedTaskCards(taskResult) {
       addCreatedTaskCard(task);
     }
   );
+}
+
+function formatDocumentCandidateDate(
+  date,
+  time
+) {
+  if (!date) {
+    return "日付未確定";
+  }
+
+  const parsed =
+    new Date(
+      `${date}T00:00:00+09:00`
+    );
+
+  const dateText =
+    parsed.toLocaleDateString(
+      "ja-JP",
+      {
+        month: "numeric",
+        day: "numeric",
+        weekday: "short",
+        timeZone: "Asia/Tokyo",
+      }
+    );
+
+  if (!time) {
+    return dateText;
+  }
+
+  return `${dateText} ${time}`;
+}
+
+function refreshDocumentCandidateRow(
+  row,
+  item
+) {
+  const type =
+    row.querySelector(
+      ".document-candidate-type"
+    );
+
+  const title =
+    row.querySelector(
+      ".document-candidate-title"
+    );
+
+  const date =
+    row.querySelector(
+      ".document-candidate-date"
+    );
+
+  const details = [
+    ...row.querySelectorAll(
+      ".document-candidate-detail"
+    ),
+  ];
+
+  details.forEach(
+    (element) => element.remove()
+  );
+
+  if (type) {
+    type.textContent =
+      item.type === "event"
+        ? "予定"
+        : "タスク";
+  }
+
+  if (title) {
+    title.textContent =
+      item.title ||
+      "名称未設定";
+  }
+
+  const candidateTime =
+    item.type === "event"
+      ? item.startTime
+      : item.dueTime;
+
+  if (date) {
+    date.textContent =
+      formatDocumentCandidateDate(
+        item.date,
+        candidateTime
+      );
+  }
+
+  const body =
+    row.querySelector(
+      ".document-candidate-body"
+    );
+
+  if (!body) {
+    return;
+  }
+
+  if (
+    item.type === "event" &&
+    item.location
+  ) {
+    const location =
+      document.createElement("p");
+
+    location.className =
+      "document-candidate-detail";
+
+    location.textContent =
+      `場所：${item.location}`;
+
+    body.appendChild(location);
+  }
+
+  if (item.description) {
+    const description =
+      document.createElement("p");
+
+    description.className =
+      "document-candidate-detail";
+
+    description.textContent =
+      item.description;
+
+    body.appendChild(
+      description
+    );
+  }
+}
+
+function openDocumentCandidateEditor(
+  item,
+  row
+) {
+  document
+    .querySelector(
+      ".document-editor-overlay"
+    )
+    ?.remove();
+
+  const overlay =
+    document.createElement("div");
+
+  overlay.className =
+    "document-editor-overlay";
+
+  const modal =
+    document.createElement("section");
+
+  modal.className =
+    "document-editor-modal";
+
+  modal.innerHTML = `
+    <div class="document-editor-header">
+      <h2>
+        ${
+          item.type === "event"
+            ? "予定を編集"
+            : "タスクを編集"
+        }
+      </h2>
+
+      <button
+        type="button"
+        class="document-editor-close"
+        aria-label="閉じる"
+      >
+        ×
+      </button>
+    </div>
+
+    <form
+      class="document-editor-form"
+    >
+      <div class="document-editor-type-switch">
+        <label>
+          <input
+            type="radio"
+            name="documentItemType"
+            value="task"
+            ${
+              item.type === "task"
+                ? "checked"
+                : ""
+            }
+          >
+          <span>タスク</span>
+        </label>
+
+        <label>
+          <input
+            type="radio"
+            name="documentItemType"
+            value="event"
+            ${
+              item.type === "event"
+                ? "checked"
+                : ""
+            }
+          >
+          <span>予定</span>
+        </label>
+      </div>
+
+      <label
+        class="document-sheet-label"
+        for="documentTitle"
+      >
+        タイトル
+      </label>
+
+      <input
+        id="documentTitle"
+        class="document-sheet-input"
+        name="title"
+        type="text"
+        required
+      >
+
+      <label
+        class="document-sheet-label"
+        for="documentDate"
+      >
+        日付
+      </label>
+
+      <input
+        id="documentDate"
+        class="document-sheet-input"
+        name="date"
+        type="date"
+      >
+
+      <div
+        class="document-editor-event-only"
+        data-event-field
+      >
+        <div class="document-editor-time-fields">
+          <div>
+            <label
+              class="document-sheet-label"
+              for="documentStartTime"
+            >
+              開始
+            </label>
+
+            <input
+              id="documentStartTime"
+              class="document-sheet-input"
+              name="startTime"
+              type="time"
+            >
+          </div>
+
+          <div>
+            <label
+              class="document-sheet-label"
+              for="documentEndTime"
+            >
+              終了
+            </label>
+
+            <input
+              id="documentEndTime"
+              class="document-sheet-input"
+              name="endTime"
+              type="time"
+            >
+          </div>
+        </div>
+
+        <p class="document-sheet-help">
+          時間を空欄にすると終日予定になります。
+        </p>
+      </div>
+
+      <section class="document-organize-card">
+        <h3 class="document-organize-title">
+          整理
+        </h3>
+
+        <div class="document-organize-row">
+          <span class="document-organize-label">
+            分類
+          </span>
+
+          <select
+            class="document-organize-select"
+            name="category"
+          >
+            <option value="work">
+              仕事
+            </option>
+
+            <option value="school">
+              学校
+            </option>
+
+            <option value="private">
+              プライベート
+            </option>
+
+            <option value="shopping">
+              買い物
+            </option>
+
+            <option value="other">
+              その他
+            </option>
+          </select>
+        </div>
+
+        <div class="document-organize-row">
+          <span class="document-organize-label">
+            優先度
+          </span>
+
+          <div class="document-priority-switch">
+            <label>
+              <input
+                type="radio"
+                name="priority"
+                value="normal"
+              >
+              <span>通常</span>
+            </label>
+
+            <label>
+              <input
+                type="radio"
+                name="priority"
+                value="important"
+              >
+              <span>重要</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="document-organize-row">
+          <span class="document-organize-label">
+            通知
+          </span>
+
+          <select
+            class="document-organize-select"
+            name="notification"
+          >
+            <option value="none">
+              通知なし
+            </option>
+
+            <option value="same_day">
+              当日
+            </option>
+
+            <option value="at_time">
+              時刻になったら
+            </option>
+
+            <option value="10_minutes_before">
+              10分前
+            </option>
+
+            <option value="30_minutes_before">
+              30分前
+            </option>
+
+            <option value="1_hour_before">
+              1時間前
+            </option>
+
+            <option value="day_before">
+              前日
+            </option>
+          </select>
+        </div>
+      </section>
+
+      <div
+        class="document-editor-event-only"
+        data-event-field
+      >
+        <label
+          class="document-sheet-label"
+          for="documentLocation"
+        >
+          場所
+        </label>
+
+        <input
+          id="documentLocation"
+          class="document-sheet-input"
+          name="location"
+          type="text"
+          placeholder="場所"
+        >
+      </div>
+
+      <label
+        class="document-sheet-label"
+        for="documentDescription"
+      >
+        備考
+      </label>
+
+      <textarea
+        id="documentDescription"
+        class="document-sheet-input document-sheet-textarea"
+        name="description"
+        rows="5"
+      ></textarea>
+
+      <div class="document-editor-actions">
+        <button
+          type="button"
+          class="document-editor-cancel"
+        >
+          キャンセル
+        </button>
+
+        <button
+          type="submit"
+          class="document-editor-save"
+        >
+          保存
+        </button>
+      </div>
+    </form>
+  `;
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  const form =
+    modal.querySelector(
+      ".document-editor-form"
+    );
+
+  const titleInput =
+    form.elements.title;
+
+  const dateInput =
+    form.elements.date;
+
+  const startTimeInput =
+    form.elements.startTime;
+
+  const endTimeInput =
+    form.elements.endTime;
+
+  const locationInput =
+    form.elements.location;
+
+  const descriptionInput =
+    form.elements.description;
+
+  const categoryInput =
+    form.elements.category;
+
+  const notificationInput =
+    form.elements.notification;
+
+  titleInput.value =
+    item.title || "";
+
+  dateInput.value =
+    item.date || "";
+
+  startTimeInput.value =
+    item.startTime || "";
+
+  endTimeInput.value =
+    item.endTime || "";
+
+  locationInput.value =
+    item.location || "";
+
+  descriptionInput.value =
+    item.description || "";
+
+  categoryInput.value =
+    item.category || "other";
+
+  notificationInput.value =
+    item.notification || "none";
+
+  const priority =
+    item.priority || "normal";
+
+  const priorityInput =
+    form.querySelector(
+      `input[name="priority"][value="${priority}"]`
+    );
+
+  if (priorityInput) {
+    priorityInput.checked = true;
+  }
+
+  function updateEditorTypeUI() {
+    const type =
+      form.elements
+        .documentItemType
+        .value;
+
+    const isEvent =
+      type === "event";
+
+    modal
+      .querySelectorAll(
+        "[data-event-field]"
+      )
+      .forEach((field) => {
+        field.hidden =
+          !isEvent;
+      });
+
+    const heading =
+      modal.querySelector(
+        ".document-editor-header h2"
+      );
+
+    if (heading) {
+      heading.textContent =
+        isEvent
+          ? "予定を編集"
+          : "タスクを編集";
+    }
+  }
+
+  form
+    .querySelectorAll(
+      'input[name="documentItemType"]'
+    )
+    .forEach((input) => {
+      input.addEventListener(
+        "change",
+        updateEditorTypeUI
+      );
+    });
+
+  updateEditorTypeUI();
+
+  function closeEditor() {
+    overlay.remove();
+  }
+
+  modal
+    .querySelector(
+      ".document-editor-close"
+    )
+    .addEventListener(
+      "click",
+      closeEditor
+    );
+
+  modal
+    .querySelector(
+      ".document-editor-cancel"
+    )
+    .addEventListener(
+      "click",
+      closeEditor
+    );
+
+  overlay.addEventListener(
+    "click",
+    (event) => {
+      if (event.target === overlay) {
+        closeEditor();
+      }
+    }
+  );
+
+  form.addEventListener(
+    "submit",
+    (event) => {
+      event.preventDefault();
+
+      const type =
+        form.elements
+          .documentItemType
+          .value;
+
+      item.type =
+        type;
+
+      item.title =
+        titleInput.value.trim();
+
+      item.date =
+        dateInput.value || null;
+
+      item.category =
+        categoryInput.value;
+
+      item.priority =
+        form.elements.priority.value;
+
+      item.notification =
+        notificationInput.value;
+
+      item.description =
+        descriptionInput.value.trim();
+
+      if (type === "event") {
+        item.startTime =
+          startTimeInput.value ||
+          null;
+
+        item.endTime =
+          endTimeInput.value ||
+          null;
+
+        item.location =
+          locationInput.value.trim() ||
+          null;
+
+        item.dueTime = null;
+      } else {
+        item.startTime = null;
+        item.endTime = null;
+        item.location = null;
+        item.dueTime = null;
+      }
+
+      refreshDocumentCandidateRow(
+        row,
+        item
+      );
+
+      closeEditor();
+    }
+  );
+}
+
+async function registerDocumentCandidate(
+  item
+) {
+  if (!item) {
+    throw new Error(
+      "登録データがありません。"
+    );
+  }
+
+  let endpoint;
+  let body;
+
+  if (item.type === "event") {
+    if (!item.date) {
+      throw new Error(
+        "予定の日付が未確定です。"
+      );
+    }
+
+    endpoint = "/api/events";
+
+    body = {
+      title:
+        String(
+          item.title || ""
+        ).trim(),
+
+      description:
+        String(
+          item.description || ""
+        ).trim(),
+
+      eventDate:
+        item.date,
+
+      startTime:
+        item.startTime || null,
+
+      endTime:
+        item.endTime || null,
+
+      location:
+        String(
+          item.location || ""
+        ).trim(),
+
+      priority:
+  item.priority || "normal",
+
+category:
+  item.category || "other",
+      notification:
+  item.notification || "none",
+    };
+  } else {
+    endpoint = "/api/tasks";
+
+    body = {
+      title:
+        String(
+          item.title || ""
+        ).trim(),
+
+      description:
+        String(
+          item.description || ""
+        ).trim(),
+
+      due_date:
+        item.date || null,
+
+      due_time:
+        item.dueTime || null,
+
+      priority:
+  item.priority || "normal",
+
+category:
+  item.category || "other",
+
+notification:
+  item.notification || "none",
+  
+    };
+  }
+
+  const res =
+    await fetch(
+      endpoint,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body:
+          JSON.stringify(body),
+      }
+    );
+
+  const data =
+    await res.json();
+
+  if (!res.ok) {
+    throw new Error(
+      data.error ||
+        "登録に失敗しました。"
+    );
+  }
+
+  return data;
+}
+
+function addDocumentCandidateCards(
+  items,
+  warnings = []
+) {
+  if (
+    !Array.isArray(items) ||
+    items.length === 0
+  ) {
+    addMessage(
+      "assistant",
+      "資料から登録できそうな予定やタスクは見つかりませんでした。",
+      new Date()
+    );
+
+    return;
+  }
+
+  const wrapper =
+    document.createElement("div");
+
+  wrapper.className =
+    "document-candidates-wrapper";
+
+  const card =
+    document.createElement("div");
+
+  card.className =
+    "document-candidates-card";
+
+  const heading =
+    document.createElement("p");
+
+  heading.className =
+    "document-candidates-heading";
+
+  heading.textContent =
+    `資料から${items.length}件見つかりました`;
+
+  const subtext =
+    document.createElement("p");
+
+  subtext.className =
+    "document-candidates-subtext";
+
+  subtext.textContent =
+    "内容を確認してから追加できます。";
+
+  const list =
+    document.createElement("div");
+
+  list.className =
+    "document-candidates-list";
+
+  items.forEach(
+    (item, index) => {
+      const row =
+        document.createElement("div");
+
+      row.className =
+        "document-candidate-item";
+
+      row.dataset.index =
+        String(index);
+
+      row.addEventListener(
+  "click",
+  (event) => {
+    if (
+      event.target.closest(
+        ".document-candidate-add"
+      )
+    ) {
+      return;
+    }
+
+    if (
+      row.dataset.registered ===
+      "true"
+    ) {
+      return;
+    }
+
+    openDocumentCandidateEditor(
+      item,
+      row
+    );
+  }
+);
+
+      const type =
+        document.createElement("span");
+
+      type.className =
+        "document-candidate-type";
+
+      type.textContent =
+        item.type === "event"
+          ? "予定"
+          : "タスク";
+
+      const body =
+        document.createElement("div");
+
+      body.className =
+        "document-candidate-body";
+
+      const title =
+        document.createElement("p");
+
+      title.className =
+        "document-candidate-title";
+
+      title.textContent =
+        item.title ||
+        "名称未設定";
+
+      const date =
+        document.createElement("p");
+
+      date.className =
+        "document-candidate-date";
+
+      const candidateTime =
+        item.type === "event"
+          ? item.startTime
+          : item.dueTime;
+
+      date.textContent =
+        formatDocumentCandidateDate(
+          item.date,
+          candidateTime
+        );
+
+      body.appendChild(title);
+      body.appendChild(date);
+
+      if (item.location) {
+        const location =
+          document.createElement("p");
+
+        location.className =
+          "document-candidate-detail";
+
+        location.textContent =
+          `場所：${item.location}`;
+
+        body.appendChild(location);
+      }
+
+      if (item.description) {
+        const description =
+          document.createElement("p");
+
+        description.className =
+          "document-candidate-detail";
+
+        description.textContent =
+          item.description;
+
+        body.appendChild(
+          description
+        );
+      }
+
+      const addButton =
+  document.createElement("button");
+
+addButton.type =
+  "button";
+
+addButton.className =
+  "document-candidate-add";
+
+addButton.textContent =
+  "追加";
+
+addButton.addEventListener(
+  "click",
+  async (event) => {
+    event.stopPropagation();
+
+    if (
+      row.dataset.registered ===
+      "true"
+    ) {
+      return;
+    }
+
+    addButton.disabled = true;
+    addButton.textContent =
+      "追加中…";
+
+    try {
+      await registerDocumentCandidate(
+        item
+      );
+
+      row.dataset.registered =
+        "true";
+
+      row.classList.add(
+        "registered"
+      );
+
+      addButton.textContent =
+        "追加済み";
+
+      addButton.classList.add(
+        "registered"
+      );
+    } catch (error) {
+      console.error(
+        "Document candidate registration error:",
+        error
+      );
+
+      addButton.disabled =
+        false;
+
+      addButton.textContent =
+        "追加";
+
+      alert(
+        error.message ||
+          "登録に失敗しました。"
+      );
+    }
+  }
+);
+
+row.appendChild(type);
+row.appendChild(body);
+row.appendChild(addButton);
+
+list.appendChild(row);
+
+    }
+  );
+
+  const actions =
+    document.createElement("div");
+
+  actions.className =
+    "document-candidates-actions";
+
+  const addAllButton =
+  document.createElement("button");
+
+addAllButton.type =
+  "button";
+
+addAllButton.className =
+  "document-candidates-primary";
+
+addAllButton.textContent =
+  "全部追加";
+
+const cancelButton =
+  document.createElement("button");
+
+cancelButton.type =
+  "button";
+
+cancelButton.className =
+  "document-candidates-secondary";
+
+cancelButton.textContent =
+  "キャンセル";
+
+addAllButton.addEventListener(
+  "click",
+  async () => {
+    const rows = [
+      ...list.querySelectorAll(
+        ".document-candidate-item"
+      ),
+    ];
+
+    const targets =
+      rows.filter(
+        (row) =>
+          row.dataset.registered !==
+          "true"
+      );
+
+    if (targets.length === 0) {
+      return;
+    }
+
+    addAllButton.disabled = true;
+    addAllButton.textContent =
+      "追加中…";
+
+    let successCount = 0;
+    let failureCount = 0;
+
+    for (const row of targets) {
+      const index =
+        Number(
+          row.dataset.index
+        );
+
+      const item =
+        items[index];
+
+      const button =
+        row.querySelector(
+          ".document-candidate-add"
+        );
+
+      try {
+        if (button) {
+          button.disabled = true;
+          button.textContent =
+            "追加中…";
+        }
+
+        await registerDocumentCandidate(
+          item
+        );
+
+        row.dataset.registered =
+          "true";
+
+        row.classList.add(
+          "registered"
+        );
+
+        if (button) {
+          button.textContent =
+            "追加済み";
+
+          button.classList.add(
+            "registered"
+          );
+        }
+
+        successCount += 1;
+      } catch (error) {
+        console.error(
+          "Document candidate registration error:",
+          error
+        );
+
+        failureCount += 1;
+
+        if (button) {
+          button.disabled = false;
+          button.textContent =
+            "追加";
+        }
+      }
+    }
+
+    addAllButton.disabled =
+      false;
+
+    const remaining =
+      rows.filter(
+        (row) =>
+          row.dataset.registered !==
+          "true"
+      ).length;
+
+    addAllButton.textContent =
+      remaining === 0
+        ? "追加済み"
+        : "残りを全部追加";
+
+    if (failureCount === 0) {
+      addMessage(
+        "assistant",
+        `${successCount}件を追加しました。`,
+        new Date()
+      );
+    } else {
+      addMessage(
+        "assistant",
+        `${successCount}件を追加しました。${failureCount}件は追加できませんでした。`,
+        new Date()
+      );
+    }
+  }
+);
+
+cancelButton.addEventListener(
+  "click",
+  () => {
+    wrapper.remove();
+
+    addMessage(
+      "assistant",
+      "資料からの追加をキャンセルしました。",
+      new Date()
+    );
+  }
+);
+
+actions.appendChild(
+  addAllButton
+);
+
+actions.appendChild(
+  cancelButton
+);
+
+  card.appendChild(heading);
+  card.appendChild(subtext);
+  card.appendChild(list);
+
+  if (
+    Array.isArray(warnings) &&
+    warnings.length > 0
+  ) {
+    const warning =
+      document.createElement("p");
+
+    warning.className =
+      "document-candidates-warning";
+
+    warning.textContent =
+      warnings.join("\n");
+
+    card.appendChild(
+      warning
+    );
+  }
+
+  card.appendChild(actions);
+
+  wrapper.appendChild(card);
+  chat.appendChild(wrapper);
+
+  scrollChatToBottom();
 }
 
 async function loadConversationHistory() {
@@ -589,90 +1867,281 @@ conversations.forEach((conversation) => {
   }
 }
 
+attachmentButton?.addEventListener(
+  "click",
+  () => {
+    if (isSending) {
+      return;
+    }
 
-chatForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const message = messageInput.value.trim();
-
-if (!message || isSending) {
-  return;
-}
-
-isSending = true;
-
-sendButton.disabled = true;
-
-  const sentMessage = addMessage(
-  "user",
-  message,
-  new Date(),
-  "processing"
-);
-  messageInput.value = "";
-
-
-  const loading = document.createElement("div");
-  loading.className = "message assistant";
-  loading.innerText = "確認しています。少しだけお待ちください。";
-  scrollChatToBottom();
-
-  try {
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ message }),
-    });
-
-    const data = await res.json();
-
-if (sentMessage.status) {
-  const statusImage =
-    sentMessage.status.querySelector(
-      ".message-processing-status-image"
-    );
-
-  if (statusImage) {
-    statusImage.src =
-      "/images/notia-double-check-overlap-transparent.png";
-
-    statusImage.alt = "処理完了";
+    attachmentInput?.click();
   }
+);
 
-  sentMessage.status.classList.add(
-    "completed"
-  );
-}
+attachmentInput?.addEventListener(
+  "change",
+  () => {
+    const file =
+      attachmentInput.files?.[0];
 
-loading.remove();
+    if (!file) {
+      return;
+    }
 
-addMessage(
+    const allowedTypes = [
+      "image/png",
+      "image/jpeg",
+      "application/pdf",
+    ];
+
+    if (
+      !allowedTypes.includes(
+        file.type
+      )
+    ) {
+      alert(
+        "PNG、JPEG、PDFのみ添付できます。"
+      );
+
+      clearAttachmentPreview();
+      return;
+    }
+
+    const maxSize =
+      10 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+      alert(
+        "ファイルサイズは10MB以下にしてください。"
+      );
+
+      clearAttachmentPreview();
+      return;
+    }
+
+    selectedAttachment =
+      file;
+
+    showAttachmentPreview(
+      file
+    );
+  }
+);
+
+chatForm.addEventListener(
+  "submit",
+  async (e) => {
+    e.preventDefault();
+
+    const message =
+      messageInput.value.trim();
+
+    const attachment =
+      selectedAttachment;
+
+    if (
+      (!message && !attachment) ||
+      isSending
+    ) {
+      return;
+    }
+
+    isSending = true;
+    sendButton.disabled = true;
+
+    let sentMessage = null;
+
+    if (message) {
+      sentMessage = addMessage(
+        "user",
+        message,
+        new Date(),
+        "processing"
+      );
+    }
+
+    messageInput.value = "";
+
+    const loading =
+      document.createElement("div");
+
+    loading.className =
+      "message assistant";
+
+    loading.innerText =
+      attachment
+        ? "資料を確認しています。少しだけお待ちください。"
+        : "確認しています。少しだけお待ちください。";
+
+    chat.appendChild(loading);
+
+    scrollChatToBottom();
+
+    try {
+      /*
+       * =====================
+       * 添付ファイルあり
+       * =====================
+       */
+      if (attachment) {
+        const formData =
+          new FormData();
+
+        formData.append(
+          "file",
+          attachment
+        );
+
+        if (message) {
+          formData.append(
+            "message",
+            message
+          );
+        }
+
+        const res =
+          await fetch(
+            "/api/document/extract",
+            {
+              method: "POST",
+              body: formData,
+            }
+          );
+
+        const data =
+          await res.json();
+
+        if (!res.ok) {
+          throw new Error(
+            data.error ||
+              "資料の送信に失敗しました。"
+          );
+        }
+
+        if (
+          sentMessage?.status
+        ) {
+          const statusImage =
+            sentMessage.status.querySelector(
+              ".message-processing-status-image"
+            );
+
+          if (statusImage) {
+            statusImage.src =
+              "/images/notia-double-check-overlap-transparent.png";
+
+            statusImage.alt =
+              "処理完了";
+          }
+
+          sentMessage.status.classList.add(
+            "completed"
+          );
+        }
+
+        loading.remove();
+
+        addMessage(
   "assistant",
-  data.reply,
+  `${data.file.name}を確認しました。`,
   new Date()
 );
 
-console.log(
-  "taskResult:",
-  data.taskResult
+addDocumentCandidateCards(
+  data.items,
+  data.warnings
 );
 
-addCreatedTaskCards(
-  data.taskResult
-);
-    
-  } catch (error) {
-    loading.remove();
-    addMessage("assistant", "すみません。少し調子が悪いようです。");
+clearAttachmentPreview();
+
+return;
+      }
+
+      /*
+       * =====================
+       * 通常チャット
+       * =====================
+       */
+      const res =
+        await fetch(
+          "/api/chat",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+              message,
+            }),
+          }
+        );
+
+      const data =
+        await res.json();
+
+      if (sentMessage?.status) {
+        const statusImage =
+          sentMessage.status.querySelector(
+            ".message-processing-status-image"
+          );
+
+        if (statusImage) {
+          statusImage.src =
+            "/images/notia-double-check-overlap-transparent.png";
+
+          statusImage.alt =
+            "処理完了";
+        }
+
+        sentMessage.status.classList.add(
+          "completed"
+        );
+      }
+
+      loading.remove();
+
+      addMessage(
+        "assistant",
+        data.reply,
+        new Date()
+      );
+
+      console.log(
+        "taskResult:",
+        data.taskResult
+      );
+
+      addCreatedTaskCards(
+        data.taskResult
+      );
+    } catch (error) {
+      console.error(
+        "Chat send error:",
+        error
+      );
+
+      loading.remove();
+
+      addMessage(
+        "assistant",
+        attachment
+          ? "すみません。資料を読み込めませんでした。"
+          : "すみません。少し調子が悪いようです。",
+        new Date()
+      );
     } finally {
-  isSending = false;
+      isSending = false;
 
-  sendButton.disabled = false;
-  messageInput.focus();
-}
-});
+      sendButton.disabled =
+        false;
+
+      messageInput.focus();
+    }
+  }
+);
 
 function showNotification(
   title,

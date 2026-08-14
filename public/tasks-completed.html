@@ -1,37 +1,162 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-  <title>完了タスク</title>
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  />
+
+  <title>Notia 完了タスク</title>
 
   <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/chat.css">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 
-<body>
-  <main class="app">
-    <header class="task-header">
-      <h1>完了タスク</h1>
-      <p>過去50件の完了タスクです。</p>
+<body class="tasks-page completed-tasks-page">
+
+  <header class="chat-header">
+    <div class="chat-header-brand">
+      <img
+        class="chat-header-logo"
+        src="/images/notia-logo.png"
+        alt=""
+      >
+
+      <img
+        class="chat-header-wordmark"
+        src="/images/notia-wordmark.png"
+        alt="Notia"
+      >
+    </div>
+
+    <button
+      class="account-button"
+      type="button"
+      aria-label="アカウントを開く"
+      title="アカウント"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <circle
+          cx="12"
+          cy="8"
+          r="3.5"
+        ></circle>
+
+        <path
+          d="M5 20c.7-4 3.2-6 7-6s6.3 2 7 6"
+        ></path>
+      </svg>
+    </button>
+  </header>
+
+  <main class="app task-app completed-task-app">
+
+    <header class="completed-page-header">
+      <a
+        class="completed-back-button"
+        href="/tasks"
+      >
+        <span aria-hidden="true">‹</span>
+        <span>タスク一覧</span>
+      </a>
+
+      <div class="completed-page-heading">
+        <p class="completed-page-eyebrow">
+          HISTORY
+        </p>
+
+        <h1>
+          完了タスク
+        </h1>
+
+        <p>
+          これまでに完了したタスクを確認できます。
+        </p>
+      </div>
     </header>
 
-    <a class="back-link" href="/tasks">
-      ← タスク一覧へ戻る
-    </a>
-
-    <section class="task-section">
+    <section class="task-section completed-section">
       <div id="completedTaskList">
-        <p class="task-status">読み込み中...</p>
+        <p class="task-status">
+          読み込み中...
+        </p>
       </div>
     </section>
   </main>
 
+  <nav class="bottom-nav">
+    <a
+      href="/"
+      aria-label="チャット"
+    >
+      <img
+        src="/images/nav/chat-unselected.png"
+        alt=""
+        class="bottom-nav-icon"
+      >
+      <span>チャット</span>
+    </a>
+
+    <a
+      href="/today"
+      aria-label="Today"
+    >
+      <img
+        src="/images/nav/today-unselected.png"
+        alt=""
+        class="today-nav-icon"
+      >
+      <span>Today</span>
+    </a>
+
+    <a
+      href="/tasks"
+      class="active"
+      aria-current="page"
+      aria-label="タスク"
+    >
+      <img
+        src="/images/nav/task-selected.png"
+        alt=""
+        class="bottom-nav-icon bottom-nav-icon-task"
+      >
+      <span>タスク</span>
+    </a>
+
+    <a
+      href="/calendar"
+      aria-label="カレンダー"
+    >
+      <svg
+        class="bottom-nav-icon"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <rect
+          x="4"
+          y="5"
+          width="16"
+          height="15"
+          rx="2"
+        ></rect>
+
+        <path
+          d="M8 3v4M16 3v4M4 9h16"
+        ></path>
+      </svg>
+
+      <span>カレンダー</span>
+    </a>
+  </nav>
+
   <script src="/js/components/cardFactory.js"></script>
   <script src="/js/taskUtils.js"></script>
+  <script src="/js/components/accountMenu.js"></script>
   <script src="/js/tasks-completed.js"></script>
 </body>
 </html>

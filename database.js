@@ -89,6 +89,13 @@ if (!hasColumn("tasks", "category")) {
   `).run();
 }
 
+if (!hasColumn("tasks", "location")) {
+  db.prepare(`
+    ALTER TABLE tasks
+    ADD COLUMN location TEXT
+  `).run();
+}
+
 if (!hasColumn("tasks", "due_time")) {
   db.prepare(`
     ALTER TABLE tasks
@@ -211,7 +218,8 @@ function addTask(
   category = "other",
   dueTime = null,
   notification = "none",
-  itemType = "task"
+  itemType = "task",
+  location = ""
 ) {
   const result = db.prepare(`
     INSERT INTO tasks (
@@ -222,9 +230,10 @@ function addTask(
       priority,
       category,
       notification,
-      item_type
+      item_type,
+      location
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     title,
     description,
@@ -233,7 +242,8 @@ function addTask(
     priority,
     category,
     notification,
-    itemType
+    itemType,
+    location
   );
 
   return result.lastInsertRowid;
@@ -385,6 +395,69 @@ const tomorrowDate =
 );
 }
 
+function getEventNotificationTargets(date) {
+  const tomorrow = new Date(
+    `${date}T00:00:00+09:00`
+  );
+
+  tomorrow.setDate(
+    tomorrow.getDate() + 1
+  );
+
+  const tomorrowDate =
+    tomorrow.toLocaleDateString(
+      "sv-SE",
+      {
+        timeZone: "Asia/Tokyo",
+      }
+    );
+
+  return db.prepare(`
+    SELECT
+      *,
+      event_date AS due_date,
+      start_time AS due_time
+    FROM events
+    WHERE status = 'active'
+      AND notified_at IS NULL
+      AND (
+        (
+          notification = 'same_day'
+          AND event_date = ?
+        )
+        OR
+        (
+          notification = 'day_before'
+          AND event_date = ?
+        )
+        OR
+        (
+          notification IN (
+            'at_time',
+            '10_minutes_before',
+            '30_minutes_before',
+            '1_hour_before'
+          )
+          AND event_date IN (?, ?)
+        )
+      )
+    ORDER BY
+      CASE
+        WHEN start_time IS NULL
+          OR start_time = ''
+        THEN 1
+        ELSE 0
+      END,
+      start_time ASC,
+      id ASC
+  `).all(
+    date,
+    tomorrowDate,
+    date,
+    tomorrowDate
+  );
+}
+
 function getRecentlyCompletedTasks(limit = 5) {
   return db.prepare(`
     SELECT *
@@ -506,6 +579,11 @@ if (updates.dueTime !== undefined) {
   values.push(updates.dueTime);
 }
 
+if (updates.location !== undefined) {
+  fields.push("location = ?");
+  values.push(updates.location);
+}
+
 if (updates.priority !== undefined) {
   fields.push("priority = ?");
   values.push(updates.priority);
@@ -578,11 +656,43 @@ CREATE TABLE IF NOT EXISTS events (
   start_time TEXT,
   end_time TEXT,
   location TEXT,
+  priority TEXT DEFAULT 'normal',
+  category TEXT DEFAULT 'other',
+  notification TEXT DEFAULT 'none',
+  notified_at TEXT,
   status TEXT DEFAULT 'active',
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 )
 `).run();
+
+if (!hasColumn("events", "priority")) {
+  db.prepare(`
+    ALTER TABLE events
+    ADD COLUMN priority TEXT DEFAULT 'normal'
+  `).run();
+}
+
+if (!hasColumn("events", "category")) {
+  db.prepare(`
+    ALTER TABLE events
+    ADD COLUMN category TEXT DEFAULT 'other'
+  `).run();
+}
+
+if (!hasColumn("events", "notification")) {
+  db.prepare(`
+    ALTER TABLE events
+    ADD COLUMN notification TEXT DEFAULT 'none'
+  `).run();
+}
+
+if (!hasColumn("events", "notified_at")) {
+  db.prepare(`
+    ALTER TABLE events
+    ADD COLUMN notified_at TEXT
+  `).run();
+}
 
 // =====================
 // task_calendar_links
@@ -603,6 +713,140 @@ CREATE TABLE IF NOT EXISTS task_calendar_links (
     ON DELETE CASCADE
 )
 `).run();
+
+// =====================
+// daily_notification_logs
+// =====================
+
+db.prepare(`
+CREATE TABLE IF NOT EXISTS daily_notification_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  notification_type TEXT NOT NULL,
+  notification_date TEXT NOT NULL,
+  sent_at TEXT DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE(
+    notification_type,
+    notification_date
+  )
+)
+`).run();
+
+function hasDailyNotificationBeenSent(
+  notificationType,
+  notificationDate
+) {
+  const row = db.prepare(`
+    SELECT id
+    FROM daily_notification_logs
+    WHERE notification_type = ?
+      AND notification_date = ?
+    LIMIT 1
+  `).get(
+    notificationType,
+    notificationDate
+  );
+
+  return Boolean(row);
+}
+
+function markDailyNotificationSent(
+  notificationType,
+  notificationDate
+) {
+  return db.prepare(`
+    INSERT OR IGNORE INTO daily_notification_logs (
+      notification_type,
+      notification_date
+    )
+    VALUES (?, ?)
+  `).run(
+    notificationType,
+    notificationDate
+  );
+}
+
+// =====================
+// notification_settings
+// =====================
+
+db.prepare(`
+CREATE TABLE IF NOT EXISTS notification_settings (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  morning_enabled INTEGER DEFAULT 1,
+  morning_time TEXT DEFAULT '08:00',
+  evening_enabled INTEGER DEFAULT 1,
+  evening_time TEXT DEFAULT '18:00',
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+)
+`).run();
+
+db.prepare(`
+INSERT OR IGNORE INTO notification_settings (
+  id,
+  morning_enabled,
+  morning_time,
+  evening_enabled,
+  evening_time
+)
+VALUES (
+  1,
+  1,
+  '08:00',
+  1,
+  '18:00'
+)
+`).run();
+
+function getNotificationSettings() {
+  const settings = db.prepare(`
+    SELECT
+      morning_enabled,
+      morning_time,
+      evening_enabled,
+      evening_time
+    FROM notification_settings
+    WHERE id = 1
+    LIMIT 1
+  `).get();
+
+  return {
+    morningEnabled:
+      Boolean(settings?.morning_enabled),
+
+    morningTime:
+      settings?.morning_time || "08:00",
+
+    eveningEnabled:
+      Boolean(settings?.evening_enabled),
+
+    eveningTime:
+      settings?.evening_time || "18:00",
+  };
+}
+
+function updateNotificationSettings({
+  morningEnabled,
+  morningTime,
+  eveningEnabled,
+  eveningTime,
+}) {
+  return db.prepare(`
+    UPDATE notification_settings
+    SET
+      morning_enabled = ?,
+      morning_time = ?,
+      evening_enabled = ?,
+      evening_time = ?,
+      updated_at = CURRENT_TIMESTAMP
+    WHERE id = 1
+  `).run(
+    morningEnabled ? 1 : 0,
+    morningTime,
+    eveningEnabled ? 1 : 0,
+    eveningTime
+  );
+}
 
 // =====================
 // memories
@@ -961,17 +1205,33 @@ function getUnsyncedTimedTasks(provider) {
   return db.prepare(`
     SELECT tasks.*
     FROM tasks
+
     LEFT JOIN task_calendar_links
       ON task_calendar_links.task_id = tasks.id
       AND task_calendar_links.provider = ?
+
     WHERE tasks.status = 'active'
+
+      AND (
+        tasks.item_type IS NULL
+        OR tasks.item_type = 'task'
+      )
+
       AND tasks.due_date IS NOT NULL
       AND tasks.due_date != ''
-      AND tasks.due_time IS NOT NULL
-      AND tasks.due_time != ''
+
       AND task_calendar_links.id IS NULL
+
     ORDER BY
       tasks.due_date ASC,
+
+      CASE
+        WHEN tasks.due_time IS NULL
+          OR tasks.due_time = ''
+        THEN 1
+        ELSE 0
+      END,
+
       tasks.due_time ASC,
       tasks.id ASC
   `).all(provider);
@@ -1253,32 +1513,51 @@ function markTaskNotified(id) {
     .run(id);
 }
 
+function markEventNotified(id) {
+  return db
+    .prepare(`
+      UPDATE events
+      SET notified_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `)
+    .run(id);
+}
+
 function addEvent(
   title,
   description = "",
   eventDate,
   startTime = null,
   endTime = null,
-  location = ""
-) {
+  location = "",
+  priority = "normal",
+  category = "other",
+  notification = "none"
+){
   const result = db.prepare(`
     INSERT INTO events (
-      title,
-      description,
-      event_date,
-      start_time,
-      end_time,
-      location
-    )
-    VALUES (?, ?, ?, ?, ?, ?)
+  title,
+  description,
+  event_date,
+  start_time,
+  end_time,
+  location,
+  priority,
+  category,
+  notification
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
-    title,
-    description,
-    eventDate,
-    startTime,
-    endTime,
-    location
-  );
+  title,
+  description,
+  eventDate,
+  startTime,
+  endTime,
+  location,
+  priority,
+  category,
+  notification
+);
 
   return result.lastInsertRowid;
 }
@@ -1301,6 +1580,9 @@ function updateEventById(
     start_time,
     end_time,
     location,
+    priority,
+    category,
+    notification,
     status,
   }
 ) {
@@ -1313,6 +1595,9 @@ function updateEventById(
       start_time = ?,
       end_time = ?,
       location = ?,
+      priority = ?,
+      category = ?,
+      notification = ?,
       status = ?,
       updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
@@ -1323,6 +1608,9 @@ function updateEventById(
     start_time ?? null,
     end_time ?? null,
     location ?? null,
+    priority ?? "normal",
+    category ?? "other",
+    notification ?? "none",
     status ?? "active",
     id
   );
@@ -1380,8 +1668,19 @@ function convertTaskToEvent(
         ? eventData.endTime
         : null,
       eventData.location !== undefined
-        ? eventData.location
-        : ""
+  ? eventData.location
+  : task.location || "",
+      eventData.priority !== undefined
+  ? eventData.priority
+  : task.priority || "normal",
+
+eventData.category !== undefined
+  ? eventData.category
+  : task.category || "other",
+
+eventData.notification !== undefined
+  ? eventData.notification
+  : task.notification || "none"
     );
 
     const deleted =
@@ -1436,13 +1735,28 @@ function convertEventToTask(
         ? taskData.description
         : event.description || "",
       dueDate,
-      taskData.priority || "normal",
-      taskData.category || "other",
-      taskData.dueTime !== undefined
-        ? taskData.dueTime
-        : event.start_time,
-      taskData.notification || "none"
-    );
+      taskData.priority !== undefined
+  ? taskData.priority
+  : event.priority || "normal",
+
+taskData.category !== undefined
+  ? taskData.category
+  : event.category || "other",
+
+taskData.dueTime !== undefined
+  ? taskData.dueTime
+  : event.start_time,
+
+taskData.notification !== undefined
+  ? taskData.notification
+  : event.notification || "none",
+
+"task",
+
+taskData.location !== undefined
+  ? taskData.location
+  : event.location || ""
+);
 
     const deleted =
       deleteEventById(eventId);
@@ -1564,4 +1878,10 @@ updateEventById,
 deleteEventById,
   convertTaskToEvent,
   convertEventToTask,
+  getEventNotificationTargets,
+markEventNotified,
+hasDailyNotificationBeenSent,
+markDailyNotificationSent,
+getNotificationSettings,
+updateNotificationSettings,
 };

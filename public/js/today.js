@@ -20,7 +20,7 @@ const timelineElement =
 
 const unscheduledList =
   document.getElementById(
-    "unscheduledList"
+    "todayUnscheduledList"
   );
 
 const overdueNotice =

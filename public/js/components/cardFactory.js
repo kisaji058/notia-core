@@ -307,7 +307,7 @@ function createTimelineCard(item) {
     item.type === "event" &&
     item.source === "google"
   ) {
-    subtitle = "Google Calendar";
+    subtitle = "Google予定";
   }
 
   if (

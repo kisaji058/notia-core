@@ -1,6 +1,8 @@
 const {
   getNotificationTargets,
+  getEventNotificationTargets,
   markTaskNotified,
+  markEventNotified,
 } = require("../../database");
 
 const NOTIFICATION_OFFSETS = {
@@ -12,8 +14,25 @@ const NOTIFICATION_OFFSETS = {
 
 class NotificationManager {
   getTargets(date) {
-    return getNotificationTargets(date);
-  }
+  const tasks =
+    getNotificationTargets(date)
+      .map((task) => ({
+        ...task,
+        notificationSource: "task",
+      }));
+
+  const events =
+    getEventNotificationTargets(date)
+      .map((event) => ({
+        ...event,
+        notificationSource: "event",
+      }));
+
+  return [
+    ...tasks,
+    ...events,
+  ];
+}
 
   getToday(date = new Date()) {
     return date.toLocaleDateString(
@@ -81,26 +100,32 @@ class NotificationManager {
   }
 
   checkNotifications() {
-    const now = new Date();
-    const today = this.getToday(now);
+  const now = new Date();
+  const today = this.getToday(now);
 
-    const tasks =
-      this.getTargets(today);
+  const targets =
+    this.getTargets(today);
 
-    const notificationTasks =
-      tasks.filter((task) =>
-        this.isNotificationDue(
-          task,
-          now
-        )
-      );
+  const notificationTargets =
+    targets.filter((item) =>
+      this.isNotificationDue(
+        item,
+        now
+      )
+    );
 
-    for (const task of notificationTasks) {
-      markTaskNotified(task.id);
+  for (const item of notificationTargets) {
+    if (
+      item.notificationSource === "event"
+    ) {
+      markEventNotified(item.id);
+    } else {
+      markTaskNotified(item.id);
     }
-
-    return notificationTasks;
   }
+
+  return notificationTargets;
+}
 }
 
 module.exports =

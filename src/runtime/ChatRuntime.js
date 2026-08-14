@@ -244,12 +244,13 @@ const taskReply =
   Array.isArray(taskResult.createdTasks)
 ) {
   const pendingDueTimeTasks =
-    taskResult.createdTasks
-      .filter(
-        (task) =>
-          task.dueDate &&
-          !task.dueTime
-      )
+  taskResult.createdTasks
+    .filter(
+      (task) =>
+        task.itemType !== "event" &&
+        task.dueDate &&
+        !task.dueTime
+    )
       .map((task) => ({
         id: task.id,
         title: task.title,

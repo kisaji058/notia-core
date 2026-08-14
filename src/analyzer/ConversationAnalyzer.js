@@ -97,7 +97,8 @@ JSONのみで返してください。
       "notification": "none | same_day | day_before | null",
       "needsDateConfirmation": "boolean",
       "dateExpression": "string | null",
-      "priority": "important | normal"
+      "priority": "important | normal",
+      "itemType": "task | event",
     }
   ],
   "routine": {
@@ -380,6 +381,42 @@ intent を "schedule_query" にする。
   }
 }
 
+【タスクと予定の区別】
+
+task_createでは、
+各tasks要素のitemTypeを必ず判定する。
+
+itemTypeは以下のどちらか。
+
+- "task"
+- "event"
+
+task:
+ユーザーが「やるべきこと」「完了させること」を表している場合。
+
+例:
+- 明日までに資料を作る
+- 牛乳を買う
+- メールを送る
+- 病院を予約する
+- レポートを提出する
+
+event:
+特定の日付・時間に発生する予定、約束、イベントを表す場合。
+
+例:
+- 明日15時から会議
+- 土曜日に映画を見る
+- 10時に歯医者
+- 来週月曜に出張
+- 18時から食事会
+
+判断基準:
+「その時間に起きる・参加するもの」ならevent。
+「その期限までに終わらせるもの」ならtask。
+
+ただし、
+毎週など繰り返しの予定・習慣はeventではなくroutine_createにする。
 
 【タスク作成】
 
@@ -494,12 +531,20 @@ descriptionに入れる。
 既存のactiveTasksに似たタイトルのタスクが存在していても、
 それだけを理由にtask_updateにしてはいけない。
 
-以下のような発言は、新規タスクとして扱う。
+以下のような発言は新規作成として扱うが、
+itemTypeは内容に応じて判定する。
 
 - 明日会議がある
+  → itemType: "event"
+
 - 明後日牛乳を買いに行く
+  → itemType: "task"
+
 - 金曜日に銀行へ行く
+  → 文脈に応じてtaskまたはevent
+
 - 来週資料を作る
+  → itemType: "task"
 
 task_updateにするのは、
 ユーザーが既存タスクの変更を明示している場合、
@@ -806,13 +851,48 @@ task_createとする。
 
 会話コンテキストにactiveTasksがある場合は必ず参照する。
 
-task_updateまたはtask_completeの場合は、
-最も一致するタスクを推定し、
+タスク名との一致は完全一致だけで判断しない。
 
+ユーザー発言とactiveTasksのタイトルが、
+表現は異なっていても同じ行動や対象を意味する場合は、
+意味的な一致として扱ってよい。
+
+例:
+- 「リストバンド買ったよ」
+  → 「リストバンド購入」
+- 「資料作った」
+  → 「資料を作成する」
+- 「メール送ったよ」
+  → 「メール送信」
+- 「病院行ってきた」
+  → 「病院に行く」
+
+ただし、
+複数のactiveTasksに意味的に一致する可能性がある場合は、
+勝手に1件へ決めない。
+
+その場合は
 targetTaskId
 targetTaskTitle
+をnullにする。
 
-を返す。
+以下のような発言は、
+既存タスクの実行完了を報告している可能性が高いため、
+activeTasksとの意味的な一致を確認する。
+
+- 〜した
+- 〜したよ
+- 〜やった
+- 〜やったよ
+- 〜買った
+- 〜買ったよ
+- 〜行った
+- 〜行ってきた
+- 〜送った
+- 〜終わらせた
+
+意味的に一致するactiveTaskが1件だけ明確に存在する場合は、
+intentをtask_completeとしてよい。
 
 一致しない場合は両方nullにする。
 
@@ -1147,6 +1227,10 @@ ${userMessage}
     task.priority,
     VALID_PRIORITIES
   ) || "normal",
+  itemType:
+  task.itemType === "event"
+    ? "event"
+    : "task",
         }));
     }
 
@@ -1168,6 +1252,10 @@ ${userMessage}
             parsed.needsDateConfirmation ?? false,
           dateExpression: parsed.dateExpression ?? null,
           priority: parsed.priority || "normal",
+          itemType:
+  parsed.itemType === "event"
+    ? "event"
+    : "task",
         },
       ];
     }

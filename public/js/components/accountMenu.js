@@ -58,6 +58,63 @@
     }
   }
 
+  async function getNotificationSettings() {
+  try {
+    const response =
+      await fetch(
+        "/api/notification-settings"
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        `通知設定取得失敗: ${response.status}`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(
+      "Notification settings error:",
+      error
+    );
+
+    return null;
+  }
+}
+
+async function saveNotificationSettings(
+  settings
+) {
+  const response =
+    await fetch(
+      "/api/notification-settings",
+      {
+        method: "PUT",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body: JSON.stringify(
+          settings
+        ),
+      }
+    );
+
+  const result =
+    await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result.error ||
+      "通知設定の保存に失敗しました。"
+    );
+  }
+
+  return result.settings;
+}
+
   async function syncGoogleCalendar(
     button
   ) {
@@ -105,7 +162,7 @@
       );
 
       alert(
-        "Google Calendarとの同期に失敗しました。"
+        "Google予定との同期に失敗しました。"
       );
 
       button.disabled = false;
@@ -119,7 +176,7 @@
   ) {
     const confirmed =
       confirm(
-        "Google Calendarとの連携を解除しますか？"
+        "Google予定との連携を解除しますか？"
       );
 
     if (!confirmed) {
@@ -146,7 +203,7 @@
       }
 
       alert(
-        "Google Calendarとの連携を解除しました。"
+        "Google予定との連携を解除しました。"
       );
 
       closeAccountMenu();
@@ -157,7 +214,7 @@
       );
 
       alert(
-        "Google Calendarとの連携を解除できませんでした。"
+        "Google予定との連携を解除できませんでした。"
       );
 
       button.disabled = false;
@@ -165,6 +222,247 @@
         "Google連携を解除";
     }
   }
+
+  async function openNotificationSettings() {
+  const settings =
+    await getNotificationSettings();
+
+  if (!settings) {
+    alert(
+      "通知設定を取得できませんでした。"
+    );
+    return;
+  }
+
+  closeAccountMenu();
+
+  document
+    .querySelectorAll(
+      ".notification-settings-sheet"
+    )
+    .forEach((sheet) => {
+      sheet.remove();
+    });
+
+  const sheet =
+    document.createElement("div");
+
+  sheet.className =
+    "notification-settings-sheet";
+
+  sheet.innerHTML = `
+    <div class="notification-settings-card">
+      <div class="notification-settings-header">
+        <h2>
+          通知設定
+        </h2>
+
+        <button
+          class="notification-settings-close"
+          type="button"
+          aria-label="閉じる"
+        >
+          ×
+        </button>
+      </div>
+
+      <div class="notification-setting-row">
+        <div class="notification-setting-text">
+          <strong>
+            朝のまとめ通知
+          </strong>
+
+          <span>
+            今日のタスクをお知らせします
+          </span>
+        </div>
+
+        <input
+          id="morningNotificationEnabled"
+          type="checkbox"
+          ${
+            settings.morningEnabled
+              ? "checked"
+              : ""
+          }
+        >
+      </div>
+
+      <div class="notification-setting-time">
+        <label for="morningNotificationTime">
+          通知時刻
+        </label>
+
+        <input
+          id="morningNotificationTime"
+          type="time"
+          value="${
+            settings.morningTime
+          }"
+        >
+      </div>
+
+      <div class="notification-setting-divider"></div>
+
+      <div class="notification-setting-row">
+        <div class="notification-setting-text">
+          <strong>
+            夜の確認通知
+          </strong>
+
+          <span>
+            今日残っているタスクを確認します
+          </span>
+        </div>
+
+        <input
+          id="eveningNotificationEnabled"
+          type="checkbox"
+          ${
+            settings.eveningEnabled
+              ? "checked"
+              : ""
+          }
+        >
+      </div>
+
+      <div class="notification-setting-time">
+        <label for="eveningNotificationTime">
+          通知時刻
+        </label>
+
+        <input
+          id="eveningNotificationTime"
+          type="time"
+          value="${
+            settings.eveningTime
+          }"
+        >
+      </div>
+
+      <button
+        class="notification-settings-save"
+        type="button"
+      >
+        保存
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(
+    sheet
+  );
+
+  const closeButton =
+    sheet.querySelector(
+      ".notification-settings-close"
+    );
+
+  const saveButton =
+    sheet.querySelector(
+      ".notification-settings-save"
+    );
+
+  const morningEnabled =
+    sheet.querySelector(
+      "#morningNotificationEnabled"
+    );
+
+  const morningTime =
+    sheet.querySelector(
+      "#morningNotificationTime"
+    );
+
+  const eveningEnabled =
+    sheet.querySelector(
+      "#eveningNotificationEnabled"
+    );
+
+  const eveningTime =
+    sheet.querySelector(
+      "#eveningNotificationTime"
+    );
+
+  function updateTimeDisabledState() {
+    morningTime.disabled =
+      !morningEnabled.checked;
+
+    eveningTime.disabled =
+      !eveningEnabled.checked;
+  }
+
+  updateTimeDisabledState();
+
+  morningEnabled.addEventListener(
+    "change",
+    updateTimeDisabledState
+  );
+
+  eveningEnabled.addEventListener(
+    "change",
+    updateTimeDisabledState
+  );
+
+  closeButton.addEventListener(
+    "click",
+    () => {
+      sheet.remove();
+    }
+  );
+
+  sheet.addEventListener(
+    "click",
+    (event) => {
+      if (event.target === sheet) {
+        sheet.remove();
+      }
+    }
+  );
+
+  saveButton.addEventListener(
+    "click",
+    async () => {
+      try {
+        saveButton.disabled = true;
+        saveButton.textContent =
+          "保存中...";
+
+        await saveNotificationSettings({
+          morningEnabled:
+            morningEnabled.checked,
+
+          morningTime:
+            morningTime.value,
+
+          eveningEnabled:
+            eveningEnabled.checked,
+
+          eveningTime:
+            eveningTime.value,
+        });
+
+        sheet.remove();
+
+        alert(
+          "通知設定を保存しました。"
+        );
+      } catch (error) {
+        console.error(
+          "Notification settings save error:",
+          error
+        );
+
+        alert(
+          "通知設定を保存できませんでした。"
+        );
+
+        saveButton.disabled = false;
+        saveButton.textContent =
+          "保存";
+      }
+    }
+  );
+}
 
   function showAbout() {
     alert(
@@ -212,12 +510,21 @@
       </div>
 
       <button
+  class="account-menu-item account-menu-notifications"
+  type="button"
+>
+  通知設定
+</button>
+
+      <button
         class="account-menu-item account-menu-about"
         type="button"
       >
         Notiaについて
       </button>
     `;
+
+
 
     document.body.appendChild(
       menu
@@ -310,6 +617,15 @@
           )
       );
     }
+
+    menu
+  .querySelector(
+    ".account-menu-notifications"
+  )
+  .addEventListener(
+    "click",
+    openNotificationSettings
+  );
 
     menu
       .querySelector(

@@ -13,6 +13,22 @@ class ConversationManager {
 if (
   session.mode === "waiting_due_time"
 ) {
+  // 時間確認中でも、
+// 新しいタスク・予定・ルーティーンの発言なら
+// 時間回答として扱わず通常処理へ戻す
+const isNewRequest =
+  analysis?.intent === "task_create" ||
+  analysis?.intent === "routine_create";
+
+if (isNewRequest) {
+  sessionManager.clear(userId);
+
+  return {
+    handled: false,
+    systemHint: "",
+    analysis,
+  };
+}
   const pendingTasks =
     Array.isArray(session.pendingTasks)
       ? session.pendingTasks

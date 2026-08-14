@@ -637,185 +637,251 @@ addTaskButton.addEventListener(
           id="addTaskForm"
           class="task-create-form"
         >
-          <label class="task-form-field">
-            <span>タスク名</span>
-
-            <input
-              id="newTaskTitle"
-              name="title"
-              type="text"
-              maxlength="100"
-              placeholder="何をしますか？"
-              autocomplete="off"
-              required
-            >
+          <label
+            class="task-create-label"
+            for="newTaskTitle"
+          >
+            タスク名
           </label>
 
-          <label class="task-form-field">
-            <span>期限</span>
+          <input
+            id="newTaskTitle"
+            class="task-create-input"
+            name="title"
+            type="text"
+            maxlength="100"
+            placeholder="何をしますか？"
+            autocomplete="off"
+            required
+          >
 
-            <input
-              name="due_date"
-              type="date"
-            >
+          <label
+            class="task-create-label"
+            for="newTaskDueDate"
+          >
+            期限
           </label>
 
-          <label class="task-form-field">
-  <span>時間（任意）</span>
+          <input
+            id="newTaskDueDate"
+            class="task-create-input"
+            name="due_date"
+            type="date"
+          >
 
-  <input
-    name="due_time"
-    type="time"
-  >
+          <label
+  class="task-create-label"
+  for="newTaskDueTime"
+>
+  時間
 </label>
 
-          <label class="task-form-field">
-            <span>分類</span>
-
-            <select name="category">
-              <option value="work">
-                仕事
-              </option>
-
-              <option value="school">
-                学校
-              </option>
-
-              <option value="shopping">
-                買い物
-              </option>
-
-              <option value="private">
-                プライベート
-              </option>
-
-              <option
-                value="other"
-                selected
-              >
-                その他
-              </option>
-            </select>
-          </label>
-
-          <label class="task-important-field">
-            <input
-              name="important"
-              type="checkbox"
-            >
-
-            <span>
-              重要タスクにする
-            </span>
-          </label>
-
-          <button
-  id="notificationToggle"
-  class="task-notification-toggle"
-  type="button"
-  aria-pressed="false"
+<input
+  id="newTaskDueTime"
+  class="task-create-input"
+  name="due_time"
+  type="time"
 >
-  <img
-    id="notificationIcon"
-    class="task-notification-icon"
-    src="/images/tasks/notia-gong-off.png"
-    alt=""
-  >
 
-  <span id="notificationText">
-    通知しない
-  </span>
-</button>
+          <section
+            class="task-create-organize-card"
+          >
+            <h3
+              class="task-create-organize-title"
+            >
+              整理
+            </h3>
+
+            <div
+              class="task-create-organize-row"
+            >
+              <svg
+  class="task-create-organize-icon"
+  viewBox="0 0 24 24"
+  aria-hidden="true"
+>
+  <path d="M20 13 11 22 2 13V3h10l8 8a1.4 1.4 0 0 1 0 2Z" />
+  <circle cx="7" cy="8" r="1.5" />
+</svg>
+
+              <span
+                class="task-create-organize-label"
+              >
+                分類
+              </span>
+
+              <select
+                class="task-create-organize-select"
+                name="category"
+              >
+                <option value="work">
+                  仕事
+                </option>
+
+                <option value="school">
+                  学校
+                </option>
+
+                <option value="shopping">
+                  買い物
+                </option>
+
+                <option value="private">
+                  プライベート
+                </option>
+
+                <option
+                  value="other"
+                  selected
+                >
+                  その他
+                </option>
+              </select>
+
+              <span
+                class="task-create-organize-chevron"
+                aria-hidden="true"
+              >
+                ›
+              </span>
+            </div>
+
+            <div
+              class="
+                task-create-organize-row
+                task-create-priority-row
+              "
+            >
+              <svg
+  class="task-create-organize-icon"
+  viewBox="0 0 24 24"
+  aria-hidden="true"
+>
+  <path d="M5 21V4" />
+  <path d="M5 5c4-3 7 3 13 0v9c-6 3-9-3-13 0" />
+</svg>
+
+              <span
+                class="task-create-organize-label"
+              >
+                優先度
+              </span>
+
+              <div
+                class="task-create-priority-switch"
+              >
+                <label>
+                  <input
+                    type="radio"
+                    name="priority"
+                    value="normal"
+                    checked
+                  >
+                  <span>通常</span>
+                </label>
+
+                <label>
+                  <input
+                    type="radio"
+                    name="priority"
+                    value="important"
+                  >
+                  <span>重要</span>
+                </label>
+              </div>
+            </div>
+
+            <div
+              class="task-create-organize-row"
+            >
+              <svg
+  class="task-create-organize-icon"
+  viewBox="0 0 24 24"
+  aria-hidden="true"
+>
+  <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+  <path d="M10 21h4" />
+</svg>
+
+              <span
+                class="task-create-organize-label"
+              >
+                通知
+              </span>
+
+             <select
+  id="newTaskNotification"
+  class="task-create-organize-select"
+  name="notification"
+>
+  <option value="none">
+    通知なし
+  </option>
+
+  <option value="at_time">
+    予定時刻
+  </option>
+
+  <option value="10_minutes_before">
+    10分前
+  </option>
+
+  <option value="30_minutes_before">
+    30分前
+  </option>
+
+  <option value="1_hour_before">
+    1時間前
+  </option>
+
+  <option value="day_before">
+    前日
+  </option>
+</select>
+              </select>
+
+              <span
+                class="task-create-organize-chevron"
+                aria-hidden="true"
+              >
+                ›
+              </span>
+            </div>
+          </section>
+
+          <label
+  class="task-create-label"
+  for="newTaskLocation"
+>
+  場所
+</label>
 
 <input
-  id="notificationValue"
-  name="notification"
-  type="hidden"
-  value="none"
+  id="newTaskLocation"
+  class="task-create-input"
+  name="location"
+  type="text"
+  maxlength="200"
+  placeholder="任意"
+  autocomplete="off"
 >
 
-<div
-  id="newTaskNotificationSheetOverlay"
-  class="sheet-overlay"
-  hidden
-></div>
+          <label
+            class="task-create-label"
+            for="newTaskDescription"
+          >
+            メモ
+          </label>
 
-<section
-  id="newTaskNotificationSheet"
-  class="sheet-modal"
-  aria-labelledby="newTaskNotificationSheetTitle"
-  hidden
->
-  <div
-    class="sheet-handle"
-    aria-hidden="true"
-  ></div>
-
-  <h2
-    id="newTaskNotificationSheetTitle"
-    class="sheet-title"
-  >
-    通知タイミング
-  </h2>
-
-  <div class="notification-sheet-options">
-    <button
-      class="sheet-item new-task-notification-sheet-item"
-      type="button"
-      data-notification-value="none"
-    >
-      通知なし
-    </button>
-
-    <button
-      class="sheet-item new-task-notification-sheet-item"
-      type="button"
-      data-notification-value="at_time"
-    >
-      予定時刻
-    </button>
-
-    <button
-      class="sheet-item new-task-notification-sheet-item"
-      type="button"
-      data-notification-value="10_minutes_before"
-    >
-      10分前
-    </button>
-
-    <button
-      class="sheet-item new-task-notification-sheet-item"
-      type="button"
-      data-notification-value="30_minutes_before"
-    >
-      30分前
-    </button>
-
-    <button
-      class="sheet-item new-task-notification-sheet-item"
-      type="button"
-      data-notification-value="1_hour_before"
-    >
-      1時間前
-    </button>
-
-    <button
-      class="sheet-item new-task-notification-sheet-item"
-      type="button"
-      data-notification-value="day_before"
-    >
-      前日
-    </button>
-  </div>
-
-  <button
-    id="closeNewTaskNotificationSheetButton"
-    class="sheet-cancel-button"
-    type="button"
-  >
-    キャンセル
-  </button>
-</section>
+          <textarea
+            id="newTaskDescription"
+            class="
+              task-create-input
+              task-create-textarea
+            "
+            name="description"
+            placeholder="任意"
+          ></textarea>
 
           <p
             id="taskCreateError"
@@ -833,156 +899,6 @@ addTaskButton.addEventListener(
         </form>
       `
     );
-
-    const notificationToggle =
-  document.getElementById(
-    "notificationToggle"
-  );
-
-const notificationIcon =
-  document.getElementById(
-    "notificationIcon"
-  );
-
-const notificationText =
-  document.getElementById(
-    "notificationText"
-  );
-
-const notificationValue =
-  document.getElementById(
-    "notificationValue"
-  );
-
-const dueTimeInput =
-  document.querySelector(
-    '#addTaskForm input[name="due_time"]'
-  );
-
-const notificationSheetOverlay =
-  document.getElementById(
-    "newTaskNotificationSheetOverlay"
-  );
-
-const notificationSheet =
-  document.getElementById(
-    "newTaskNotificationSheet"
-  );
-
-const closeNotificationSheetButton =
-  document.getElementById(
-    "closeNewTaskNotificationSheetButton"
-  );
-
-const notificationSheetItems =
-  document.querySelectorAll(
-    ".new-task-notification-sheet-item"
-  );
-
-const timeRequiredNotifications = [
-  "at_time",
-  "10_minutes_before",
-  "30_minutes_before",
-  "1_hour_before",
-];
-
-function updateNewTaskNotificationButton() {
-  const isOn =
-    notificationValue.value !== "none";
-
-  const label = {
-    none: "通知なし",
-    at_time: "予定時刻",
-    "10_minutes_before": "10分前",
-    "30_minutes_before": "30分前",
-    "1_hour_before": "1時間前",
-    day_before: "前日",
-  }[notificationValue.value] || "通知なし";
-
-  notificationText.textContent = label;
-
-  notificationToggle.setAttribute(
-    "aria-pressed",
-    String(isOn)
-  );
-
-  notificationIcon.src = isOn
-    ? "/images/tasks/notia-gong-on.png"
-    : "/images/tasks/notia-gong-off.png";
-}
-
-function openNewTaskNotificationSheet() {
-  const hasDueTime =
-    Boolean(dueTimeInput?.value);
-
-  notificationSheetItems.forEach(
-    (item) => {
-      const requiresTime =
-        timeRequiredNotifications.includes(
-          item.dataset.notificationValue
-        );
-
-      item.disabled =
-        requiresTime && !hasDueTime;
-    }
-  );
-
-  notificationSheetOverlay.hidden = false;
-  notificationSheet.hidden = false;
-}
-
-function closeNewTaskNotificationSheet() {
-  notificationSheetOverlay.hidden = true;
-  notificationSheet.hidden = true;
-}
-
-notificationToggle.addEventListener(
-  "click",
-  openNewTaskNotificationSheet
-);
-
-notificationSheetOverlay.addEventListener(
-  "click",
-  closeNewTaskNotificationSheet
-);
-
-closeNotificationSheetButton.addEventListener(
-  "click",
-  closeNewTaskNotificationSheet
-);
-
-notificationSheetItems.forEach((item) => {
-  item.addEventListener("click", () => {
-    const value =
-      item.dataset.notificationValue;
-
-    if (!value) {
-      return;
-    }
-
-    notificationValue.value = value;
-
-    updateNewTaskNotificationButton();
-    closeNewTaskNotificationSheet();
-  });
-});
-
-dueTimeInput?.addEventListener(
-  "input",
-  () => {
-    if (
-      !dueTimeInput.value &&
-      timeRequiredNotifications.includes(
-        notificationValue.value
-      )
-    ) {
-      notificationValue.value = "none";
-      updateNewTaskNotificationButton();
-    }
-  }
-);
-
-updateNewTaskNotificationButton();
 
     const form =
       document.getElementById(
@@ -1014,9 +930,11 @@ updateNewTaskNotificationButton();
         const formData =
           new FormData(form);
 
-        const title = String(
-          formData.get("title") || ""
-        ).trim();
+        const title =
+          String(
+            formData.get("title") ||
+            ""
+          ).trim();
 
         if (!title) {
           titleInput.focus();
@@ -1025,49 +943,77 @@ updateNewTaskNotificationButton();
 
         const taskData = {
           title,
+
+          description:
+            String(
+              formData.get(
+                "description"
+              ) || ""
+            ).trim(),
+
           due_date:
-            formData.get("due_date") ||
-            null,
+            formData.get(
+              "due_date"
+            ) || null,
+
           due_time:
-    formData.get("due_time") ||
-    null,
+  formData.get("due_time") ||
+  null,
+
+  location:
+  String(
+    formData.get("location") ||
+    ""
+  ).trim(),
+
           priority:
-  formData.get("important") === "on"
-    ? "important"
-    : "normal",
+            formData.get(
+              "priority"
+            ) || "normal",
+
           category:
-            formData.get("category") ||
-            "other",
+            formData.get(
+              "category"
+            ) || "other",
+
           notification:
-  formData.get("notification") ||
-  "none",
+            formData.get(
+              "notification"
+            ) || "none",
         };
 
         try {
           saveButton.disabled = true;
+
           saveButton.textContent =
             "追加中...";
 
           errorMessage.hidden = true;
 
-          const res = await fetch(
-            "/api/tasks",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
-              body: JSON.stringify(
-                taskData
-              ),
-            }
-          );
+          const res =
+            await fetch(
+              "/api/tasks",
+              {
+                method: "POST",
+
+                headers: {
+                  "Content-Type":
+                    "application/json",
+                },
+
+                body:
+                  JSON.stringify(
+                    taskData
+                  ),
+              }
+            );
 
           const result =
             await res
               .json()
-              .catch(() => ({}));
+              .catch(
+                () => ({})
+              );
 
           if (!res.ok) {
             throw new Error(
@@ -1077,6 +1023,7 @@ updateNewTaskNotificationButton();
           }
 
           closeSheet();
+
           await loadTasks();
         } catch (error) {
           console.error(
@@ -1088,9 +1035,12 @@ updateNewTaskNotificationButton();
             error.message ||
             "タスクを追加できませんでした。";
 
-          errorMessage.hidden = false;
+          errorMessage.hidden =
+            false;
 
-          saveButton.disabled = false;
+          saveButton.disabled =
+            false;
+
           saveButton.textContent =
             "タスクを追加";
         }
@@ -1309,7 +1259,7 @@ async function loadGoogleIntegration() {
           );
 
           alert(
-            "Google Calendarとの同期に失敗しました。"
+            "Google予定との同期に失敗しました。"
           );
 
           syncButton.disabled = false;
@@ -1322,7 +1272,7 @@ async function loadGoogleIntegration() {
       "click",
       async () => {
         const confirmed = confirm(
-          "Google Calendarとの連携を解除しますか？"
+          "Google予定との連携を解除しますか？"
         );
 
         if (!confirmed) {
@@ -1350,7 +1300,7 @@ async function loadGoogleIntegration() {
           await loadGoogleIntegration();
 
           alert(
-            "Google Calendarとの連携を解除しました。"
+            "Google予定との連携を解除しました。"
           );
         } catch (error) {
           console.error(
@@ -1359,7 +1309,7 @@ async function loadGoogleIntegration() {
           );
 
           alert(
-            "Google Calendarとの連携を解除できませんでした。"
+            "Google予定との連携を解除できませんでした。"
           );
 
           logoutButton.disabled = false;

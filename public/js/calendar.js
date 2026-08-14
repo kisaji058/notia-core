@@ -607,33 +607,62 @@ function createDayCalendarItem({
   title,
   timeText,
   source,
+  taskId,
   eventItem,
   externalItem,
   routineId,
+  locationText,
 }) {
-  const item =
-    document.createElement("div");
+  const item = document.createElement("div");
 
   item.className =
     `task-card calendar-entry-card ${source}-event-card`;
 
-  const time =
-    document.createElement("strong");
+  const content = document.createElement("div");
+  content.className = "calendar-entry-content";
 
+  const time = document.createElement("strong");
+  time.className = "calendar-entry-time";
   time.textContent = timeText;
 
-  const titleElement =
-    document.createElement("div");
-
-  titleElement.className =
-    "calendar-entry-title";
-
+  const titleElement = document.createElement("div");
+  titleElement.className = "calendar-entry-title";
   titleElement.textContent = title;
 
-  item.appendChild(time);
-  item.appendChild(titleElement);
+  content.appendChild(time);
+  content.appendChild(titleElement);
+
+  if (locationText) {
+    const locationRow = document.createElement("div");
+    locationRow.className = "calendar-entry-location";
+
+    locationRow.innerHTML = `
+  <span
+    class="calendar-entry-location-icon"
+    aria-hidden="true"
+  >
+    <img
+      src="/images/notia-pointer.PNG"
+      alt=""
+    >
+  </span>
+
+  <span
+    class="calendar-entry-location-text"
+  ></span>
+`;
+
+    locationRow.querySelector(
+      ".calendar-entry-location-text"
+    ).textContent = locationText;
+
+    content.appendChild(locationRow);
+  }
+
+  item.appendChild(content);
 
   attachCalendarItemAction(item, {
+    taskId,
     eventItem,
     externalItem,
     routineId,
@@ -1055,39 +1084,14 @@ attachCalendarItemAction(item, {
     );
   }
 
-  if (entry.source === "routine") {
-    const icon =
-      document.createElement("img");
-
-    icon.className =
-      "month-calendar-item-icon";
-    icon.src =
-      "/images/nav/routine-icon-concept.png";
-    icon.alt = "";
-    icon.setAttribute(
-      "aria-hidden",
-      "true"
-    );
-
-    item.appendChild(icon);
-  }
-
-  const time =
-    document.createElement("span");
-
-  time.className =
-    "month-calendar-item-time";
-  time.textContent = entry.timeText;
-
   const title =
-    document.createElement("span");
+  document.createElement("span");
 
-  title.className =
-    "month-calendar-item-title";
-  title.textContent = entry.title;
+title.className =
+  "month-calendar-item-title";
+title.textContent = entry.title;
 
-  item.appendChild(time);
-  item.appendChild(title);
+item.appendChild(title);
 
   return item;
 }
@@ -1161,7 +1165,7 @@ function getMonthDetailMeta(entry) {
   if (entry.source === "google") {
     return (
       entry.externalItem?.location ||
-      "Google Calendar"
+      "Google予定"
     );
   }
 
@@ -1204,24 +1208,44 @@ function createMonthDetailItem(entry) {
   }
 
   const marker =
-    document.createElement("span");
+  document.createElement("span");
 
-  marker.className =
-    "month-detail-marker";
+marker.className =
+  "month-detail-marker";
 
-  if (entry.source === "routine") {
-    const icon =
-      document.createElement("img");
+const markerIconSources = {
+  notia:
+    "/images/nav/task-selected.png",
 
-    icon.src =
-      "/images/nav/routine-icon-concept.png";
-    icon.alt = "";
-    icon.setAttribute(
-      "aria-hidden",
-      "true"
-    );
-    marker.appendChild(icon);
-  }
+  event:
+    "/images/nav/point-selected.png",
+
+  google:
+    "/images/nav/point-selected.png",
+
+  routine:
+    "/images/nav/routine-icon-concept.png",
+};
+
+const markerIconSource =
+  markerIconSources[entry.source];
+
+if (markerIconSource) {
+  const icon =
+    document.createElement("img");
+
+  icon.src =
+    markerIconSource;
+
+  icon.alt = "";
+
+  icon.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+
+  marker.appendChild(icon);
+}
 
   const body =
     document.createElement("div");
@@ -1530,24 +1554,15 @@ function renderMonth(
     );
 
     dayButton.addEventListener(
-      "click",
-      () => {
-        selectedDate = dateString;
+  "click",
+  () => {
+    selectedDate = dateString;
+    currentView = "day";
 
-        if (!isCurrentMonth) {
-          loadCalendar();
-          return;
-        }
-
-        updateHeader();
-        renderMonth(
-          tasks,
-          events,
-          routines,
-          externalEvents
-        );
-      }
-    );
+    updateViewPanels();
+    loadCalendar();
+  }
+);
 
     const contents =
       document.createElement("div");
@@ -1741,90 +1756,85 @@ function renderCalendar(
   unscheduledList.innerHTML = "";
 
   // =====================
-  // Notiaタスク
-  // =====================
+// Notiaタスク
+// =====================
 
-  for (const task of tasks) {
-    const dueTime =
-      normalizeCalendarTime(
-        task.due_time
-      );
-
-    if (!dueTime) {
-      const item = createTaskCard(task, {
-        variant: "calendar",
-
-      });
-      addDayItemTypeIcon(
-  item,
-  "task"
-);
-
-markImportantDayTask(
-  item,
-  task
-);
-
-      const metaElement =
-  item.querySelector(".task-meta");
-
-if (metaElement) {
-  metaElement.remove();
-}
-
-      item.addEventListener(
-        "click",
-        () => {
-          window.location.href =
-            `/tasks/${task.id}`;
-        }
-      );
-
-      unscheduledList.appendChild(item);
-      continue;
-    }
-
-    const hour = Number(
-      dueTime.split(":")[0]
+for (const task of tasks) {
+  const dueTime =
+    normalizeCalendarTime(
+      task.due_time
     );
 
-    const slot =
-      document.getElementById(
-        `hour-${hour}`
-      );
+  if (!dueTime) {
+    const item =
+  createDayCalendarItem({
+    title: task.title,
+    timeText: "時間未設定",
+    source: "task",
+    taskId: task.id,
+    locationText:
+      task.location || "",
+  });
 
-    if (!slot) {
-      continue;
-    }
-
-    const card = createTaskCard(task, {
-      variant: "calendar",
-      timeText: dueTime,
-    });
     addDayItemTypeIcon(
-  card,
-  "task"
-);
-
-markImportantDayTask(
-  card,
-  task
-);
-
-    if (task.status === "completed") {
-      card.classList.add("completed");
-    }
-
-    card.addEventListener(
-      "click",
-      () => {
-        window.location.href =
-          `/tasks/${task.id}`;
-      }
+      item,
+      "task"
     );
 
-    slot.appendChild(card);
+    markImportantDayTask(
+      item,
+      task
+    );
+
+    if (
+      task.status === "completed"
+    ) {
+      item.classList.add(
+        "completed"
+      );
+    }
+
+    unscheduledList.appendChild(
+      item
+    );
+
+    continue;
   }
+
+  const card =
+  createDayCalendarItem({
+    title: task.title,
+    timeText: dueTime,
+    source: "task",
+    taskId: task.id,
+    locationText:
+      task.location || "",
+  });
+
+  addDayItemTypeIcon(
+    card,
+    "task"
+  );
+
+  markImportantDayTask(
+    card,
+    task
+  );
+
+  if (
+    task.status === "completed"
+  ) {
+    card.classList.add(
+      "completed"
+    );
+  }
+
+  appendDayItem(
+    card,
+    dueTime,
+    "時間未設定"
+  );
+}
 
   // =====================
   // Notia予定
@@ -1836,14 +1846,13 @@ markImportantDayTask(
         event.start_time
       );
 
-    const card =
-      createDayCalendarItem({
-        title: event.title,
-        timeText:
-          startTime || "終日",
-        source: "notia",
-        eventItem: event,
-      });
+    const card = createDayCalendarItem({
+  title: event.title,
+  timeText: startTime || "終日",
+  source: "notia",
+  eventItem: event,
+  locationText: event.location || "",
+});
     addDayItemTypeIcon(
   card,
   "calendar"
@@ -1894,21 +1903,24 @@ markImportantDayTask(
 
   for (const event of externalEvents) {
     if (isExternalAllDay(event)) {
-      const item =
-        createDayCalendarItem({
-          title: event.title,
-          timeText: "終日",
-          source: "google",
-          externalItem: event,
-        });
-      addDayItemTypeIcon(
-  item,
-  "calendar"
-);
+  const item =
+    createDayCalendarItem({
+      title: event.title,
+      timeText: "終日",
+      source: "google",
+      externalItem: event,
+      locationText:
+        event.location || "",
+    });
 
-      unscheduledList.appendChild(item);
-      continue;
-    }
+  addDayItemTypeIcon(
+    item,
+    "calendar"
+  );
+
+  unscheduledList.appendChild(item);
+  continue;
+}
 
     const timeParts =
       getJapanTimeParts(
@@ -1919,13 +1931,13 @@ markImportantDayTask(
       continue;
     }
 
-    const card =
-      createDayCalendarItem({
-        title: event.title,
-        timeText: timeParts.time,
-        source: "google",
-        externalItem: event,
-      });
+    const card = createDayCalendarItem({
+  title: event.title,
+  timeText: timeParts.time,
+  source: "google",
+  externalItem: event,
+  locationText: event.location || "",
+});
     addDayItemTypeIcon(
   card,
   "calendar"
@@ -1980,7 +1992,7 @@ function openExternalEventSheet(externalItem) {
   eventSheetContent.innerHTML = `
     <div class="event-sheet-form">
       <p class="sheet-help-text">
-        Googleカレンダーから同期された予定です。編集はGoogleカレンダーで行ってください。
+        Googleから同期された予定です。編集はGoogleカレンダーで行ってください。
       </p>
 
       <label class="sheet-label" for="externalEventTitle">
@@ -2159,6 +2171,36 @@ function openEventSheet(eventItem = null) {
       id="eventForm"
       class="event-sheet-form"
     >
+
+${
+  isEdit
+    ? `
+      <div class="event-type-switch">
+        <label class="event-type-option">
+          <input
+            id="eventTypeTask"
+            type="radio"
+            name="eventItemType"
+            value="task"
+          >
+          <span>タスク</span>
+        </label>
+
+        <label class="event-type-option">
+          <input
+            id="eventTypeEvent"
+            type="radio"
+            name="eventItemType"
+            value="event"
+            checked
+          >
+          <span>予定</span>
+        </label>
+      </div>
+    `
+    : ""
+}
+
       <label
         class="sheet-label"
         for="eventTitle"
@@ -2241,6 +2283,205 @@ function openEventSheet(eventItem = null) {
         時間を空欄にすると終日予定になります。
       </p>
 
+      <section class="event-organize-card">
+  <h2 class="event-card-title">
+    整理
+  </h2>
+
+  <div class="event-organize-list">
+
+    <label class="event-organize-item">
+      <svg
+        class="event-organize-icon"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path d="M20 13 11 22 2 13V3h10l8 8a1.4 1.4 0 0 1 0 2Z" />
+        <circle cx="7" cy="8" r="1.5" />
+      </svg>
+
+      <span class="event-organize-label">
+        分類
+      </span>
+
+      <select
+        id="eventCategory"
+        class="event-organize-control"
+      >
+        <option
+          value="work"
+          ${eventItem?.category === "work" ? "selected" : ""}
+        >
+          仕事
+        </option>
+
+        <option
+          value="school"
+          ${eventItem?.category === "school" ? "selected" : ""}
+        >
+          学校
+        </option>
+
+        <option
+          value="shopping"
+          ${eventItem?.category === "shopping" ? "selected" : ""}
+        >
+          買い物
+        </option>
+
+        <option
+          value="private"
+          ${eventItem?.category === "private" ? "selected" : ""}
+        >
+          プライベート
+        </option>
+
+        <option
+          value="other"
+          ${
+            !eventItem?.category ||
+            eventItem?.category === "other"
+              ? "selected"
+              : ""
+          }
+        >
+          その他
+        </option>
+      </select>
+
+      <span
+        class="event-organize-chevron"
+        aria-hidden="true"
+      >
+        ›
+      </span>
+    </label>
+
+    <div
+      class="event-organize-item event-priority-item"
+    >
+      <svg
+        class="event-organize-icon"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path d="M5 21V4" />
+        <path d="M5 5c4-3 7 3 13 0v9c-6 3-9-3-13 0" />
+      </svg>
+
+      <span class="event-organize-label">
+        優先度
+      </span>
+
+      <div
+        class="event-priority-switch"
+        role="radiogroup"
+        aria-label="優先度"
+      >
+        <label class="event-priority-option">
+          <input
+            id="eventPriorityNormal"
+            type="radio"
+            name="eventPriority"
+            value="normal"
+            ${
+              eventItem?.priority !== "important"
+                ? "checked"
+                : ""
+            }
+          >
+          <span>通常</span>
+        </label>
+
+        <label class="event-priority-option">
+          <input
+            id="eventPriorityImportant"
+            type="radio"
+            name="eventPriority"
+            value="important"
+            ${
+              eventItem?.priority === "important"
+                ? "checked"
+                : ""
+            }
+          >
+          <span>重要</span>
+        </label>
+      </div>
+    </div>
+
+    <label class="event-organize-item">
+      <svg
+        class="event-organize-icon"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+        <path d="M10 21h4" />
+      </svg>
+
+      <span class="event-organize-label">
+        通知
+      </span>
+
+      <select
+        id="eventNotification"
+        class="event-organize-control"
+      >
+        <option
+          value="none"
+          ${!eventItem?.notification || eventItem?.notification === "none" ? "selected" : ""}
+        >
+          通知なし
+        </option>
+
+        <option
+          value="at_time"
+          ${eventItem?.notification === "at_time" ? "selected" : ""}
+        >
+          予定時刻
+        </option>
+
+        <option
+          value="10_minutes_before"
+          ${eventItem?.notification === "10_minutes_before" ? "selected" : ""}
+        >
+          10分前
+        </option>
+
+        <option
+          value="30_minutes_before"
+          ${eventItem?.notification === "30_minutes_before" ? "selected" : ""}
+        >
+          30分前
+        </option>
+
+        <option
+          value="1_hour_before"
+          ${eventItem?.notification === "1_hour_before" ? "selected" : ""}
+        >
+          1時間前
+        </option>
+
+        <option
+          value="day_before"
+          ${eventItem?.notification === "day_before" ? "selected" : ""}
+        >
+          前日
+        </option>
+      </select>
+
+      <span
+        class="event-organize-chevron"
+        aria-hidden="true"
+      >
+        ›
+      </span>
+    </label>
+
+  </div>
+</section>
+
       <label
         class="sheet-label"
         for="eventLocation"
@@ -2308,6 +2549,64 @@ function openEventSheet(eventItem = null) {
       "eventForm"
     );
 
+    const eventStartTime =
+  document.getElementById(
+    "eventStartTime"
+  );
+
+const eventNotification =
+  document.getElementById(
+    "eventNotification"
+  );
+
+function updateEventNotificationOptions() {
+  if (
+    !eventStartTime ||
+    !eventNotification
+  ) {
+    return;
+  }
+
+  const hasStartTime =
+    Boolean(
+      eventStartTime.value
+    );
+
+  const requiresTimeValues = [
+    "at_time",
+    "10_minutes_before",
+    "30_minutes_before",
+    "1_hour_before",
+  ];
+
+  for (
+    const option of eventNotification.options
+  ) {
+    option.disabled =
+      requiresTimeValues.includes(
+        option.value
+      ) &&
+      !hasStartTime;
+  }
+
+  if (
+    !hasStartTime &&
+    requiresTimeValues.includes(
+      eventNotification.value
+    )
+  ) {
+    eventNotification.value =
+      "none";
+  }
+}
+
+eventStartTime.addEventListener(
+  "change",
+  updateEventNotificationOptions
+);
+
+updateEventNotificationOptions();
+
   eventForm.addEventListener(
     "submit",
     (submitEvent) => {
@@ -2317,6 +2616,8 @@ function openEventSheet(eventItem = null) {
       );
     }
   );
+
+  
 
   if (isEdit) {
     const deleteEventButton =
@@ -2406,7 +2707,34 @@ async function submitCalendarEvent(
       document
         .getElementById("eventDescription")
         .value.trim(),
+    
+    category:
+  document
+    .getElementById("eventCategory")
+    .value,
+
+priority:
+  document
+    .getElementById(
+      "eventPriorityImportant"
+    )
+    .checked
+      ? "important"
+      : "normal",
+
+notification:
+  document
+    .getElementById(
+      "eventNotification"
+    )
+    .value,
   };
+
+  const isConvertingToTask =
+  isEdit &&
+  document.getElementById(
+    "eventTypeTask"
+  )?.checked;
 
   try {
     saveButton.disabled = true;
@@ -2417,22 +2745,56 @@ async function submitCalendarEvent(
 
     message.textContent = "";
 
-    const response = await fetch(
-      isEdit
-        ? `/api/events/${eventItem.id}`
-        : "/api/events",
-      {
-        method:
-          isEdit ? "PUT" : "POST",
+    let endpoint;
+let method;
+let requestBody;
 
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
+if (isConvertingToTask) {
+  endpoint =
+    `/api/events/${eventItem.id}/convert-to-task`;
 
-        body: JSON.stringify(payload),
-      }
-    );
+  method = "POST";
+
+  requestBody = {
+  title: payload.title,
+  description: payload.description,
+  eventDate: payload.eventDate,
+  startTime: payload.startTime,
+  priority: payload.priority,
+  category: payload.category,
+  notification: payload.notification,
+};
+} else {
+  endpoint =
+    isEdit
+      ? `/api/events/${eventItem.id}`
+      : "/api/events";
+
+  method =
+    isEdit
+      ? "PUT"
+      : "POST";
+
+  requestBody = payload;
+}
+
+const response =
+  await fetch(
+    endpoint,
+    {
+      method,
+
+      headers: {
+        "Content-Type":
+          "application/json",
+      },
+
+      body:
+        JSON.stringify(
+          requestBody
+        ),
+    }
+  );
 
     const result =
       await response.json();
@@ -2445,7 +2807,13 @@ async function submitCalendarEvent(
     }
 
     closeEventSheet();
-    await loadCalendar();
+
+if (isConvertingToTask) {
+  location.href = "/tasks";
+  return;
+}
+
+await loadCalendar();
   } catch (error) {
     console.error(
       "予定保存エラー:",
@@ -2633,7 +3001,7 @@ async function syncCalendar() {
 
     if (!res.ok || !result.success) {
       throw new Error(
-        result.message || "Google Calendarとの同期に失敗しました。"
+        result.message || "Google予定との同期に失敗しました。"
       );
     }
 
@@ -2649,7 +3017,7 @@ async function syncCalendar() {
 
     if (syncStatus) {
       syncStatus.textContent =
-        "Google Calendarとの同期に失敗しました。";
+        "Google予定との同期に失敗しました。";
     }
   } finally {
     syncButton.disabled = false;

@@ -3,6 +3,7 @@ require("dotenv").config();
 const chatRuntime = require("./src/runtime/ChatRuntime");
 const express = require("express");
 const path = require("path");
+const multer = require("multer");
 const taskListManager = require("./src/managers/TaskListManager");
 const googleAuthRouter = require("./src/routes/googleAuth");
 const googleProvider =
@@ -48,10 +49,51 @@ const {
   updateRoutineById,
   deleteRoutineById,
   getTodayRoutines,
+  hasDailyNotificationBeenSent,
+markDailyNotificationSent,
+getNotificationSettings,
+updateNotificationSettings,
 } = require("./database");
+
+const {
+  extractDocumentSchedule,
+} = require("./openai");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const documentUpload = multer({
+  storage: multer.memoryStorage(),
+
+  limits: {
+    fileSize: 10 * 1024 * 1024,
+  },
+
+  fileFilter: (
+    req,
+    file,
+    callback
+  ) => {
+    const allowedTypes = [
+      "image/png",
+      "image/jpeg",
+      "application/pdf",
+    ];
+
+    if (
+      !allowedTypes.includes(
+        file.mimetype
+      )
+    ) {
+      return callback(
+        new Error(
+          "PNG、JPEG、PDFのみ添付できます。"
+        )
+      );
+    }
+
+    callback(null, true);
+  },
+});
 const notificationClients = new Set();
 
 const VALID_PRIORITIES = [
@@ -188,6 +230,81 @@ app.use("/auth", googleAuthRouter);
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
+app.get("/api/notification-settings", (req, res) => {
+  try {
+    return res.json(
+      getNotificationSettings()
+    );
+  } catch (error) {
+    console.error(
+      "通知設定取得エラー:",
+      error
+    );
+
+    return res.status(500).json({
+      error:
+        "通知設定の取得に失敗しました。",
+    });
+  }
+});
+
+app.put("/api/notification-settings", (req, res) => {
+  try {
+    const {
+      morningEnabled,
+      morningTime,
+      eveningEnabled,
+      eveningTime,
+    } = req.body;
+
+    const timePattern =
+      /^([01]\d|2[0-3]):[0-5]\d$/;
+
+    if (
+      typeof morningEnabled !== "boolean" ||
+      typeof eveningEnabled !== "boolean"
+    ) {
+      return res.status(400).json({
+        error:
+          "通知設定が正しくありません。",
+      });
+    }
+
+    if (
+      !timePattern.test(morningTime) ||
+      !timePattern.test(eveningTime)
+    ) {
+      return res.status(400).json({
+        error:
+          "通知時刻が正しくありません。",
+      });
+    }
+
+    updateNotificationSettings({
+      morningEnabled,
+      morningTime,
+      eveningEnabled,
+      eveningTime,
+    });
+
+    return res.json({
+      success: true,
+      settings:
+        getNotificationSettings(),
+    });
+  } catch (error) {
+    console.error(
+      "通知設定更新エラー:",
+      error
+    );
+
+    return res.status(500).json({
+      error:
+        "通知設定の更新に失敗しました。",
+    });
+  }
+});
+
 app.get("/tasks", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "tasks.html"));
 });
@@ -255,13 +372,16 @@ app.get("/api/events/:id", (req, res) => {
 app.post("/api/events", (req, res) => {
   try {
     const {
-      title,
-      description,
-      eventDate,
-      startTime,
-      endTime,
-      location,
-    } = req.body;
+  title,
+  description,
+  eventDate,
+  startTime,
+  endTime,
+  location,
+  priority = "normal",
+  category = "other",
+  notification = "none",
+} = req.body;
 
     if (
       typeof title !== "string" ||
@@ -313,18 +433,39 @@ app.post("/api/events", (req, res) => {
       });
     }
 
+    if (!VALID_PRIORITIES.includes(priority)) {
+  return res.status(400).json({
+    error: "優先度が正しくありません。",
+  });
+}
+
+if (!VALID_CATEGORIES.includes(category)) {
+  return res.status(400).json({
+    error: "分類が正しくありません。",
+  });
+}
+
+if (!VALID_NOTIFICATIONS.includes(notification)) {
+  return res.status(400).json({
+    error: "通知設定が正しくありません。",
+  });
+}
+
     const eventId = addEvent(
-      title.trim(),
-      typeof description === "string"
-        ? description.trim()
-        : "",
-      eventDate,
-      startTime || null,
-      endTime || null,
-      typeof location === "string"
-        ? location.trim()
-        : ""
-    );
+  title.trim(),
+  typeof description === "string"
+    ? description.trim()
+    : "",
+  eventDate,
+  startTime || null,
+  endTime || null,
+  typeof location === "string"
+    ? location.trim()
+    : "",
+  priority,
+  category,
+  notification
+);
 
     const event = getEventById(
       Number(eventId)
@@ -360,13 +501,16 @@ app.put("/api/events/:id", (req, res) => {
     }
 
     const {
-      title,
-      description,
-      eventDate,
-      startTime,
-      endTime,
-      location,
-    } = req.body;
+  title,
+  description,
+  eventDate,
+  startTime,
+  endTime,
+  location,
+  priority = "normal",
+  category = "other",
+  notification = "none",
+} = req.body;
 
     if (
       typeof title !== "string" ||
@@ -418,21 +562,51 @@ app.put("/api/events/:id", (req, res) => {
       });
     }
 
+    if (!VALID_PRIORITIES.includes(priority)) {
+  return res.status(400).json({
+    error: "優先度が正しくありません。",
+  });
+}
+
+if (!VALID_CATEGORIES.includes(category)) {
+  return res.status(400).json({
+    error: "分類が正しくありません。",
+  });
+}
+
+if (!VALID_NOTIFICATIONS.includes(notification)) {
+  return res.status(400).json({
+    error: "通知設定が正しくありません。",
+  });
+}
+
     const updated = updateEventById(id, {
-      title: title.trim(),
-      description:
-        typeof description === "string"
-          ? description.trim()
-          : "",
-      event_date: eventDate,
-      start_time: startTime || null,
-      end_time: endTime || null,
-      location:
-        typeof location === "string"
-          ? location.trim()
-          : "",
-      status: "active",
-    });
+  title: title.trim(),
+
+  description:
+    typeof description === "string"
+      ? description.trim()
+      : "",
+
+  event_date: eventDate,
+
+  start_time:
+    startTime || null,
+
+  end_time:
+    endTime || null,
+
+  location:
+    typeof location === "string"
+      ? location.trim()
+      : "",
+
+  priority,
+  category,
+  notification,
+
+  status: "active",
+});
 
     if (!updated) {
       return res.status(404).json({
@@ -499,14 +673,15 @@ app.get(
 app.post("/api/tasks", (req, res) => {
   try {
     const {
-      title,
-      description = "",
-      due_date: dueDate = null,
-      due_time: dueTime = null,
-      priority = "normal",
-      category = "other",
-      notification = "none",
-    } = req.body;
+  title,
+  description = "",
+  due_date: dueDate = null,
+  due_time: dueTime = null,
+  location = "",
+  priority = "normal",
+  category = "other",
+  notification = "none",
+} = req.body;
 
     const normalizedTitle =
       String(title || "").trim();
@@ -544,14 +719,16 @@ app.post("/api/tasks", (req, res) => {
     }
 
     const taskId = addTask(
-      normalizedTitle,
-      String(description || "").trim(),
-      dueDate || null,
-      priority,
-      category,
-      dueTime || null,
-      notification
-    );
+  normalizedTitle,
+  String(description || "").trim(),
+  dueDate || null,
+  priority,
+  category,
+  dueTime || null,
+  notification,
+  "task",
+  String(location || "").trim()
+);
 
     const task = getTaskById(taskId);
 
@@ -571,6 +748,119 @@ app.post("/api/tasks", (req, res) => {
   }
 });
 
+function normalizeUploadFilename(
+  filename
+) {
+  if (!filename) {
+    return "";
+  }
+
+  try {
+    return Buffer.from(
+      filename,
+      "latin1"
+    ).toString("utf8");
+  } catch {
+    return filename;
+  }
+}
+
+app.post(
+  "/api/document/extract",
+
+  documentUpload.single("file"),
+
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            error:
+              "ファイルがありません。",
+          });
+      }
+
+      const originalName =
+  normalizeUploadFilename(
+    req.file.originalname
+  );
+
+console.log(
+  "Document received:",
+  {
+    originalName,
+    mimeType:
+      req.file.mimetype,
+    size:
+      req.file.size,
+  }
+);
+
+     const result =
+  await extractDocumentSchedule({
+    buffer:
+      req.file.buffer,
+
+    mimeType:
+      req.file.mimetype,
+
+    fileName:
+      originalName,
+
+    userMessage:
+      String(
+        req.body.message || ""
+      ).trim(),
+  });
+
+  console.log(
+  "Document extraction result:",
+  JSON.stringify(
+    result,
+    null,
+    2
+  )
+);
+
+return res.json({
+  success: true,
+
+  file: {
+    name: originalName,
+    type:
+      req.file.mimetype,
+    size:
+      req.file.size,
+  },
+
+  items:
+    Array.isArray(result.items)
+      ? result.items
+      : [],
+
+  warnings:
+    Array.isArray(result.warnings)
+      ? result.warnings
+      : [],
+}); 
+    } catch (error) {
+      console.error(
+        "Document upload error:",
+        error
+      );
+
+      return res
+        .status(500)
+        .json({
+          success: false,
+          error:
+            "資料の受信に失敗しました。",
+        });
+    }
+  }
+);
 
 app.post("/api/chat", async (req, res) => {
   try {
@@ -616,7 +906,7 @@ app.post("/api/calendar/sync", async (req, res) => {
     res.status(500).json({
       success: false,
       message:
-        "Google Calendarとの同期に失敗しました。",
+        "Google予定との同期に失敗しました。",
     });
   }
 });
@@ -672,10 +962,9 @@ app.get("/api/calendar", (req, res) => {
     // 日表示
     if (date) {
       const tasks =
-        taskListManager.formatTasksForApi([
-          ...getTasksByDate(date),
-          ...getCompletedTasksByDate(date),
-        ]);
+  taskListManager.formatTasksForApi(
+    getTasksByDate(date)
+  );
 
       const events =
         getEventsByDate(date);
@@ -717,16 +1006,12 @@ app.get("/api/calendar", (req, res) => {
     }
 
     const tasks =
-      taskListManager.formatTasksForApi([
-        ...getTasksByDateRange(
-          startDate,
-          endDate
-        ),
-        ...getCompletedTasksByDateRange(
-          startDate,
-          endDate
-        ),
-      ]);
+  taskListManager.formatTasksForApi(
+    getTasksByDateRange(
+      startDate,
+      endDate
+    )
+  );
 
     const events =
       getEventsByDateRange(
@@ -868,7 +1153,7 @@ app.get("/api/today", (req, res) => {
               ?.slice(11, 16),
 
         subtitle:
-          "Google Calendar",
+          "Google予定",
         location:
           event.location,
         isAllDay:
@@ -1001,14 +1286,15 @@ app.patch("/api/tasks/:id", (req, res) => {
     }
 
     const {
-      title,
-      description,
-      dueDate,
-      dueTime,
-      priority,
-      category,
-      notification,
-    } = req.body;
+  title,
+  description,
+  dueDate,
+  dueTime,
+  location,
+  priority,
+  category,
+  notification,
+} = req.body;
 
     // タスク名
     if (
@@ -1082,6 +1368,13 @@ app.patch("/api/tasks/:id", (req, res) => {
     if (dueTime !== undefined) {
       updates.dueTime = dueTime || null;
     }
+
+    if (location !== undefined) {
+  updates.location =
+    typeof location === "string"
+      ? location.trim()
+      : "";
+}
 
     if (priority !== undefined) {
       updates.priority = priority;
@@ -1288,11 +1581,14 @@ app.post(
       }
 
       const {
-        title,
-        description,
-        eventDate,
-        startTime,
-      } = req.body || {};
+  title,
+  description,
+  eventDate,
+  startTime,
+  priority,
+  category,
+  notification,
+} = req.body || {};
 
       if (
         title !== undefined &&
@@ -1361,9 +1657,20 @@ app.post(
                 ? startTime || null
                 : undefined,
 
-            priority: "normal",
-            category: "other",
-            notification: "none",
+            priority:
+  priority !== undefined
+    ? priority
+    : event.priority,
+
+category:
+  category !== undefined
+    ? category
+    : event.category,
+
+notification:
+  notification !== undefined
+    ? notification
+    : event.notification,
           }
         );
 
@@ -1823,51 +2130,270 @@ function runNotificationCheck() {
 
   console.log("🔔 通知対象");
 
-for (const task of tasks) {
+for (const item of tasks) {
   console.log(
-    `・${task.title} (${task.dueDate} ${task.dueTime
-?? ""})`
+    `・${item.title} (${item.due_date || ""} ${item.due_time || ""})`
   );
 
   const body = {
-  same_day:
-    `本日は「${task.title}」があります。`,
+    same_day:
+      `本日は「${item.title}」があります。`,
 
-  day_before:
-    `明日は「${task.title}」があります。`,
+    day_before:
+      `明日は「${item.title}」があります。`,
 
-  at_time:
-    `「${task.title}」の時間です。`,
+    at_time:
+      `「${item.title}」の時間です。`,
 
-  "10_minutes_before":
-    `「${task.title}」は10分後です。`,
+    "10_minutes_before":
+      `「${item.title}」は10分後です。`,
 
-  "30_minutes_before":
-    `「${task.title}」は30分後です。`,
+    "30_minutes_before":
+      `「${item.title}」は30分後です。`,
 
-  "1_hour_before":
-    `「${task.title}」は1時間後です。`,
-}[task.notification] ||
-  `「${task.title}」のお知らせです。`;
+    "1_hour_before":
+      `「${item.title}」は1時間後です。`,
+  }[item.notification] ||
+    `「${item.title}」のお知らせです。`;
 
-broadcastNotification(
-  "Notia",
-  body
-);
-saveConversation(
-  "assistant",
-  `🔔 ${body}`
-);
+  broadcastNotification(
+    "Notia",
+    body
+  );
+
+  saveConversation(
+    "assistant",
+    `🔔 ${body}`
+  );
 }
 }
 
-runNotificationCheck();
+function getJapanNowParts() {
+  const now = new Date();
 
-setInterval(
-  runNotificationCheck,
-  60 * 1000
+  const date = now.toLocaleDateString(
+    "sv-SE",
+    {
+      timeZone: "Asia/Tokyo",
+    }
+  );
+
+  const time = now.toLocaleTimeString(
+    "ja-JP",
+    {
+      timeZone: "Asia/Tokyo",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }
+  );
+
+  return {
+    date,
+    time,
+  };
+}
+
+function createTaskTitleSummary(tasks) {
+  const titles =
+    tasks
+      .slice(0, 3)
+      .map(
+        (task) =>
+          `「${task.title}」`
+      );
+
+  if (tasks.length <= 3) {
+    return titles.join("、");
+  }
+
+  return (
+    titles.join("、") +
+    `など${tasks.length}件`
+  );
+}
+
+function runMorningTaskSummary() {
+  const { date, time } =
+    getJapanNowParts();
+
+  const settings =
+  getNotificationSettings();
+
+if (!settings.morningEnabled) {
+  return;
+}
+
+const morningTime =
+  settings.morningTime;
+
+const end = new Date(
+  `${date}T${morningTime}:00+09:00`
 );
+
+end.setMinutes(
+  end.getMinutes() + 2
+);
+
+const endTime =
+  end.toLocaleTimeString(
+    "ja-JP",
+    {
+      timeZone: "Asia/Tokyo",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }
+  );
+
+if (
+  time < morningTime ||
+  time >= endTime
+) {
+  return;
+}
+
+  if (
+    hasDailyNotificationBeenSent(
+      "morning_summary",
+      date
+    )
+  ) {
+    return;
+  }
+
+  const tasks =
+    getTasksByDate(date);
+
+  if (tasks.length === 0) {
+    markDailyNotificationSent(
+      "morning_summary",
+      date
+    );
+    return;
+  }
+
+  const summary =
+    createTaskTitleSummary(tasks);
+
+  const body =
+    tasks.length === 1
+      ? `おはようございます。今日は${summary}があります。`
+      : `おはようございます。今日は${summary}があります。無理のない順番で進めていきましょう。`;
+
+  broadcastNotification(
+    "Notia",
+    body
+  );
+
+  saveConversation(
+    "assistant",
+    `🔔 ${body}`
+  );
+
+  markDailyNotificationSent(
+    "morning_summary",
+    date
+  );
+}
+
+function runEveningTaskCheck() {
+  const { date, time } =
+    getJapanNowParts();
+
+  const settings =
+    getNotificationSettings();
+
+  if (!settings.eveningEnabled) {
+    return;
+  }
+
+  const eveningTime =
+    settings.eveningTime;
+
+  const end = new Date(
+    `${date}T${eveningTime}:00+09:00`
+  );
+
+  end.setMinutes(
+    end.getMinutes() + 2
+  );
+
+  const endTime =
+    end.toLocaleTimeString(
+      "ja-JP",
+      {
+        timeZone: "Asia/Tokyo",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }
+    );
+
+  if (
+    time < eveningTime ||
+    time >= endTime
+  ) {
+    return;
+  }
+
+  if (
+    hasDailyNotificationBeenSent(
+      "evening_check",
+      date
+    )
+  ) {
+    return;
+  }
+
+  const tasks =
+    getTasksByDate(date);
+
+  if (tasks.length === 0) {
+    markDailyNotificationSent(
+      "evening_check",
+      date
+    );
+    return;
+  }
+
+  const summary =
+    createTaskTitleSummary(tasks);
+
+  const body =
+    tasks.length === 1
+      ? `今日のタスクがあと1件、${summary}残っています。今日中に済ませるか、一度確認しておきませんか？`
+      : `今日のタスクがあと${tasks.length}件残っています。${summary}です。今日中に済ませるものだけ、もう一度確認しておきませんか？`;
+
+  broadcastNotification(
+    "Notia",
+    body
+  );
+
+  saveConversation(
+    "assistant",
+    `🔔 ${body}`
+  );
+
+  markDailyNotificationSent(
+    "evening_check",
+    date
+  );
+}
+
+function runNotificationCycle() {
+  runNotificationCheck();
+  runMorningTaskSummary();
+  runEveningTaskCheck();
+}
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Notia 起動: http://localhost:${PORT}`);
+  console.log(
+    `Notia 起動: http://localhost:${PORT}`
+  );
 });
+
+setInterval(
+  runNotificationCycle,
+  60 * 1000
+);

@@ -24,6 +24,8 @@ const taskPriorityNormal =
   document.getElementById("taskPriorityNormal");
 const taskPriorityImportant =
   document.getElementById("taskPriorityImportant");
+const taskLocation =
+  document.getElementById("taskLocation");
 const taskDescription = document.getElementById("taskDescription");
 const backLink = document.querySelector(".task-detail-back");
 const notificationButton =
@@ -208,8 +210,15 @@ function renderTask(task) {
 
 taskPriorityImportant.checked = isImportant;
 taskPriorityNormal.checked = !isImportant;
-  taskDescription.value = task.description || "";
-  taskNotification.value = task.notification || "none";
+
+taskLocation.value =
+  task.location || "";
+
+taskDescription.value =
+  task.description || "";
+
+taskNotification.value =
+  task.notification || "none";
 
   updateDateTimeState();
 
@@ -299,18 +308,36 @@ notificationSheetItems.forEach((item) => {
 
 function getTaskFormState() {
   return {
-        taskType: taskTypeEvent.checked
-      ? "event"
-      : "task",
-    title: taskTitle.value.trim(),
-    dueDate: taskDueDate.value || null,
-    dueTime: taskDueTime.value || null,
-    category: taskCategory.value,
-    priority: taskPriorityImportant.checked
-  ? "important"
-  : "normal",
-    description: taskDescription.value.trim(),
-    notification: taskNotification.value,
+    taskType:
+      taskTypeEvent.checked
+        ? "event"
+        : "task",
+
+    title:
+      taskTitle.value.trim(),
+
+    dueDate:
+      taskDueDate.value || null,
+
+    dueTime:
+      taskDueTime.value || null,
+
+    category:
+      taskCategory.value,
+
+    priority:
+      taskPriorityImportant.checked
+        ? "important"
+        : "normal",
+
+    location:
+      taskLocation.value.trim(),
+
+    description:
+      taskDescription.value.trim(),
+
+    notification:
+      taskNotification.value,
   };
 }
 

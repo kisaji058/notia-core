@@ -166,16 +166,23 @@ button {
   font-weight: 600;
 }
 
-.bottom-nav-icon {
+.bottom-nav-icon,
+.today-nav-icon {
   display: block;
+
   width: 25px;
   height: 25px;
+
   margin: 0 auto 3px;
+
   object-fit: contain;
   flex-shrink: 0;
 }
 
 .bottom-nav svg.bottom-nav-icon {
+  width: 25px;
+  height: 25px;
+
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
@@ -183,12 +190,11 @@ button {
   stroke-linejoin: round;
 }
 
-/* タスクアイコンだけ少し大きくする */
 .bottom-nav-icon-task {
-  width: 31px;
-  height: 31px;
-  margin-top: -3px;
-  margin-bottom: 0;
+  width: 25px;
+  height: 25px;
+
+  margin: 0 auto 3px;
 }
 
 /* 選択中を示す上部ライン */
@@ -371,4 +377,203 @@ button {
 .account-menu button:disabled {
   opacity: 0.55;
   cursor: default;
+}
+
+/* ===== Notification Settings ===== */
+
+.notification-settings-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+
+  padding:
+    24px
+    16px
+    max(
+      24px,
+      env(safe-area-inset-bottom)
+    );
+
+  background:
+    rgba(32, 48, 44, 0.18);
+
+  backdrop-filter:
+    blur(4px);
+}
+
+.notification-settings-card {
+  width: min(
+    420px,
+    100%
+  );
+
+  padding: 20px;
+
+  background: #ffffff;
+
+  border: 1px solid #dfe8e6;
+  border-radius: 24px;
+
+  box-shadow:
+    0 16px 40px
+    rgba(38, 65, 60, 0.16);
+}
+
+.notification-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 20px;
+}
+
+.notification-settings-header h2 {
+  margin: 0;
+
+  font-size: 20px;
+  font-weight: 700;
+
+  color: #2d3b38;
+}
+
+.notification-settings-close {
+  display: grid;
+  place-items: center;
+
+  width: 36px;
+  height: 36px;
+
+  padding: 0;
+
+  border: 0;
+  border-radius: 50%;
+
+  background: #edf4f2;
+  color: #53635f;
+
+  font-size: 22px;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.notification-setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 16px;
+}
+
+.notification-setting-text {
+  display: grid;
+  gap: 4px;
+}
+
+.notification-setting-text strong {
+  font-size: 15px;
+  font-weight: 700;
+
+  color: #354541;
+}
+
+.notification-setting-text span {
+  font-size: 12px;
+  line-height: 1.5;
+
+  color: #7d8d89;
+}
+
+.notification-setting-row input[type="checkbox"] {
+  width: 46px;
+  height: 26px;
+
+  flex: 0 0 auto;
+
+  accent-color: #5f8f86;
+
+  cursor: pointer;
+}
+
+.notification-setting-time {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 16px;
+
+  margin-top: 14px;
+}
+
+.notification-setting-time label {
+  font-size: 13px;
+  font-weight: 700;
+
+  color: #647470;
+}
+
+.notification-setting-time input[type="time"] {
+  min-width: 112px;
+
+  padding: 9px 12px;
+
+  border: 1px solid #dfe8e6;
+  border-radius: 12px;
+
+  background: #f8fbfa;
+  color: #354541;
+
+  font: inherit;
+  font-size: 14px;
+}
+
+.notification-setting-time input[type="time"]:disabled {
+  opacity: 0.45;
+}
+
+.notification-setting-divider {
+  height: 1px;
+
+  margin: 20px 0;
+
+  background: #edf1f0;
+}
+
+.notification-settings-save {
+  width: 100%;
+  min-height: 46px;
+
+  margin-top: 24px;
+
+  border: 0;
+  border-radius: 14px;
+
+  background: #edf4f2;
+  color: #355e57;
+
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.notification-settings-save:active,
+.notification-settings-close:active {
+  transform: scale(0.98);
+}
+
+.notification-settings-save:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+@media (min-width: 700px) {
+  .notification-settings-sheet {
+    align-items: center;
+  }
 }

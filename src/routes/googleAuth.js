@@ -58,7 +58,7 @@ console.log(
     );
 
     res.status(500).send(
-      "Google Calendarとの接続に失敗しました。"
+      "Google予定との接続に失敗しました。"
     );
   }
 });
