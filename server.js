@@ -2554,8 +2554,17 @@ function runMorningTaskSummary(
       userId,
       date
     );
+  
+  const events =
+  getEventsByDate(
+    userId,
+    date
+  );
 
-  if (tasks.length === 0) {
+  if (
+  tasks.length === 0 &&
+  events.length === 0
+) {
     markDailyNotificationSent(
       userId,
       "morning_summary",
@@ -2565,13 +2574,24 @@ function runMorningTaskSummary(
     return;
   }
 
-  const summary =
-    createTaskTitleSummary(tasks);
+  const items = [
+  ...tasks.map((task) => ({
+    title: task.title,
+    type: "task",
+  })),
+  ...events.map((event) => ({
+    title: event.title,
+    type: "event",
+  })),
+];
 
-  const body =
-    tasks.length === 1
-      ? `おはようございます。今日は${summary}があります。`
-      : `おはようございます。今日は${summary}があります。無理のない順番で進めていきましょう。`;
+const summary =
+  createTaskTitleSummary(items);
+
+const body =
+  items.length === 1
+    ? `おはようございます。今日は${summary}があります。`
+    : `おはようございます。今日は${summary}があります。無理のない順番で進めていきましょう。`;
 
   broadcastNotification(
     userId,

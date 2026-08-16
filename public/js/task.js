@@ -69,6 +69,7 @@ function updateNotificationButton() {
 
   const notificationText = {
   none: "通知なし",
+  same_day: "当日",
   at_time: "予定時刻",
   "10_minutes_before": "10分前",
   "30_minutes_before": "30分前",

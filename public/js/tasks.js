@@ -818,6 +818,10 @@ addTaskButton.addEventListener(
     通知なし
   </option>
 
+  <option value="same_day">
+  当日
+</option>
+
   <option value="at_time">
     予定時刻
   </option>
