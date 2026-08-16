@@ -324,8 +324,7 @@ if (taskReply) {
 const systemHint =
   promptBuilder.createSystemHint(
     userId,
-    message,
-    result
+    message
   );
 
 const prompt = promptBuilder.build({
