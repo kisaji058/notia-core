@@ -4,10 +4,24 @@ const router = express.Router();
 const googleProvider =
   require("../calendar/providers/GoogleCalendarProvider");
 
+function requireAuth(req, res, next) {
+  if (!req.session?.userId) {
+    return res.status(401).json({
+      error: "ログインが必要です。",
+    });
+  }
+
+  next();
+}
+
+router.use(requireAuth);
+
 router.post("/google/logout", (req, res) => {
   try {
     
-    googleProvider.disconnect();
+    googleProvider.disconnect(
+  req.session.userId
+);
 
     res.json({
       success: true,
@@ -43,7 +57,10 @@ router.get("/google/callback", async (req, res) => {
     }
 
     const account =
-  await googleProvider.connect(code);
+  await googleProvider.connect(
+    req.session.userId,
+    code
+  );
 
 console.log(
   "Google OAuth completed:",

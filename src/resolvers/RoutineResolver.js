@@ -2,18 +2,20 @@ const {
   createRoutine,
   getRoutinesByDayOfWeek,
 } = require("../../database");
-
 async function resolve(
   analysis,
-  context
+  context,
+  userId
 ) {
   if (
   analysis?.intent ===
   "routine_create"
 ) {
-  return resolveRoutineCreate(
-    analysis
-  );
+  return resolveRoutineQuery(
+  analysis.scheduleQuery?.range,
+  analysis.scheduleQuery?.dayOfWeek,
+  userId
+);
 }
 
 if (
@@ -35,7 +37,8 @@ return {
 };
 
 function resolveRoutineCreate(
-  analysis
+  analysis,
+  userId
 ) {
   const routine = analysis.routine;
 
@@ -53,7 +56,9 @@ function resolveRoutineCreate(
     };
   }
 
-  createRoutine({
+  createRoutine(
+  userId,
+  {
     title: routine.title,
     dayOfWeek:
       routine.dayOfWeek,
@@ -64,7 +69,8 @@ function resolveRoutineCreate(
     googleCalendarEnabled:
       routine.googleCalendarEnabled ===
       true,
-  });
+  }
+);
 
   const dayLabels = [
     "日曜日",
@@ -96,7 +102,8 @@ function resolveRoutineCreate(
 
 function resolveRoutineQuery(
   range = "today",
-  dayOfWeek = null
+  dayOfWeek = null,
+  userId
 ) {
   console.log({
     range,
@@ -158,9 +165,10 @@ function resolveRoutineQuery(
   }
 
   const routines =
-    getRoutinesByDayOfWeek(
-      resolvedDayOfWeek
-    );
+  getRoutinesByDayOfWeek(
+    userId,
+    resolvedDayOfWeek
+  );
 
 
 

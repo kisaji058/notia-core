@@ -7,7 +7,11 @@ const routineResolver =
 const taskResolver =
   require("../resolvers/TaskResolver");
 
-function resolve(_message, context) {
+function resolve(
+  _message,
+  context,
+  userId
+) {
   const analysis = context?.analysis;
 
   if (!analysis?.intent) {
@@ -18,9 +22,10 @@ function resolve(_message, context) {
     analysis.intent === "routine_create"
   ) {
     return routineResolver.resolve(
-      analysis,
-      context
-    );
+  analysis,
+  context,
+  userId
+);
   }
 
   if (
@@ -46,15 +51,17 @@ function resolve(_message, context) {
 
     case "routine":
       return routineResolver.resolve(
-        analysis,
-        context
-      );
+  analysis,
+  context,
+  userId
+);
 
     default:
       return scheduleResolver.resolve(
-        analysis,
-        context
-      );
+  analysis,
+  context,
+  userId
+);
   }
 }
 

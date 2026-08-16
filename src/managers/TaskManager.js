@@ -7,27 +7,41 @@ const {
 } = require("../../database");
 
 class TaskManager {
-  handle(analysis) {
+  handle(analysis, userId) {
+  if (!userId) {
+    throw new Error(
+      "TaskManager: userId is required"
+    );
+  }
     if (!analysis || !analysis.intent) {
       return null;
     }
 
     if (analysis.intent === "task_create") {
-      return this.handleCreate(analysis);
+      return this.handleCreate(
+  analysis,
+  userId
+);
     }
 
     if (analysis.intent === "task_update") {
-      return this.handleUpdate(analysis);
+      return this.handleUpdate(
+  analysis,
+  userId
+);
     }
 
     if (analysis.intent === "task_complete") {
-      return this.handleComplete(analysis);
+      return this.handleComplete(
+  analysis,
+  userId
+);
     }
 
     return null;
   }
 
-  handleCreate(analysis) {
+  handleCreate(analysis, userId) {
   const tasks =
     Array.isArray(analysis.tasks) && analysis.tasks.length > 0
       ? analysis.tasks
@@ -41,6 +55,7 @@ class TaskManager {
             category: analysis.category,
             notification: analysis.notification,
             itemType: analysis.itemType,
+            location: analysis.location,
           },
         ];
 
@@ -77,12 +92,13 @@ if (task.itemType === "event") {
   }
 
   const eventId = addEvent(
+  userId,
   task.title,
   task.description || "",
   task.dueDate,
   task.dueTime || null,
   null,
-  "",
+  task.location || "",
   task.priority || "normal",
   task.category || "other",
   task.notification || "none"
@@ -112,6 +128,7 @@ if (task.itemType === "event") {
 
     const existingTasks =
   findActiveTasks(
+    userId,
     task.title,
     task.dueDate || null,
     task.dueTime || null
@@ -124,6 +141,7 @@ if (task.itemType === "event") {
     }
 
     const taskId = addTask(
+  userId,
   task.title,
   task.description || "",
   task.dueDate || null,
@@ -133,7 +151,8 @@ if (task.itemType === "event") {
   task.notification || "none",
   task.itemType === "event"
     ? "event"
-    : "task"
+    : "task",
+  task.location || ""
 );
 
     console.log("✅ タスク登録:", task.title);
@@ -162,7 +181,7 @@ if (task.itemType === "event") {
   };
 }
 
-  handleUpdate(analysis) {
+  handleUpdate(analysis, userId) {
     if (!analysis.targetTaskId) {
       return {
         updated: false,
@@ -199,6 +218,7 @@ if (task.itemType === "event") {
     }
 
     const success = updateTaskById(
+      userId,
       analysis.targetTaskId,
       updates
     );
@@ -216,7 +236,7 @@ if (task.itemType === "event") {
     };
   }
 
-  handleComplete(analysis) {
+  handleComplete(analysis, userId) {
     if (!analysis.targetTaskId) {
       return {
         completed: false,
@@ -225,6 +245,7 @@ if (task.itemType === "event") {
     }
 
     const success = completeTaskById(
+      userId,
       analysis.targetTaskId
     );
 

@@ -1,7 +1,11 @@
 const { getAllMemories } = require("../../database");
 
-function getRelevantMemories(message) {
-  const memories = getAllMemories();
+function getRelevantMemories(
+  userId,
+  message
+) {
+  const memories =
+    getAllMemories(userId);
 
   if (!message || !memories.length) {
     return [];

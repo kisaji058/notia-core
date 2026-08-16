@@ -18,17 +18,22 @@ const GOOGLE_WEEKDAYS = [
   "SA",
 ];
 
-const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_REDIRECT_URI
-);
+function createOAuth2Client() {
+  return new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI
+  );
+}
 
 // =====================
 // OAuth
 // =====================
 
 function getAuthUrl() {
+  const oauth2Client =
+    createOAuth2Client();
+
   return oauth2Client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
@@ -40,25 +45,69 @@ function getAuthUrl() {
   });
 }
 
-function loadStoredCredentials() {
+function getAuthenticatedClient(userId) {
+  if (!userId) {
+    throw new Error(
+      "GoogleCalendarProvider: userId is required"
+    );
+  }
+
   const tokens =
-    getIntegrationTokens(PROVIDER_NAME);
+    getIntegrationTokens(
+      userId,
+      PROVIDER_NAME
+    );
 
   if (!tokens) {
-    return false;
+    throw new Error(
+      "Google Calendarが未接続です。"
+    );
   }
+
+  const oauth2Client =
+    createOAuth2Client();
 
   oauth2Client.setCredentials(tokens);
 
-  return true;
+  oauth2Client.on(
+    "tokens",
+    (newTokens) => {
+      try {
+        saveIntegrationTokens(
+          userId,
+          PROVIDER_NAME,
+          newTokens
+        );
+      } catch (error) {
+        console.error(
+          "Google token save error:",
+          error
+        );
+      }
+    }
+  );
+
+  return oauth2Client;
 }
 
-async function connect(code) {
+async function connect(
+  userId,
+  code
+) {
+  if (!userId) {
+    throw new Error(
+      "GoogleCalendarProvider: userId is required"
+    );
+  }
+
   if (!code) {
     throw new Error(
       "Google認証コードが指定されていません。"
     );
   }
+
+  const oauth2Client =
+    createOAuth2Client();
 
   const { tokens } =
     await oauth2Client.getToken(code);
@@ -66,9 +115,12 @@ async function connect(code) {
   oauth2Client.setCredentials(tokens);
 
   const accountInfo =
-    await getAccountInfo();
+    await getAccountInfo(
+      oauth2Client
+    );
 
   saveIntegrationTokens(
+    userId,
     PROVIDER_NAME,
     tokens,
     accountInfo.email
@@ -77,32 +129,20 @@ async function connect(code) {
   return accountInfo;
 }
 
-function disconnect() {
-  deleteIntegration(PROVIDER_NAME);
-
-  oauth2Client.setCredentials({});
+function disconnect(userId) {
+  return deleteIntegration(
+    userId,
+    PROVIDER_NAME
+  );
 }
-
-// アクセストークン更新時にDBへ保存
-oauth2Client.on("tokens", (tokens) => {
-  try {
-    saveIntegrationTokens(
-      PROVIDER_NAME,
-      tokens
-    );
-  } catch (error) {
-    console.error(
-      "Google token save error:",
-      error
-    );
-  }
-});
 
 // =====================
 // Account
 // =====================
 
-async function getAccountInfo() {
+async function getAccountInfo(
+  oauth2Client
+) {
   const oauth2 = google.oauth2({
     version: "v2",
     auth: oauth2Client,
@@ -113,7 +153,8 @@ async function getAccountInfo() {
 
   return {
     provider: PROVIDER_NAME,
-    email: response.data.email ?? null,
+    email:
+      response.data.email ?? null,
   };
 }
 
@@ -121,19 +162,20 @@ async function getAccountInfo() {
 // Authentication check
 // =====================
 
-function isAuthenticated() {
-  return loadStoredCredentials();
+function isAuthenticated(userId) {
+  return Boolean(
+    getIntegrationTokens(
+      userId,
+      PROVIDER_NAME
+    )
+  );
 }
 
-function getAuthenticatedCalendar() {
-  const connected =
-    loadStoredCredentials();
-
-  if (!connected) {
-    throw new Error(
-      "Google Calendarが未接続です。"
-    );
-  }
+function getAuthenticatedCalendar(
+  userId
+) {
+  const oauth2Client =
+    getAuthenticatedClient(userId);
 
   return google.calendar({
     version: "v3",
@@ -145,13 +187,16 @@ function getAuthenticatedCalendar() {
 // Events
 // =====================
 
-async function listEvents({
-  timeMin = new Date().toISOString(),
-  timeMax = null,
-  maxResults = 250,
-} = {}) {
+async function listEvents(
+  userId,
+  {
+    timeMin = new Date().toISOString(),
+    timeMax = null,
+    maxResults = 250,
+  } = {}
+) {
   const calendar =
-    getAuthenticatedCalendar();
+    getAuthenticatedCalendar(userId);
 
   const params = {
     calendarId: "primary",
@@ -292,7 +337,10 @@ function getNextRoutineDateTime(
   );
 }
 
-async function createEventFromTask(task) {
+async function createEventFromTask(
+  userId,
+  task
+) {
   if (!task) {
     throw new Error(
       "同期するタスクが指定されていません。"
@@ -306,7 +354,7 @@ async function createEventFromTask(task) {
   }
 
   const calendar =
-    getAuthenticatedCalendar();
+    getAuthenticatedCalendar(userId);
 
   let start;
   let end;
@@ -424,6 +472,7 @@ async function createEventFromTask(task) {
 }
 
 async function createRecurringEventFromRoutine(
+  userId,
   routine
 ) {
   if (!routine) {
@@ -460,7 +509,7 @@ async function createRecurringEventFromRoutine(
   }
 
   const calendar =
-    getAuthenticatedCalendar();
+    getAuthenticatedCalendar(userId);
 
   const start =
     getNextRoutineDateTime(
@@ -538,6 +587,7 @@ async function createRecurringEventFromRoutine(
 }
 
 async function updateRecurringEventFromRoutine(
+  userId,
   routine
 ) {
   if (!routine.google_event_id) {
@@ -545,7 +595,7 @@ async function updateRecurringEventFromRoutine(
   }
 
   const calendar =
-    getAuthenticatedCalendar();
+    getAuthenticatedCalendar(userId);
 
   const weekday =
     GOOGLE_WEEKDAYS[
@@ -599,6 +649,7 @@ async function updateRecurringEventFromRoutine(
 }
 
  async function deleteRecurringEvent(
+  userId,
   googleEventId
 ) {
   if (!googleEventId) {
@@ -606,7 +657,7 @@ async function updateRecurringEventFromRoutine(
   }
 
   const calendar =
-    getAuthenticatedCalendar();
+    getAuthenticatedCalendar(userId);
 
   await calendar.events.delete({
     calendarId: "primary",

@@ -13,16 +13,25 @@ const NOTIFICATION_OFFSETS = {
 };
 
 class NotificationManager {
-  getTargets(date) {
+  getTargets(
+  userId,
+  date
+) {
   const tasks =
-    getNotificationTargets(date)
+    getNotificationTargets(
+      userId,
+      date
+    )
       .map((task) => ({
         ...task,
         notificationSource: "task",
       }));
 
   const events =
-    getEventNotificationTargets(date)
+    getEventNotificationTargets(
+      userId,
+      date
+    )
       .map((event) => ({
         ...event,
         notificationSource: "event",
@@ -99,12 +108,15 @@ class NotificationManager {
     );
   }
 
-  checkNotifications() {
+  checkNotifications(userId) {
   const now = new Date();
   const today = this.getToday(now);
 
   const targets =
-    this.getTargets(today);
+    this.getTargets(
+      userId,
+      today
+    );
 
   const notificationTargets =
     targets.filter((item) =>
@@ -118,9 +130,15 @@ class NotificationManager {
     if (
       item.notificationSource === "event"
     ) {
-      markEventNotified(item.id);
+      markEventNotified(
+        userId,
+        item.id
+      );
     } else {
-      markTaskNotified(item.id);
+      markTaskNotified(
+        userId,
+        item.id
+      );
     }
   }
 

@@ -4,8 +4,16 @@ const {
 } = require("../memory/MemoryRetriever");
 
 class PromptBuilder {
-  createSystemHint(message, result = {}) {
-    const relevantMemories = getRelevantMemories(message);
+  createSystemHint(
+  userId,
+  message,
+  result = {}
+) {
+  const relevantMemories =
+    getRelevantMemories(
+      userId,
+      message
+    );
     const memoryHint = formatMemoriesForPrompt(relevantMemories);
 
     const today = new Date().toLocaleDateString("sv-SE", {

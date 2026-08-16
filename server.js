@@ -2,12 +2,19 @@ require("dotenv").config();
 
 const chatRuntime = require("./src/runtime/ChatRuntime");
 const express = require("express");
+const session = require("express-session");
+const SQLiteStore =
+  require("connect-sqlite3")(
+    session
+  );
 const path = require("path");
 const multer = require("multer");
 const taskListManager = require("./src/managers/TaskListManager");
 const googleAuthRouter = require("./src/routes/googleAuth");
 const googleProvider =
   require("./src/calendar/providers/GoogleCalendarProvider");
+const authRouter =
+  require("./src/routes/auth");
 
 const {
   saveConversation,
@@ -49,6 +56,7 @@ const {
   updateRoutineById,
   deleteRoutineById,
   getTodayRoutines,
+  getAllUsers,
   hasDailyNotificationBeenSent,
 markDailyNotificationSent,
 getNotificationSettings,
@@ -61,6 +69,54 @@ const {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProduction =
+  process.env.NODE_ENV ===
+  "production";
+
+if (isProduction) {
+  app.set("trust proxy", 1);
+}
+
+app.use(
+  session({
+    store: new SQLiteStore({
+      db: "sessions.db",
+      dir: __dirname,
+    }),
+
+    secret:
+      process.env.SESSION_SECRET ||
+      "notia-local-development-secret",
+
+    resave: false,
+    saveUninitialized: false,
+
+    cookie: {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: isProduction,
+      maxAge:
+        1000 *
+        60 *
+        60 *
+        24 *
+        30,
+    },
+  })
+);
+app.use("/login", authRouter);
+
+function requireAuth(req, res, next) {
+  if (!req.session?.userId) {
+    return res.status(401).json({
+      error: "ログインが必要です。",
+    });
+  }
+
+  next();
+}
+
+app.use("/api", requireAuth);
 const documentUpload = multer({
   storage: multer.memoryStorage(),
 
@@ -94,7 +150,8 @@ const documentUpload = multer({
     callback(null, true);
   },
 });
-const notificationClients = new Set();
+const notificationClients =
+  new Map();
 
 const VALID_PRIORITIES = [
   "important",
@@ -160,7 +217,14 @@ function getRoutineDays(routine) {
 app.get(
   "/api/notifications/stream",
   (req, res) => {
-    console.log("SSE client connected");
+    const userId =
+      req.session.userId;
+
+    console.log(
+      "SSE client connected:",
+      userId
+    );
+
     res.setHeader(
       "Content-Type",
       "text/event-stream"
@@ -178,24 +242,62 @@ app.get(
 
     res.flushHeaders();
 
-res.write(": connected\n\n");
+    res.write(": connected\n\n");
 
-    notificationClients.add(res);
+    let clients =
+      notificationClients.get(
+        userId
+      );
+
+    if (!clients) {
+      clients = new Set();
+
+      notificationClients.set(
+        userId,
+        clients
+      );
+    }
+
+    clients.add(res);
 
     req.on("close", () => {
-      notificationClients.delete(res);
+      const currentClients =
+        notificationClients.get(
+          userId
+        );
+
+      if (!currentClients) {
+        return;
+      }
+
+      currentClients.delete(res);
+
+      if (
+        currentClients.size === 0
+      ) {
+        notificationClients.delete(
+          userId
+        );
+      }
     });
   }
 );
 
 app.get("/api/conversations", (req, res) => {
-  const conversations = getRecentConversations(100);
+  const conversations =
+  getRecentConversations(
+    req.session.userId,
+    100
+  );
   res.json(conversations);
 });
 
 app.get("/api/integrations", (req, res) => {
   try {
-    const google = getGoogleIntegration();
+    const google =
+  getGoogleIntegration(
+    req.session.userId
+  );
 
     if (!google) {
       return res.json({
@@ -265,7 +367,9 @@ app.use(
 app.get("/api/notification-settings", (req, res) => {
   try {
     return res.json(
-      getNotificationSettings()
+      getNotificationSettings(
+        req.session.userId
+      )
     );
   } catch (error) {
     console.error(
@@ -312,18 +416,24 @@ app.put("/api/notification-settings", (req, res) => {
       });
     }
 
-    updateNotificationSettings({
-      morningEnabled,
-      morningTime,
-      eveningEnabled,
-      eveningTime,
-    });
+    updateNotificationSettings(
+  req.session.userId,
+  {
+    morningEnabled,
+    morningTime,
+    eveningEnabled,
+    eveningTime,
+  }
+);
 
-    return res.json({
-      success: true,
-      settings:
-        getNotificationSettings(),
-    });
+return res.json({
+  success: true,
+  settings:
+    getNotificationSettings(
+      req.session.userId
+    ),
+});
+
   } catch (error) {
     console.error(
       "通知設定更新エラー:",
@@ -383,7 +493,10 @@ app.get("/api/events/:id", (req, res) => {
       });
     }
 
-    const event = getEventById(id);
+    const event = getEventById(
+  req.session.userId,
+  id
+);
 
     if (!event) {
       return res.status(404).json({
@@ -484,6 +597,7 @@ if (!VALID_NOTIFICATIONS.includes(notification)) {
 }
 
     const eventId = addEvent(
+      req.session.userId,
   title.trim(),
   typeof description === "string"
     ? description.trim()
@@ -500,8 +614,9 @@ if (!VALID_NOTIFICATIONS.includes(notification)) {
 );
 
     const event = getEventById(
-      Number(eventId)
-    );
+  req.session.userId,
+  Number(eventId)
+);
 
     return res.status(201).json({
       success: true,
@@ -526,7 +641,10 @@ app.put("/api/events/:id", (req, res) => {
       });
     }
 
-    if (!getEventById(id)) {
+    if (!getEventById(
+  req.session.userId,
+  id
+)) {
       return res.status(404).json({
         error: "予定が見つかりません。",
       });
@@ -612,7 +730,10 @@ if (!VALID_NOTIFICATIONS.includes(notification)) {
   });
 }
 
-    const updated = updateEventById(id, {
+    const updated = updateEventById(
+  req.session.userId,
+  id,
+  {
   title: title.trim(),
 
   description:
@@ -648,7 +769,10 @@ if (!VALID_NOTIFICATIONS.includes(notification)) {
 
     return res.json({
       success: true,
-      event: getEventById(id),
+      event: getEventById(
+  req.session.userId,
+  id
+),
     });
   } catch (error) {
     console.error("予定更新エラー:", error);
@@ -669,13 +793,19 @@ app.delete("/api/events/:id", (req, res) => {
       });
     }
 
-    if (!getEventById(id)) {
+    if (!getEventById(
+  req.session.userId,
+  id
+)) {
       return res.status(404).json({
         error: "予定が見つかりません。",
       });
     }
 
-    deleteEventById(id);
+    deleteEventById(
+  req.session.userId,
+  id
+);
 
     return res.json({
       success: true,
@@ -751,6 +881,7 @@ app.post("/api/tasks", (req, res) => {
     }
 
     const taskId = addTask(
+      req.session.userId,
   normalizedTitle,
   String(description || "").trim(),
   dueDate || null,
@@ -762,7 +893,10 @@ app.post("/api/tasks", (req, res) => {
   String(location || "").trim()
 );
 
-    const task = getTaskById(taskId);
+    const task = getTaskById(
+  req.session.userId,
+  taskId
+);
 
     return res.status(201).json({
       success: true,
@@ -904,7 +1038,11 @@ app.post("/api/chat", async (req, res) => {
       });
     }
 
-    const result = await chatRuntime.handleChat(message);
+    const result =
+  await chatRuntime.handleChat(
+    message,
+    req.session.userId
+  );
 
     return res.json(result);
   } catch (error) {
@@ -918,7 +1056,10 @@ app.post("/api/chat", async (req, res) => {
 
 app.post("/api/calendar/sync", async (req, res) => {
   try {
-    const result = await syncGoogleCalendar();
+    const result =
+  await syncGoogleCalendar(
+    req.session.userId
+  );
 
     res.json({
   success: true,
@@ -995,24 +1136,33 @@ app.get("/api/calendar", (req, res) => {
     if (date) {
       const tasks =
   taskListManager.formatTasksForApi(
-    getTasksByDate(date)
+    getTasksByDate(
+  req.session.userId,
+  date
+)
   );
 
       const events =
-        getEventsByDate(date);
+        getEventsByDate(
+  req.session.userId,
+  date
+);
 
       const routines =
         expandRoutinesByDate(
-          getActiveRoutines(),
+          getActiveRoutines(
+  req.session.userId
+),
           date,
           date
         );
 
       const externalEvents =
         getExternalCalendarEventsByDate(
-          "google",
-          date
-        );
+  req.session.userId,
+  "google",
+  date
+);
 
       return res.json({
         tasks,
@@ -1040,6 +1190,7 @@ app.get("/api/calendar", (req, res) => {
     const tasks =
   taskListManager.formatTasksForApi(
     getTasksByDateRange(
+      req.session.userId,
       startDate,
       endDate
     )
@@ -1047,23 +1198,27 @@ app.get("/api/calendar", (req, res) => {
 
     const events =
       getEventsByDateRange(
-        startDate,
-        endDate
-      );
+  req.session.userId,
+  startDate,
+  endDate
+);
 
     const routines =
       expandRoutinesByDate(
-        getActiveRoutines(),
+        getActiveRoutines(
+  req.session.userId
+),
         startDate,
         endDate
       );
 
     const externalEvents =
       getExternalCalendarEventsByDateRange(
-        "google",
-        startDate,
-        endDate
-      );
+  req.session.userId,
+  "google",
+  startDate,
+  endDate
+);
 
     return res.json({
       tasks,
@@ -1096,14 +1251,22 @@ app.get("/api/today", (req, res) => {
 
     const tasks =
   taskListManager.formatTasksForApi([
-    ...getTasksByDate(date),
-    ...getCompletedTasksByDate(date),
+    ...getTasksByDate(
+  req.session.userId,
+  date
+),
+    ...getCompletedTasksByDate(
+  req.session.userId,
+  date
+),
   ]);
 
     const overdueTasks =
   taskListManager
     .formatTasksForApi(
-      getActiveTasks()
+      getActiveTasks(
+  req.session.userId
+)
     )
     .filter(
       (task) =>
@@ -1137,17 +1300,23 @@ app.get("/api/today", (req, res) => {
 );
 
     const events =
-      getEventsByDate(date);
+      getEventsByDate(
+  req.session.userId,
+  date
+);
 
     const externalEvents =
-      getExternalCalendarEventsByDate(
-        "google",
-        date
-      );
+  getExternalCalendarEventsByDate(
+    req.session.userId,
+    "google",
+    date
+  );
 
     const routines =
-      getTodayRoutines();
-
+  getTodayRoutines(
+    req.session.userId
+  );
+  
     const schedule = [
       ...events.map((event) => ({
         id: event.id,
@@ -1239,7 +1408,10 @@ timeline.sort((a, b) => {
 app.get("/api/tasks/completed", (req, res) => {
   try {
     const tasks = taskListManager.formatTasksForApi(
-      getRecentlyCompletedTasks(50)
+      getRecentlyCompletedTasks(
+  req.session.userId,
+  50
+)
     );
 
     return res.json(tasks);
@@ -1255,7 +1427,9 @@ app.get("/api/tasks/completed", (req, res) => {
 app.get("/api/tasks", (req, res) => {
   try {
     const tasks = taskListManager.formatSortedTasksForApi(
-  getActiveTasks()
+  getActiveTasks(
+  req.session.userId
+)
 );
 
     return res.json(tasks);
@@ -1271,7 +1445,10 @@ app.get("/api/tasks", (req, res) => {
 app.get("/api/tasks/completed/recent", (req, res) => {
   try {
     const tasks = taskListManager.formatTasksForApi(
-      getRecentlyCompletedTasks(50)
+      getRecentlyCompletedTasks(
+  req.session.userId,
+  50
+)
     );
 
     return res.json(tasks);
@@ -1286,7 +1463,10 @@ app.get("/api/tasks/completed/recent", (req, res) => {
 
 app.get("/api/tasks/:id", (req, res) => {
   try {
-    const task = getTaskById(req.params.id);
+    const task = getTaskById(
+  req.session.userId,
+  req.params.id
+);
 
     if (!task) {
       return res.status(404).json({
@@ -1309,7 +1489,10 @@ app.get("/api/tasks/:id", (req, res) => {
 
 app.patch("/api/tasks/:id", (req, res) => {
   try {
-    const existingTask = getTaskById(req.params.id);
+    const existingTask = getTaskById(
+  req.session.userId,
+  req.params.id
+);
 
     if (!existingTask) {
       return res.status(404).json({
@@ -1421,6 +1604,7 @@ app.patch("/api/tasks/:id", (req, res) => {
     }
 
     const updated = updateTaskById(
+      req.session.userId,
       req.params.id,
       updates
     );
@@ -1431,7 +1615,10 @@ app.patch("/api/tasks/:id", (req, res) => {
       });
     }
 
-    const task = getTaskById(req.params.id);
+    const task = getTaskById(
+  req.session.userId,
+  req.params.id
+);
 
     const [formattedTask] =
       taskListManager.formatTasksForApi([task]);
@@ -1451,7 +1638,10 @@ app.patch("/api/tasks/:id", (req, res) => {
 
 app.post("/api/tasks/:id/complete", (req, res) => {
   try {
-    const task = getTaskById(req.params.id);
+    const task = getTaskById(
+  req.session.userId,
+  req.params.id
+);
 
     if (!task) {
       return res.status(404).json({
@@ -1459,7 +1649,10 @@ app.post("/api/tasks/:id/complete", (req, res) => {
       });
     }
 
-    const completed = completeTask(req.params.id);
+    const completed = completeTask(
+  req.session.userId,
+  req.params.id
+);
 
     return res.json({
       ok: completed,
@@ -1478,7 +1671,10 @@ app.post(
   (req, res) => {
     try {
       const task =
-        getTaskById(req.params.id);
+        getTaskById(
+  req.session.userId,
+  req.params.id
+);
 
       if (!task) {
         return res.status(404).json({
@@ -1545,26 +1741,29 @@ app.post(
       }
 
       const result =
-        convertTaskToEvent(
-          req.params.id,
-          {
-            title:
-              title !== undefined
-                ? title.trim()
-                : undefined,
-            description:
-              description !== undefined
-                ? String(
-                    description
-                  ).trim()
-                : undefined,
-            eventDate,
-            startTime:
-              dueTime !== undefined
-                ? dueTime || null
-                : undefined,
-          }
-        );
+  convertTaskToEvent(
+    req.session.userId,
+    req.params.id,
+    {
+      title:
+        title !== undefined
+          ? title.trim()
+          : undefined,
+
+      description:
+        description !== undefined
+          ? String(description).trim()
+          : undefined,
+
+      eventDate,
+
+      startTime:
+        dueTime !== undefined
+          ? dueTime || null
+          : undefined,
+    }
+  );
+        
 
       if (!result.ok) {
         if (
@@ -1603,7 +1802,10 @@ app.post(
   (req, res) => {
     try {
       const event =
-        getEventById(req.params.id);
+  getEventById(
+    req.session.userId,
+    req.params.id
+  );
 
       if (!event) {
         return res.status(404).json({
@@ -1668,6 +1870,7 @@ app.post(
 
       const result =
         convertEventToTask(
+          req.session.userId,
           req.params.id,
           {
             title:
@@ -1740,7 +1943,10 @@ notification:
 
 app.post("/api/tasks/:id/restore", (req, res) => {
   try {
-    const task = getTaskById(req.params.id);
+    const task = getTaskById(
+  req.session.userId,
+  req.params.id
+);
 
     if (!task) {
       return res.status(404).json({
@@ -1754,7 +1960,10 @@ app.post("/api/tasks/:id/restore", (req, res) => {
       });
     }
 
-    const restored = restoreTaskById(req.params.id);
+    const restored = restoreTaskById(
+  req.session.userId,
+  req.params.id
+);
 
     return res.json({
       ok: restored,
@@ -1770,7 +1979,10 @@ app.post("/api/tasks/:id/restore", (req, res) => {
 
 app.delete("/api/tasks/:id", (req, res) => {
   try {
-    const task = getTaskById(req.params.id);
+    const task = getTaskById(
+  req.session.userId,
+  req.params.id
+);
 
     if (!task) {
       return res.status(404).json({
@@ -1778,7 +1990,10 @@ app.delete("/api/tasks/:id", (req, res) => {
       });
     }
 
-    const deleted = deleteTaskById(req.params.id);
+    const deleted = deleteTaskById(
+  req.session.userId,
+  req.params.id
+);
 
     return res.json({
       ok: deleted,
@@ -1810,7 +2025,10 @@ app.delete(
       }
 
       const routine =
-        getRoutineById(id);
+  getRoutineById(
+    req.session.userId,
+    id
+  );
 
       if (!routine) {
         return res.status(404).json({
@@ -1825,9 +2043,10 @@ app.delete(
       ) {
         try {
           await googleProvider
-            .deleteRecurringEvent(
-              routine.google_event_id
-            );
+  .deleteRecurringEvent(
+    req.session.userId,
+    routine.google_event_id
+  );
         } catch (error) {
           console.error(
             "Google routine delete error:",
@@ -1837,7 +2056,10 @@ app.delete(
       }
 
       const result =
-        deleteRoutineById(id);
+        deleteRoutineById(
+  req.session.userId,
+  id
+);
 
       if (
         !result ||
@@ -1871,7 +2093,9 @@ app.get(
   (req, res) => {
     try {
       const routines =
-        getActiveRoutines();
+        getActiveRoutines(
+          req.session.userId
+        );
 
       return res.json(routines);
     } catch (error) {
@@ -1949,7 +2173,9 @@ app.post(
           : "other";
 
       const routine =
-        createRoutine({
+  createRoutine(
+    req.session.userId,
+    {
           title:
             title.trim(),
           dayOfWeek:
@@ -2065,6 +2291,7 @@ app.put(
 
       const result =
   updateRoutineById(
+    req.session.userId,
     id,
     {
       title: title.trim(),
@@ -2098,7 +2325,10 @@ app.put(
       }
 
       const routine =
-  getRoutineById(id);
+  getRoutineById(
+    req.session.userId,
+    id
+  );
 
 if (
   routine &&
@@ -2107,9 +2337,10 @@ if (
 ) {
   try {
     await googleProvider
-      .updateRecurringEventFromRoutine(
-        routine
-      );
+  .updateRecurringEventFromRoutine(
+    req.session.userId,
+    routine
+  );
   } catch (error) {
     console.error(
       "Google routine update error:",
@@ -2137,67 +2368,86 @@ if (
 );
 
 function broadcastNotification(
+  userId,
   title,
   body
 ) {
-  const payload = JSON.stringify({
-    title,
-    body,
-  });
+  const payload =
+    JSON.stringify({
+      title,
+      body,
+    });
 
-  for (const client of notificationClients) {
+  const clients =
+    notificationClients.get(
+      userId
+    );
+
+  if (!clients) {
+    return;
+  }
+
+  for (const client of clients) {
     client.write(
       `data: ${payload}\n\n`
     );
   }
 }
 
-function runNotificationCheck() {
+function runNotificationCheck(
+  userId
+) {
   const tasks =
-    notificationManager.checkNotifications();
+    notificationManager
+      .checkNotifications(userId);
 
   if (tasks.length === 0) {
     return;
   }
 
-  console.log("🔔 通知対象");
-
-for (const item of tasks) {
   console.log(
-    `・${item.title} (${item.due_date || ""} ${item.due_time || ""})`
+    "🔔 通知対象:",
+    userId
   );
 
-  const body = {
-    same_day:
-      `本日は「${item.title}」があります。`,
+  for (const item of tasks) {
+    console.log(
+      `・${item.title} (${item.due_date || ""} ${item.due_time || ""})`
+    );
 
-    day_before:
-      `明日は「${item.title}」があります。`,
+    const body = {
+      same_day:
+        `本日は「${item.title}」があります。`,
 
-    at_time:
-      `「${item.title}」の時間です。`,
+      day_before:
+        `明日は「${item.title}」があります。`,
 
-    "10_minutes_before":
-      `「${item.title}」は10分後です。`,
+      at_time:
+        `「${item.title}」の時間です。`,
 
-    "30_minutes_before":
-      `「${item.title}」は30分後です。`,
+      "10_minutes_before":
+        `「${item.title}」は10分後です。`,
 
-    "1_hour_before":
-      `「${item.title}」は1時間後です。`,
-  }[item.notification] ||
-    `「${item.title}」のお知らせです。`;
+      "30_minutes_before":
+        `「${item.title}」は30分後です。`,
 
-  broadcastNotification(
-    "Notia",
-    body
-  );
+      "1_hour_before":
+        `「${item.title}」は1時間後です。`,
+    }[item.notification] ||
+      `「${item.title}」のお知らせです。`;
 
-  saveConversation(
-    "assistant",
-    `🔔 ${body}`
-  );
-}
+    broadcastNotification(
+      userId,
+      "Notia",
+      body
+    );
+
+    saveConversation(
+      userId,
+      "assistant",
+      `🔔 ${body}`
+    );
+  }
 }
 
 function getJapanNowParts() {
@@ -2245,48 +2495,53 @@ function createTaskTitleSummary(tasks) {
   );
 }
 
-function runMorningTaskSummary() {
+function runMorningTaskSummary(
+  userId
+) {
   const { date, time } =
     getJapanNowParts();
 
   const settings =
-  getNotificationSettings();
+    getNotificationSettings(
+      userId
+    );
 
-if (!settings.morningEnabled) {
-  return;
-}
+  if (!settings.morningEnabled) {
+    return;
+  }
 
-const morningTime =
-  settings.morningTime;
+  const morningTime =
+    settings.morningTime;
 
-const end = new Date(
-  `${date}T${morningTime}:00+09:00`
-);
-
-end.setMinutes(
-  end.getMinutes() + 2
-);
-
-const endTime =
-  end.toLocaleTimeString(
-    "ja-JP",
-    {
-      timeZone: "Asia/Tokyo",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }
+  const end = new Date(
+    `${date}T${morningTime}:00+09:00`
   );
 
-if (
-  time < morningTime ||
-  time >= endTime
-) {
-  return;
-}
+  end.setMinutes(
+    end.getMinutes() + 2
+  );
+
+  const endTime =
+    end.toLocaleTimeString(
+      "ja-JP",
+      {
+        timeZone: "Asia/Tokyo",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }
+    );
+
+  if (
+    time < morningTime ||
+    time >= endTime
+  ) {
+    return;
+  }
 
   if (
     hasDailyNotificationBeenSent(
+      userId,
       "morning_summary",
       date
     )
@@ -2295,13 +2550,18 @@ if (
   }
 
   const tasks =
-    getTasksByDate(date);
+    getTasksByDate(
+      userId,
+      date
+    );
 
   if (tasks.length === 0) {
     markDailyNotificationSent(
+      userId,
       "morning_summary",
       date
     );
+
     return;
   }
 
@@ -2314,27 +2574,34 @@ if (
       : `おはようございます。今日は${summary}があります。無理のない順番で進めていきましょう。`;
 
   broadcastNotification(
+    userId,
     "Notia",
     body
   );
 
   saveConversation(
+    userId,
     "assistant",
     `🔔 ${body}`
   );
 
   markDailyNotificationSent(
+    userId,
     "morning_summary",
     date
   );
 }
 
-function runEveningTaskCheck() {
+function runEveningTaskCheck(
+  userId
+) {
   const { date, time } =
     getJapanNowParts();
 
   const settings =
-    getNotificationSettings();
+    getNotificationSettings(
+      userId
+    );
 
   if (!settings.eveningEnabled) {
     return;
@@ -2371,6 +2638,7 @@ function runEveningTaskCheck() {
 
   if (
     hasDailyNotificationBeenSent(
+      userId,
       "evening_check",
       date
     )
@@ -2379,13 +2647,18 @@ function runEveningTaskCheck() {
   }
 
   const tasks =
-    getTasksByDate(date);
+    getTasksByDate(
+      userId,
+      date
+    );
 
   if (tasks.length === 0) {
     markDailyNotificationSent(
+      userId,
       "evening_check",
       date
     );
+
     return;
   }
 
@@ -2398,25 +2671,52 @@ function runEveningTaskCheck() {
       : `今日のタスクがあと${tasks.length}件残っています。${summary}です。今日中に済ませるものだけ、もう一度確認しておきませんか？`;
 
   broadcastNotification(
+    userId,
     "Notia",
     body
   );
 
   saveConversation(
+    userId,
     "assistant",
     `🔔 ${body}`
   );
 
   markDailyNotificationSent(
+    userId,
     "evening_check",
     date
   );
 }
 
 function runNotificationCycle() {
-  runNotificationCheck();
-  runMorningTaskSummary();
-  runEveningTaskCheck();
+  const users =
+    getAllUsers();
+
+  for (const user of users) {
+    try {
+      runNotificationCheck(
+        user.id
+      );
+
+      runMorningTaskSummary(
+        user.id
+      );
+
+      runEveningTaskCheck(
+        user.id
+      );
+    } catch (error) {
+      console.error(
+        "Notification cycle error:",
+        {
+          userId: user.id,
+          error:
+            error.message,
+        }
+      );
+    }
+  }
 }
 
 app.listen(PORT, "0.0.0.0", () => {

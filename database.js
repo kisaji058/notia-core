@@ -3,12 +3,78 @@ const Database = require("better-sqlite3");
 const db = new Database("notia.db");
 
 // =====================
+// users
+// =====================
+
+db.prepare(`
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  google_sub TEXT UNIQUE NOT NULL,
+  email TEXT NOT NULL,
+  display_name TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+)
+`).run();
+
+function getAllUsers() {
+  return db.prepare(`
+    SELECT
+      id,
+      email,
+      display_name
+    FROM users
+    ORDER BY id ASC
+  `).all();
+}
+
+function getUserById(userId) {
+  return db.prepare(`
+    SELECT *
+    FROM users
+    WHERE id = ?
+    LIMIT 1
+  `).get(userId);
+}
+
+function getUserByGoogleSub(googleSub) {
+  return db.prepare(`
+    SELECT *
+    FROM users
+    WHERE google_sub = ?
+    LIMIT 1
+  `).get(googleSub);
+}
+
+function createUser({
+  googleSub,
+  email,
+  displayName = null,
+}) {
+  const result = db.prepare(`
+    INSERT INTO users (
+      google_sub,
+      email,
+      display_name
+    )
+    VALUES (?, ?, ?)
+  `).run(
+    googleSub,
+    email,
+    displayName
+  );
+
+  return getUserById(result.lastInsertRowid);
+}
+
+// =====================
 // conversations
 // =====================
 
 db.prepare(`
 CREATE TABLE IF NOT EXISTS conversations (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
   role TEXT NOT NULL,
   message TEXT NOT NULL,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
@@ -22,14 +88,17 @@ CREATE TABLE IF NOT EXISTS conversations (
 db.prepare(`
 CREATE TABLE IF NOT EXISTS tasks (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
   title TEXT NOT NULL,
   description TEXT,
   due_date TEXT,
   due_time TEXT,
+  location TEXT,
   priority TEXT DEFAULT 'normal',
   category TEXT DEFAULT 'other',
   notification TEXT DEFAULT 'none',
   item_type TEXT DEFAULT 'task',
+  notified_at TEXT,
   status TEXT DEFAULT 'active',
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   completed_at TEXT
@@ -39,19 +108,21 @@ CREATE TABLE IF NOT EXISTS tasks (
 db.prepare(`
 CREATE TABLE IF NOT EXISTS routines (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
   title TEXT NOT NULL,
   day_of_week INTEGER NOT NULL,
+  days_of_week TEXT NOT NULL,
   routine_time TEXT,
   category TEXT DEFAULT 'other',
   google_calendar_enabled INTEGER DEFAULT 0,
+  google_event_id TEXT,
   status TEXT DEFAULT 'active',
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  memo TEXT,
-  days_of_week TEXT NOT NULL
+  memo TEXT
 )
 `).run();
 
-function getGoogleIntegration() {
+function getGoogleIntegration(userId) {
   return db.prepare(`
     SELECT
       provider,
@@ -59,9 +130,13 @@ function getGoogleIntegration() {
       connected_at,
       last_sync_at
     FROM integrations
-    WHERE provider = ?
+    WHERE user_id = ?
+      AND provider = ?
     LIMIT 1
-  `).get("google");
+  `).get(
+    userId,
+    "google"
+  );
 }
 
 function getTableColumns(tableName) {
@@ -159,14 +234,20 @@ db.prepare(`
 db.prepare(`
 CREATE TABLE IF NOT EXISTS integrations (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  provider TEXT NOT NULL UNIQUE,
+  user_id INTEGER NOT NULL,
+  provider TEXT NOT NULL,
   access_token TEXT,
   refresh_token TEXT,
   expiry_date INTEGER,
   scope TEXT,
   token_type TEXT,
+  email TEXT,
+  connected_at TEXT,
+  last_sync_at TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE(user_id, provider)
 )
 `).run();
 
@@ -191,26 +272,46 @@ if (!hasColumn("integrations", "last_sync_at")) {
   `).run();
 }
 
-function saveConversation(role, message) {
+function saveConversation(
+  userId,
+  role,
+  message
+) {
   db.prepare(`
-    INSERT INTO conversations (role, message)
-    VALUES (?, ?)
-  `).run(role, message);
+    INSERT INTO conversations (
+      user_id,
+      role,
+      message
+    )
+    VALUES (?, ?, ?)
+  `).run(
+    userId,
+    role,
+    message
+  );
 }
 
-function getRecentConversations(limit = 10) {
+function getRecentConversations(
+  userId,
+  limit = 10
+) {
   return db.prepare(`
     SELECT
       role,
       message,
       created_at
     FROM conversations
+    WHERE user_id = ?
     ORDER BY id DESC
     LIMIT ?
-  `).all(limit).reverse();
+  `).all(
+    userId,
+    limit
+  ).reverse();
 }
 
 function addTask(
+  userId,
   title,
   description = "",
   dueDate = null,
@@ -223,6 +324,7 @@ function addTask(
 ) {
   const result = db.prepare(`
     INSERT INTO tasks (
+    user_id,
       title,
       description,
       due_date,
@@ -233,8 +335,9 @@ function addTask(
       item_type,
       location
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
+    userId,
     title,
     description,
     dueDate,
@@ -249,153 +352,191 @@ function addTask(
   return result.lastInsertRowid;
 }
 
-function getActiveTasks() {
+function getActiveTasks(userId) {
   return db.prepare(`
     SELECT *
     FROM tasks
-    WHERE status = 'active'
+    WHERE user_id = ?
+      AND status = 'active'
     ORDER BY created_at DESC
-  `).all();
+  `).all(userId);
 }
 
-function getTasksByDate(date) {
+function getTasksByDate(
+  userId,
+  date
+) {
   return db.prepare(`
     SELECT *
     FROM tasks
-    WHERE status = 'active'
+    WHERE user_id = ?
+      AND status = 'active'
       AND due_date = ?
     ORDER BY
       CASE
-        WHEN due_time IS NULL OR due_time = '' THEN 1
+        WHEN due_time IS NULL
+          OR due_time = ''
+        THEN 1
         ELSE 0
       END,
       due_time ASC,
       id ASC
-  `).all(date);
+  `).all(
+    userId,
+    date
+  );
 }
 
 function getTasksByDateRange(
+  userId,
   startDate,
   endDate
 ) {
   return db.prepare(`
     SELECT *
     FROM tasks
-    WHERE status = 'active'
+    WHERE user_id = ?
+      AND status = 'active'
       AND due_date BETWEEN ? AND ?
     ORDER BY
       due_date ASC,
       CASE
-        WHEN due_time IS NULL OR due_time = '' THEN 1
+        WHEN due_time IS NULL
+          OR due_time = ''
+        THEN 1
         ELSE 0
       END,
       due_time ASC,
       id ASC
   `).all(
+    userId,
     startDate,
     endDate
   );
 }
 
-function getCompletedTasksByDate(date) {
+function getCompletedTasksByDate(
+  userId,
+  date
+) {
   return db.prepare(`
     SELECT *
     FROM tasks
-    WHERE status = 'completed'
+    WHERE user_id = ?
+      AND status = 'completed'
       AND due_date = ?
     ORDER BY
       CASE
-        WHEN due_time IS NULL OR due_time = '' THEN 1
+        WHEN due_time IS NULL
+          OR due_time = ''
+        THEN 1
         ELSE 0
       END,
       due_time ASC,
       id ASC
-  `).all(date);
+  `).all(
+    userId,
+    date
+  );
 }
 
 function getCompletedTasksByDateRange(
+  userId,
   startDate,
   endDate
 ) {
   return db.prepare(`
     SELECT *
     FROM tasks
-    WHERE status = 'completed'
+    WHERE user_id = ?
+      AND status = 'completed'
       AND due_date BETWEEN ? AND ?
     ORDER BY
       due_date ASC,
       CASE
-        WHEN due_time IS NULL OR due_time = '' THEN 1
+        WHEN due_time IS NULL
+          OR due_time = ''
+        THEN 1
         ELSE 0
       END,
       due_time ASC,
       id ASC
   `).all(
+    userId,
     startDate,
     endDate
   );
 }
 
-function getNotificationTargets(date) {
+function getNotificationTargets(
+  userId,
+  date
+) {
   const tomorrow = new Date(
-  `${date}T00:00:00+09:00`
-);
-
-tomorrow.setDate(
-  tomorrow.getDate() + 1
-);
-
-const tomorrowDate =
-  tomorrow.toLocaleDateString(
-    "sv-SE",
-    {
-      timeZone: "Asia/Tokyo",
-    }
+    `${date}T00:00:00+09:00`
   );
+
+  tomorrow.setDate(
+    tomorrow.getDate() + 1
+  );
+
+  const tomorrowDate =
+    tomorrow.toLocaleDateString(
+      "sv-SE",
+      {
+        timeZone: "Asia/Tokyo",
+      }
+    );
+
   return db.prepare(`
-  SELECT *
-  FROM tasks
-  WHERE status = 'active'
-    AND notified_at IS NULL
-    AND (
-      (
-        notification = 'same_day'
-        AND due_date = ?
-      )
-      OR
-      (
-        notification = 'day_before'
-        AND due_date = ?
-      )
-      OR
-      (
-        notification IN (
-          'at_time',
-          '10_minutes_before',
-          '30_minutes_before',
-          '1_hour_before'
+    SELECT *
+    FROM tasks
+    WHERE user_id = ?
+      AND status = 'active'
+      AND notified_at IS NULL
+      AND (
+        (
+          notification = 'same_day'
+          AND due_date = ?
         )
-        AND due_date IN (?, ?)
+        OR
+        (
+          notification = 'day_before'
+          AND due_date = ?
+        )
+        OR
+        (
+          notification IN (
+            'at_time',
+            '10_minutes_before',
+            '30_minutes_before',
+            '1_hour_before'
+          )
+          AND due_date IN (?, ?)
+        )
       )
-    )
-  ORDER BY
-    CASE
-      WHEN due_time IS NULL
-        OR due_time = ''
-      THEN 1
-      ELSE 0
-    END,
-    due_time ASC,
-    id ASC
-`).all(
-  date,
-  tomorrowDate,
-  date,
-  tomorrowDate
-);
+    ORDER BY
+      CASE
+        WHEN due_time IS NULL
+          OR due_time = ''
+        THEN 1
+        ELSE 0
+      END,
+      due_time ASC,
+      id ASC
+  `).all(
+    userId,
+    date,
+    tomorrowDate,
+    date,
+    tomorrowDate
+  );
 }
 
-function getEventNotificationTargets(date) {
+function getEventNotificationTargets(
+  userId,
+  date
+) {
   const tomorrow = new Date(
     `${date}T00:00:00+09:00`
   );
@@ -418,7 +559,8 @@ function getEventNotificationTargets(date) {
       event_date AS due_date,
       start_time AS due_time
     FROM events
-    WHERE status = 'active'
+    WHERE user_id = ?
+      AND status = 'active'
       AND notified_at IS NULL
       AND (
         (
@@ -451,6 +593,7 @@ function getEventNotificationTargets(date) {
       start_time ASC,
       id ASC
   `).all(
+    userId,
     date,
     tomorrowDate,
     date,
@@ -458,104 +601,154 @@ function getEventNotificationTargets(date) {
   );
 }
 
-function getRecentlyCompletedTasks(limit = 5) {
+function getRecentlyCompletedTasks(
+  userId,
+  limit = 5
+) {
   return db.prepare(`
     SELECT *
     FROM tasks
-    WHERE status = 'completed'
-    ORDER BY completed_at DESC, id DESC
+    WHERE user_id = ?
+      AND status = 'completed'
+    ORDER BY
+      completed_at DESC,
+      id DESC
     LIMIT ?
-  `).all(limit);
+  `).all(
+    userId,
+    limit
+  );
 }
 
-function restoreTaskById(id) {
+function restoreTaskById(
+  userId,
+  id
+) {
   const result = db.prepare(`
     UPDATE tasks
-    SET status = 'active',
-        completed_at = NULL
+    SET
+      status = 'active',
+      completed_at = NULL
     WHERE id = ?
+      AND user_id = ?
       AND status = 'completed'
-  `).run(id);
+  `).run(
+    id,
+    userId
+  );
 
   return result.changes > 0;
 }
 
-function getTaskById(id) {
+function getTaskById(
+  userId,
+  id
+) {
   return db.prepare(`
     SELECT *
     FROM tasks
     WHERE id = ?
+      AND user_id = ?
     LIMIT 1
-  `).get(id);
+  `).get(
+    id,
+    userId
+  );
 }
 
-function completeTask(id) {
+function completeTask(
+  userId,
+  id
+) {
   const result = db.prepare(`
     UPDATE tasks
-    SET status = 'completed',
-        completed_at = CURRENT_TIMESTAMP
+    SET
+      status = 'completed',
+      completed_at = CURRENT_TIMESTAMP
     WHERE id = ?
-  `).run(id);
+      AND user_id = ?
+  `).run(
+    id,
+    userId
+  );
 
   return result.changes > 0;
 }
 
 function findActiveTasks(
+  userId,
   title = null,
   dueDate = null,
   dueTime = null
 ) {
   if (title) {
-    return db.prepare(`
-      SELECT *
-      FROM tasks
-      WHERE status = 'active'
-        AND title = ?
-        AND (
-          due_date = ?
-          OR (
-            due_date IS NULL
-            AND ? IS NULL
-          )
-        )
-        AND (
-          due_time = ?
-          OR (
-            (due_time IS NULL OR due_time = '')
-            AND (? IS NULL OR ? = '')
-          )
-        )
-      ORDER BY id DESC
-    `).all(
-      title,
-      dueDate,
-      dueDate,
-      dueTime,
-      dueTime,
-      dueTime
-    );
-  }
-
   return db.prepare(`
     SELECT *
     FROM tasks
-    WHERE status = 'active'
+    WHERE user_id = ?
+      AND status = 'active'
+      AND title = ?
+      AND (
+        due_date = ?
+        OR (
+          due_date IS NULL
+          AND ? IS NULL
+        )
+      )
+      AND (
+        due_time = ?
+        OR (
+          (
+            due_time IS NULL
+            OR due_time = ''
+          )
+          AND (
+            ? IS NULL
+            OR ? = ''
+          )
+        )
+      )
     ORDER BY id DESC
-  `).all();
+  `).all(
+    userId,
+    title,
+    dueDate,
+    dueDate,
+    dueTime,
+    dueTime,
+    dueTime
+  );
 }
 
-function completeTaskById(id) {
+  return db.prepare(`
+  SELECT *
+  FROM tasks
+  WHERE user_id = ?
+    AND status = 'active'
+  ORDER BY id DESC
+`).all(userId);
+}
+
+function completeTaskById(
+  userId,
+  id
+) {
   const result = db.prepare(`
     UPDATE tasks
     SET status = 'completed',
         completed_at = CURRENT_TIMESTAMP
     WHERE id = ?
-  `).run(id);
+    AND user_id = ?
+  `).run(id, userId);
 
   return result.changes > 0;
 }
 
-function updateTaskById(id, updates = {}) {
+function updateTaskById(
+  userId,
+  id,
+  updates = {}
+) {
   const fields = [];
   const values = [];
 
@@ -609,11 +802,13 @@ if (updates.itemType !== undefined) {
   }
 
   values.push(id);
+  values.push(userId);
 
   const result = db.prepare(`
     UPDATE tasks
     SET ${fields.join(", ")}
     WHERE id = ?
+    AND user_id = ?
   `).run(...values);
 
   return result.changes > 0;
@@ -626,6 +821,7 @@ if (updates.itemType !== undefined) {
 db.prepare(`
 CREATE TABLE IF NOT EXISTS external_calendar_events (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
   provider TEXT NOT NULL,
   external_event_id TEXT NOT NULL,
   calendar_id TEXT NOT NULL DEFAULT 'primary',
@@ -639,7 +835,11 @@ CREATE TABLE IF NOT EXISTS external_calendar_events (
   updated_at_external TEXT,
   synced_at TEXT DEFAULT CURRENT_TIMESTAMP,
 
-  UNIQUE(provider, external_event_id)
+  UNIQUE(
+    user_id,
+    provider,
+    external_event_id
+  )
 )
 `).run();
 
@@ -650,6 +850,7 @@ CREATE TABLE IF NOT EXISTS external_calendar_events (
 db.prepare(`
 CREATE TABLE IF NOT EXISTS events (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
   title TEXT NOT NULL,
   description TEXT,
   event_date TEXT NOT NULL,
@@ -701,12 +902,17 @@ if (!hasColumn("events", "notified_at")) {
 db.prepare(`
 CREATE TABLE IF NOT EXISTS task_calendar_links (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
   task_id INTEGER NOT NULL,
   provider TEXT NOT NULL,
   external_event_id TEXT NOT NULL,
   synced_at TEXT DEFAULT CURRENT_TIMESTAMP,
 
-  UNIQUE(task_id, provider),
+  UNIQUE(
+    user_id,
+    task_id,
+    provider
+  ),
 
   FOREIGN KEY (task_id)
     REFERENCES tasks(id)
@@ -721,11 +927,13 @@ CREATE TABLE IF NOT EXISTS task_calendar_links (
 db.prepare(`
 CREATE TABLE IF NOT EXISTS daily_notification_logs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
   notification_type TEXT NOT NULL,
   notification_date TEXT NOT NULL,
   sent_at TEXT DEFAULT CURRENT_TIMESTAMP,
 
   UNIQUE(
+    user_id,
     notification_type,
     notification_date
   )
@@ -733,16 +941,19 @@ CREATE TABLE IF NOT EXISTS daily_notification_logs (
 `).run();
 
 function hasDailyNotificationBeenSent(
+  userId,
   notificationType,
   notificationDate
 ) {
   const row = db.prepare(`
     SELECT id
     FROM daily_notification_logs
-    WHERE notification_type = ?
+    WHERE user_id = ?
+      AND notification_type = ?
       AND notification_date = ?
     LIMIT 1
   `).get(
+    userId,
     notificationType,
     notificationDate
   );
@@ -751,16 +962,20 @@ function hasDailyNotificationBeenSent(
 }
 
 function markDailyNotificationSent(
+  userId,
   notificationType,
   notificationDate
 ) {
   return db.prepare(`
-    INSERT OR IGNORE INTO daily_notification_logs (
+    INSERT OR IGNORE
+    INTO daily_notification_logs (
+      user_id,
       notification_type,
       notification_date
     )
-    VALUES (?, ?)
+    VALUES (?, ?, ?)
   `).run(
+    userId,
     notificationType,
     notificationDate
   );
@@ -772,7 +987,8 @@ function markDailyNotificationSent(
 
 db.prepare(`
 CREATE TABLE IF NOT EXISTS notification_settings (
-  id INTEGER PRIMARY KEY CHECK (id = 1),
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL UNIQUE,
   morning_enabled INTEGER DEFAULT 1,
   morning_time TEXT DEFAULT '08:00',
   evening_enabled INTEGER DEFAULT 1,
@@ -781,24 +997,33 @@ CREATE TABLE IF NOT EXISTS notification_settings (
 )
 `).run();
 
-db.prepare(`
-INSERT OR IGNORE INTO notification_settings (
-  id,
-  morning_enabled,
-  morning_time,
-  evening_enabled,
-  evening_time
-)
-VALUES (
-  1,
-  1,
-  '08:00',
-  1,
-  '18:00'
-)
-`).run();
+function ensureNotificationSettings(
+  userId
+) {
+  db.prepare(`
+    INSERT OR IGNORE
+    INTO notification_settings (
+      user_id,
+      morning_enabled,
+      morning_time,
+      evening_enabled,
+      evening_time
+    )
+    VALUES (
+      ?,
+      1,
+      '08:00',
+      1,
+      '18:00'
+    )
+  `).run(userId);
+}
 
-function getNotificationSettings() {
+function getNotificationSettings(
+  userId
+) {
+  ensureNotificationSettings(userId);
+
   const settings = db.prepare(`
     SELECT
       morning_enabled,
@@ -806,31 +1031,42 @@ function getNotificationSettings() {
       evening_enabled,
       evening_time
     FROM notification_settings
-    WHERE id = 1
+    WHERE user_id = ?
     LIMIT 1
-  `).get();
+  `).get(userId);
 
   return {
     morningEnabled:
-      Boolean(settings?.morning_enabled),
+      Boolean(
+        settings?.morning_enabled
+      ),
 
     morningTime:
-      settings?.morning_time || "08:00",
+      settings?.morning_time ||
+      "08:00",
 
     eveningEnabled:
-      Boolean(settings?.evening_enabled),
+      Boolean(
+        settings?.evening_enabled
+      ),
 
     eveningTime:
-      settings?.evening_time || "18:00",
+      settings?.evening_time ||
+      "18:00",
   };
 }
 
-function updateNotificationSettings({
-  morningEnabled,
-  morningTime,
-  eveningEnabled,
-  eveningTime,
-}) {
+function updateNotificationSettings(
+  userId,
+  {
+    morningEnabled,
+    morningTime,
+    eveningEnabled,
+    eveningTime,
+  }
+) {
+  ensureNotificationSettings(userId);
+
   return db.prepare(`
     UPDATE notification_settings
     SET
@@ -838,13 +1074,15 @@ function updateNotificationSettings({
       morning_time = ?,
       evening_enabled = ?,
       evening_time = ?,
-      updated_at = CURRENT_TIMESTAMP
-    WHERE id = 1
+      updated_at =
+        CURRENT_TIMESTAMP
+    WHERE user_id = ?
   `).run(
     morningEnabled ? 1 : 0,
     morningTime,
     eveningEnabled ? 1 : 0,
-    eveningTime
+    eveningTime,
+    userId
   );
 }
 
@@ -855,6 +1093,7 @@ function updateNotificationSettings({
 db.prepare(`
 CREATE TABLE IF NOT EXISTS memories (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
   category TEXT NOT NULL,
   memory_key TEXT NOT NULL,
   memory_value TEXT NOT NULL,
@@ -862,21 +1101,36 @@ CREATE TABLE IF NOT EXISTS memories (
 )
 `).run();
 
-function saveOrUpdateMemory(category, key, value) {
+function saveOrUpdateMemory(
+  userId,
+  category,
+  key,
+  value
+) {
   const existing = db.prepare(`
     SELECT *
     FROM memories
-    WHERE category = ?
+    WHERE user_id = ?
+      AND category = ?
       AND memory_key = ?
     LIMIT 1
-  `).get(category, key);
+  `).get(
+    userId,
+    category,
+    key
+  );
 
   if (existing) {
     db.prepare(`
       UPDATE memories
       SET memory_value = ?
-      WHERE id = ?
-    `).run(value, existing.id);
+      WHERE user_id = ?
+        AND id = ?
+    `).run(
+      value,
+      userId,
+      existing.id
+    );
 
     return {
       action: "updated",
@@ -886,12 +1140,18 @@ function saveOrUpdateMemory(category, key, value) {
 
   const result = db.prepare(`
     INSERT INTO memories (
+      user_id,
       category,
       memory_key,
       memory_value
     )
-    VALUES (?, ?, ?)
-  `).run(category, key, value);
+    VALUES (?, ?, ?, ?)
+  `).run(
+    userId,
+    category,
+    key,
+    value
+  );
 
   return {
     action: "created",
@@ -899,19 +1159,29 @@ function saveOrUpdateMemory(category, key, value) {
   };
 }
 
-function getAllMemories() {
+function getAllMemories(
+  userId
+) {
   return db.prepare(`
     SELECT *
     FROM memories
+    WHERE user_id = ?
     ORDER BY created_at DESC
-  `).all();
+  `).all(userId);
 }
 
-function deleteTaskById(id) {
+function deleteTaskById(
+  userId,
+  id
+) {
   const result = db.prepare(`
     DELETE FROM tasks
     WHERE id = ?
-  `).run(id);
+      AND user_id = ?
+  `).run(
+    id,
+    userId
+  );
 
   return result.changes > 0;
 }
@@ -921,12 +1191,14 @@ function deleteTaskById(id) {
 // =====================
 
 function saveIntegrationTokens(
+  userId,
   provider,
   tokens = {},
   email = null
 ) {
   db.prepare(`
     INSERT INTO integrations (
+      user_id,
       provider,
       access_token,
       refresh_token,
@@ -938,12 +1210,13 @@ function saveIntegrationTokens(
       updated_at
     )
     VALUES (
-      ?, ?, ?, ?, ?, ?, ?,
+      ?, ?, ?, ?, ?, ?, ?, ?,
       CURRENT_TIMESTAMP,
       CURRENT_TIMESTAMP
     )
 
-    ON CONFLICT(provider) DO UPDATE SET
+    ON CONFLICT(user_id, provider)
+    DO UPDATE SET
       access_token = COALESCE(
         excluded.access_token,
         integrations.access_token
@@ -974,6 +1247,7 @@ function saveIntegrationTokens(
       ),
       updated_at = CURRENT_TIMESTAMP
   `).run(
+    userId,
     provider,
     tokens.access_token ?? null,
     tokens.refresh_token ?? null,
@@ -984,7 +1258,10 @@ function saveIntegrationTokens(
   );
 }
 
-function getIntegrationTokens(provider) {
+function getIntegrationTokens(
+  userId,
+  provider
+) {
   const integration = db.prepare(`
     SELECT
       access_token,
@@ -993,28 +1270,44 @@ function getIntegrationTokens(provider) {
       scope,
       token_type
     FROM integrations
-    WHERE provider = ?
+    WHERE user_id = ?
+      AND provider = ?
     LIMIT 1
-  `).get(provider);
+  `).get(
+    userId,
+    provider
+  );
 
   if (!integration) {
     return null;
   }
 
   return {
-    access_token: integration.access_token,
-    refresh_token: integration.refresh_token,
-    expiry_date: integration.expiry_date,
-    scope: integration.scope,
-    token_type: integration.token_type,
+    access_token:
+      integration.access_token,
+    refresh_token:
+      integration.refresh_token,
+    expiry_date:
+      integration.expiry_date,
+    scope:
+      integration.scope,
+    token_type:
+      integration.token_type,
   };
 }
 
-function deleteIntegration(provider) {
+function deleteIntegration(
+  userId,
+  provider
+) {
   const result = db.prepare(`
     DELETE FROM integrations
-    WHERE provider = ?
-  `).run(provider);
+    WHERE user_id = ?
+      AND provider = ?
+  `).run(
+    userId,
+    provider
+  );
 
   return result.changes > 0;
 }
@@ -1024,11 +1317,13 @@ function deleteIntegration(provider) {
 // =====================
 
 function saveExternalCalendarEvent(
+  userId,
   provider,
   event = {}
 ) {
   db.prepare(`
     INSERT INTO external_calendar_events (
+      user_id,
       provider,
       external_event_id,
       calendar_id,
@@ -1042,21 +1337,39 @@ function saveExternalCalendarEvent(
       updated_at_external,
       synced_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    VALUES (
+      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+      CURRENT_TIMESTAMP
+    )
 
-    ON CONFLICT(provider, external_event_id)
+    ON CONFLICT(
+      user_id,
+      provider,
+      external_event_id
+    )
     DO UPDATE SET
-      calendar_id = excluded.calendar_id,
-      title = excluded.title,
-      description = excluded.description,
-      start_datetime = excluded.start_datetime,
-      end_datetime = excluded.end_datetime,
-      is_all_day = excluded.is_all_day,
-      location = excluded.location,
-      status = excluded.status,
-      updated_at_external = excluded.updated_at_external,
-      synced_at = CURRENT_TIMESTAMP
+      calendar_id =
+        excluded.calendar_id,
+      title =
+        excluded.title,
+      description =
+        excluded.description,
+      start_datetime =
+        excluded.start_datetime,
+      end_datetime =
+        excluded.end_datetime,
+      is_all_day =
+        excluded.is_all_day,
+      location =
+        excluded.location,
+      status =
+        excluded.status,
+      updated_at_external =
+        excluded.updated_at_external,
+      synced_at =
+        CURRENT_TIMESTAMP
   `).run(
+    userId,
     provider,
     event.externalEventId,
     event.calendarId ?? "primary",
@@ -1072,13 +1385,15 @@ function saveExternalCalendarEvent(
 }
 
 function getExternalCalendarEventsByDate(
+  userId,
   provider,
   date
 ) {
   return db.prepare(`
     SELECT *
     FROM external_calendar_events
-    WHERE provider = ?
+    WHERE user_id = ?
+      AND provider = ?
       AND (
         substr(start_datetime, 1, 10) = ?
         OR (
@@ -1098,6 +1413,7 @@ function getExternalCalendarEventsByDate(
       END,
       start_datetime ASC
   `).all(
+    userId,
     provider,
     date,
     date,
@@ -1106,6 +1422,7 @@ function getExternalCalendarEventsByDate(
 }
 
 function getExternalCalendarEventsByDateRange(
+  userId,
   provider,
   startDate,
   endDate
@@ -1113,7 +1430,8 @@ function getExternalCalendarEventsByDateRange(
   return db.prepare(`
     SELECT *
     FROM external_calendar_events
-    WHERE provider = ?
+    WHERE user_id = ?
+      AND provider = ?
       AND (
         (
           is_all_day = 1
@@ -1121,7 +1439,10 @@ function getExternalCalendarEventsByDateRange(
           AND substr(end_datetime, 1, 10) > ?
         )
         OR (
-          (is_all_day IS NULL OR is_all_day != 1)
+          (
+            is_all_day IS NULL
+            OR is_all_day != 1
+          )
           AND substr(start_datetime, 1, 10)
             BETWEEN ? AND ?
         )
@@ -1137,6 +1458,7 @@ function getExternalCalendarEventsByDateRange(
       END,
       start_datetime ASC
   `).all(
+    userId,
     provider,
     endDate,
     startDate,
@@ -1146,12 +1468,17 @@ function getExternalCalendarEventsByDateRange(
 }
 
 function deleteExternalCalendarEventsByProvider(
+  userId,
   provider
 ) {
   const result = db.prepare(`
     DELETE FROM external_calendar_events
-    WHERE provider = ?
-  `).run(provider);
+    WHERE user_id = ?
+      AND provider = ?
+  `).run(
+    userId,
+    provider
+  );
 
   return result.changes;
 }
@@ -1161,24 +1488,36 @@ function deleteExternalCalendarEventsByProvider(
 // =====================
 
 function saveTaskCalendarLink(
+  userId,
   taskId,
   provider,
   externalEventId
 ) {
   db.prepare(`
     INSERT INTO task_calendar_links (
+      user_id,
       task_id,
       provider,
       external_event_id,
       synced_at
     )
-    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+    VALUES (
+      ?, ?, ?, ?,
+      CURRENT_TIMESTAMP
+    )
 
-    ON CONFLICT(task_id, provider)
+    ON CONFLICT(
+      user_id,
+      task_id,
+      provider
+    )
     DO UPDATE SET
-      external_event_id = excluded.external_event_id,
-      synced_at = CURRENT_TIMESTAMP
+      external_event_id =
+        excluded.external_event_id,
+      synced_at =
+        CURRENT_TIMESTAMP
   `).run(
+    userId,
     taskId,
     provider,
     externalEventId
@@ -1186,31 +1525,41 @@ function saveTaskCalendarLink(
 }
 
 function getTaskCalendarLink(
+  userId,
   taskId,
   provider
 ) {
   return db.prepare(`
     SELECT *
     FROM task_calendar_links
-    WHERE task_id = ?
+    WHERE user_id = ?
+      AND task_id = ?
       AND provider = ?
     LIMIT 1
   `).get(
+    userId,
     taskId,
     provider
   );
 }
 
-function getUnsyncedTimedTasks(provider) {
+function getUnsyncedTimedTasks(
+  userId,
+  provider
+) {
   return db.prepare(`
     SELECT tasks.*
     FROM tasks
 
     LEFT JOIN task_calendar_links
-      ON task_calendar_links.task_id = tasks.id
+      ON task_calendar_links.task_id =
+        tasks.id
+      AND task_calendar_links.user_id =
+        tasks.user_id
       AND task_calendar_links.provider = ?
 
-    WHERE tasks.status = 'active'
+    WHERE tasks.user_id = ?
+      AND tasks.status = 'active'
 
       AND (
         tasks.item_type IS NULL
@@ -1234,17 +1583,29 @@ function getUnsyncedTimedTasks(provider) {
 
       tasks.due_time ASC,
       tasks.id ASC
-  `).all(provider);
+  `).all(
+    provider,
+    userId
+  );
 }
 
-function updateIntegrationLastSync(provider) {
+function updateIntegrationLastSync(
+  userId,
+  provider
+) {
   const result = db.prepare(`
     UPDATE integrations
     SET
-      last_sync_at = CURRENT_TIMESTAMP,
-      updated_at = CURRENT_TIMESTAMP
-    WHERE provider = ?
-  `).run(provider);
+      last_sync_at =
+        CURRENT_TIMESTAMP,
+      updated_at =
+        CURRENT_TIMESTAMP
+    WHERE user_id = ?
+      AND provider = ?
+  `).run(
+    userId,
+    provider
+  );
 
   return result.changes > 0;
 }
@@ -1298,23 +1659,28 @@ function normalizeRoutineRow(routine) {
   };
 }
 
-function createRoutine({
-  title,
-  dayOfWeek,
-  daysOfWeek,
-  routineTime = null,
-  category = "other",
-  googleCalendarEnabled = false,
-  memo = "",
-}) {
-  const normalizedDays = normalizeDaysOfWeek(
+function createRoutine(
+  userId,
+  {
+    title,
+    dayOfWeek,
     daysOfWeek,
-    dayOfWeek
-  );
+    routineTime = null,
+    category = "other",
+    googleCalendarEnabled = false,
+    memo = "",
+  }
+) {
+  const normalizedDays =
+    normalizeDaysOfWeek(
+      daysOfWeek,
+      dayOfWeek
+    );
 
   const result = db
     .prepare(`
       INSERT INTO routines (
+        user_id,
         title,
         day_of_week,
         days_of_week,
@@ -1323,9 +1689,10 @@ function createRoutine({
         google_calendar_enabled,
         memo
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `)
     .run(
+      userId,
       title,
       normalizedDays[0],
       normalizedDays.join(","),
@@ -1335,26 +1702,37 @@ function createRoutine({
       memo
     );
 
-  return getRoutineById(result.lastInsertRowid);
+  return getRoutineById(
+    userId,
+    result.lastInsertRowid
+  );
 }
 
-function getRoutineById(id) {
+function getRoutineById(
+  userId,
+  id
+) {
   const routine = db.prepare(`
     SELECT *
     FROM routines
-    WHERE id = ?
+    WHERE user_id = ?
+      AND id = ?
       AND status = 'active'
-  `).get(id);
+  `).get(
+    userId,
+    id
+  );
 
   return normalizeRoutineRow(routine);
 }
 
-function getActiveRoutines() {
+function getActiveRoutines(userId) {
   return db
     .prepare(`
       SELECT *
       FROM routines
-      WHERE status = 'active'
+      WHERE user_id = ?
+        AND status = 'active'
       ORDER BY
         day_of_week ASC,
         CASE
@@ -1364,16 +1742,20 @@ function getActiveRoutines() {
         routine_time ASC,
         created_at ASC
     `)
-    .all()
+    .all(userId)
     .map(normalizeRoutineRow);
 }
 
-function getRoutinesByDayOfWeek(dayOfWeek) {
+function getRoutinesByDayOfWeek(
+  userId,
+  dayOfWeek
+) {
   return db
     .prepare(`
       SELECT *
       FROM routines
-      WHERE status = 'active'
+      WHERE user_id = ?
+        AND status = 'active'
         AND (
           ',' || COALESCE(
             NULLIF(days_of_week, ''),
@@ -1388,18 +1770,28 @@ function getRoutinesByDayOfWeek(dayOfWeek) {
         routine_time ASC,
         created_at ASC
     `)
-    .all(String(dayOfWeek))
+    .all(
+      userId,
+      String(dayOfWeek)
+    )
     .map(normalizeRoutineRow);
 }
 
-function archiveRoutineById(id) {
+function archiveRoutineById(
+  userId,
+  id
+) {
   const result = db
     .prepare(`
       UPDATE routines
       SET status = 'archived'
-      WHERE id = ?
+      WHERE user_id = ?
+        AND id = ?
     `)
-    .run(id);
+    .run(
+      userId,
+      id
+    );
 
   return result.changes > 0;
 }
@@ -1417,13 +1809,15 @@ function getCurrentDayOfWeek() {
   ).getDay();
 }
 
-function getTodayRoutines() {
+function getTodayRoutines(userId) {
   return getRoutinesByDayOfWeek(
+    userId,
     getCurrentDayOfWeek()
   );
 }
 
 function updateRoutineById(
+  userId,
   id,
   {
     title,
@@ -1435,10 +1829,11 @@ function updateRoutineById(
     memo = "",
   }
 ) {
-  const normalizedDays = normalizeDaysOfWeek(
-    daysOfWeek,
-    dayOfWeek
-  );
+  const normalizedDays =
+    normalizeDaysOfWeek(
+      daysOfWeek,
+      dayOfWeek
+    );
 
   return db
     .prepare(`
@@ -1451,7 +1846,8 @@ function updateRoutineById(
         category = ?,
         google_calendar_enabled = ?,
         memo = ?
-      WHERE id = ?
+      WHERE user_id = ?
+        AND id = ?
     `)
     .run(
       title,
@@ -1461,69 +1857,96 @@ function updateRoutineById(
       category,
       googleCalendarEnabled ? 1 : 0,
       memo,
+      userId,
       id
     );
 }
 
-function deleteRoutineById(id) {
+function deleteRoutineById(
+  userId,
+  id
+) {
   return db
     .prepare(`
       DELETE FROM routines
-      WHERE id = ?
+      WHERE user_id = ?
+        AND id = ?
     `)
-    .run(id);
+    .run(
+      userId,
+      id
+    );
 }
 
-function getUnsyncedGoogleRoutines() {
+function getUnsyncedGoogleRoutines(
+  userId
+) {
   return db.prepare(`
     SELECT *
     FROM routines
-    WHERE
-      status = 'active'
+    WHERE user_id = ?
+      AND status = 'active'
       AND google_calendar_enabled = 1
       AND google_event_id IS NULL
     ORDER BY
       day_of_week,
       routine_time,
       id
-  `).all().map(normalizeRoutineRow);
+  `).all(userId)
+    .map(normalizeRoutineRow);
 }
 
 function saveRoutineGoogleEventId(
+  userId,
   routineId,
   googleEventId
 ) {
   return db.prepare(`
     UPDATE routines
     SET google_event_id = ?
-    WHERE id = ?
+    WHERE user_id = ?
+      AND id = ?
   `).run(
     googleEventId,
+    userId,
     routineId
   );
 }
 
-function markTaskNotified(id) {
-  return db
-    .prepare(`
-      UPDATE tasks
-      SET notified_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `)
-    .run(id);
+function markTaskNotified(
+  userId,
+  id
+) {
+  return db.prepare(`
+    UPDATE tasks
+    SET notified_at =
+      CURRENT_TIMESTAMP
+    WHERE user_id = ?
+      AND id = ?
+  `).run(
+    userId,
+    id
+  );
 }
 
-function markEventNotified(id) {
-  return db
-    .prepare(`
-      UPDATE events
-      SET notified_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `)
-    .run(id);
+function markEventNotified(
+  userId,
+  id
+) {
+  return db.prepare(`
+    UPDATE events
+    SET notified_at =
+      CURRENT_TIMESTAMP
+    WHERE user_id = ?
+      AND id = ?
+  `).run(
+    userId,
+    id
+  );
 }
 
 function addEvent(
+  userId,
   title,
   description = "",
   eventDate,
@@ -1536,6 +1959,7 @@ function addEvent(
 ){
   const result = db.prepare(`
     INSERT INTO events (
+  user_id,
   title,
   description,
   event_date,
@@ -1546,8 +1970,9 @@ function addEvent(
   category,
   notification
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
+  userId,
   title,
   description,
   eventDate,
@@ -1562,16 +1987,24 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   return result.lastInsertRowid;
 }
 
-function getEventById(id) {
+function getEventById(
+  userId,
+  id
+) {
   return db.prepare(`
     SELECT *
     FROM events
     WHERE id = ?
+      AND user_id = ?
     LIMIT 1
-  `).get(id);
+  `).get(
+    id,
+    userId
+  );
 }
 
 function updateEventById(
+  userId,
   id,
   {
     title,
@@ -1601,6 +2034,7 @@ function updateEventById(
       status = ?,
       updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
+    AND user_id = ?
   `).run(
     title,
     description ?? null,
@@ -1612,27 +2046,40 @@ function updateEventById(
     category ?? "other",
     notification ?? "none",
     status ?? "active",
-    id
+    id,
+    userId
   );
 
   return result.changes > 0;
 }
 
-function deleteEventById(id) {
+function deleteEventById(
+  userId,
+  id
+) {
   const result = db.prepare(`
     DELETE FROM events
     WHERE id = ?
-  `).run(id);
+      AND user_id = ?
+  `).run(
+    id,
+    userId
+  );
 
   return result.changes > 0;
 }
 
 function convertTaskToEvent(
+  userId,
   taskId,
   eventData = {}
 ) {
   const convert = db.transaction(() => {
-    const task = getTaskById(taskId);
+    const task =
+  getTaskById(
+    userId,
+    taskId
+  );
 
     if (!task) {
       return {
@@ -1654,6 +2101,7 @@ function convertTaskToEvent(
     }
 
     const eventId = addEvent(
+      userId,
       eventData.title !== undefined
         ? eventData.title
         : task.title,
@@ -1684,7 +2132,10 @@ eventData.notification !== undefined
     );
 
     const deleted =
-      deleteTaskById(taskId);
+      deleteTaskById(
+  userId,
+  taskId
+);
 
     if (!deleted) {
       throw new Error(
@@ -1702,11 +2153,16 @@ eventData.notification !== undefined
 }
 
 function convertEventToTask(
+  userId,
   eventId,
   taskData = {}
 ) {
   const convert = db.transaction(() => {
-    const event = getEventById(eventId);
+    const event =
+  getEventById(
+    userId,
+    eventId
+  );
 
     if (!event) {
       return {
@@ -1728,9 +2184,10 @@ function convertEventToTask(
     }
 
     const taskId = addTask(
-      taskData.title !== undefined
-        ? taskData.title
-        : event.title,
+  userId,
+  taskData.title !== undefined
+    ? taskData.title
+    : event.title,
       taskData.description !== undefined
         ? taskData.description
         : event.description || "",
@@ -1759,7 +2216,10 @@ taskData.location !== undefined
 );
 
     const deleted =
-      deleteEventById(eventId);
+      deleteEventById(
+  userId,
+  eventId
+);
 
     if (!deleted) {
       throw new Error(
@@ -1776,12 +2236,15 @@ taskData.location !== undefined
   return convert();
 }
 
-function getEventsByDate(date) {
+function getEventsByDate(
+  userId,
+  date
+) {
   return db.prepare(`
     SELECT *
     FROM events
-    WHERE
-      status = 'active'
+    WHERE user_id = ?
+      AND status = 'active'
       AND event_date = ?
     ORDER BY
       CASE
@@ -1792,18 +2255,22 @@ function getEventsByDate(date) {
       END,
       start_time ASC,
       id ASC
-  `).all(date);
+  `).all(
+    userId,
+    date
+  );
 }
 
 function getEventsByDateRange(
+  userId,
   startDate,
   endDate
 ) {
   return db.prepare(`
     SELECT *
     FROM events
-    WHERE
-      status = 'active'
+    WHERE user_id = ?
+      AND status = 'active'
       AND event_date BETWEEN ? AND ?
     ORDER BY
       event_date ASC,
@@ -1816,12 +2283,17 @@ function getEventsByDateRange(
       start_time ASC,
       id ASC
   `).all(
+    userId,
     startDate,
     endDate
   );
 }
 
 module.exports = {
+  getAllUsers,
+  getUserById,
+getUserByGoogleSub,
+createUser,
   saveConversation,
   getRecentConversations,
 

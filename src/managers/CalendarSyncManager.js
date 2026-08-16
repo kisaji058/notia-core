@@ -10,13 +10,10 @@ const {
 const googleProvider =
   require("../calendar/providers/GoogleCalendarProvider");
 
-async function syncGoogleCalendar() {
-  // =====================
+async function syncGoogleCalendar(userId) {
   // Google → Notia
-  // =====================
-
   const googleEvents =
-    await googleProvider.listEvents();
+    await googleProvider.listEvents(userId);
 
   let importedEvents = 0;
 
@@ -29,11 +26,10 @@ async function syncGoogleCalendar() {
       }
 
       const normalizedEvent =
-        googleProvider.normalizeEvent(
-          event
-        );
+        googleProvider.normalizeEvent(event);
 
       saveExternalCalendarEvent(
+        userId,
         "google",
         normalizedEvent
       );
@@ -51,14 +47,11 @@ async function syncGoogleCalendar() {
     }
   }
 
-  // =====================
-  // Notia Task → Google
-  // =====================
-
   const unsyncedTasks =
-  getUnsyncedTimedTasks(
-    "google"
-  );
+    getUnsyncedTimedTasks(
+      userId,
+      "google"
+    );
 
   let exportedTasks = 0;
 
@@ -67,10 +60,12 @@ async function syncGoogleCalendar() {
       const googleEvent =
         await googleProvider
           .createEventFromTask(
+            userId,
             task
           );
 
       saveTaskCalendarLink(
+        userId,
         task.id,
         "google",
         googleEvent.id
@@ -89,27 +84,24 @@ async function syncGoogleCalendar() {
     }
   }
 
-  // =====================
-  // Notia Routine → Google
-  // =====================
-
   const unsyncedRoutines =
-    getUnsyncedGoogleRoutines();
+    getUnsyncedGoogleRoutines(
+      userId
+    );
 
   let exportedRoutines = 0;
 
-  for (
-    const routine of
-    unsyncedRoutines
-  ) {
+  for (const routine of unsyncedRoutines) {
     try {
       const googleEvent =
         await googleProvider
           .createRecurringEventFromRoutine(
+            userId,
             routine
           );
 
       saveRoutineGoogleEventId(
+        userId,
         routine.id,
         googleEvent.id
       );
@@ -127,11 +119,8 @@ async function syncGoogleCalendar() {
     }
   }
 
-  // =====================
-  // Last Sync
-  // =====================
-
   updateIntegrationLastSync(
+    userId,
     "google"
   );
 

@@ -67,12 +67,15 @@ function getPreviousAssistantMessage(
   return "";
 }
 
+
 function createReply(
+  userId,
   reply,
   analysis,
   taskResult = null
 ) {
   saveConversation(
+    userId,
     "assistant",
     reply
   );
@@ -84,15 +87,34 @@ function createReply(
   };
 }
 
-async function handleChat(message) {
-  saveConversation("user", message);
+async function handleChat(
+  message,
+  userId
+) {
+  if (!userId) {
+    throw new Error(
+      "ChatRuntime: userId is required"
+    );
+  }
+
+  saveConversation(
+    userId,
+    "user",
+    message
+  );
 
 // =====================
 // 初期化
 // =====================
 
-const activeTasks = getActiveTasks();
-const recentMessages = getRecentConversations(10);
+const activeTasks =
+  getActiveTasks(userId);
+
+const recentMessages =
+  getRecentConversations(
+    userId,
+    10
+  );
 
 const context = conversationContextBuilder.build({
   conversations: recentMessages,
@@ -137,6 +159,7 @@ const isDecliningSuggestion =
     "承知しました。通知は設定しません。";
 
   saveConversation(
+    userId,
     "assistant",
     reply
   );
@@ -169,10 +192,12 @@ if (
 }
 
   if (taskListManager.isTaskListRequest(message)) {
-    const tasks = getActiveTasks();
+    const tasks =
+  getActiveTasks(userId);
     const reply = taskListManager.createTaskListReply(tasks);
 
     return createReply(
+  userId,
   reply,
   analysis
 );
@@ -193,10 +218,16 @@ if (
 // Resolver
 // =====================
 
-  const conversationResult = await conversationManager.handle(message, analysis);
+  const conversationResult =
+  await conversationManager.handle(
+    message,
+    analysis,
+    userId
+  );
 
   if (conversationResult.handled) {
   return createReply(
+    userId,
     conversationResult.reply,
     conversationResult.analysis ||
       analysis,
@@ -205,11 +236,15 @@ if (
   );
 }
 
- const memoryResult = await resolve(message, {
-  analysis,
-  activeTasks,
-  conversations: recentMessages,
-});
+ const memoryResult = await resolve(
+  message,
+  {
+    analysis,
+    activeTasks,
+    conversations: recentMessages,
+  },
+  userId
+);
 
 console.log(
   "memoryResult:",
@@ -221,6 +256,7 @@ if (
   memoryResult.reply
 ) {
   return createReply(
+    userId,
     memoryResult.reply,
     analysis
   );
@@ -231,7 +267,10 @@ if (
 // =====================
 
 const taskResult =
-  taskManager.handle(analysis);
+  taskManager.handle(
+    analysis,
+    userId
+  );
 
 const taskReply =
   responseManager.createTaskResultReply(
@@ -260,7 +299,7 @@ const taskReply =
     const sessionManager =
       require("../session/SessionManager");
 
-    sessionManager.set("default", {
+    sessionManager.set(userId, {
       mode: "waiting_due_time",
       pendingTasks:
         pendingDueTimeTasks,
@@ -271,6 +310,7 @@ const taskReply =
 
 if (taskReply) {
   return createReply(
+    userId,
     taskReply,
     analysis,
     taskResult
@@ -281,10 +321,12 @@ if (taskReply) {
 // AI応答
 // =====================
 
-const systemHint = promptBuilder.createSystemHint(
-  message,
-  conversationResult
-);
+const systemHint =
+  promptBuilder.createSystemHint(
+    userId,
+    message,
+    result
+  );
 
 const prompt = promptBuilder.build({
   context,
@@ -295,6 +337,7 @@ const reply = await chatWithNotia(message, [], prompt);
 
 
   return createReply(
+    userId,
   reply,
   analysis
 );

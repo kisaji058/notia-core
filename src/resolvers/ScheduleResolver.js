@@ -4,7 +4,8 @@ const {
 
 function resolve(
   analysis,
-  context
+  context,
+  userId
 ) {
   if (
     analysis?.intent !==
@@ -23,8 +24,9 @@ function resolve(
   ) {
     case "today":
       return resolveTodaySchedule(
-        context
-      );
+  context,
+  userId
+);
 
     case "tomorrow":
       return resolveTomorrowSchedule(
@@ -203,7 +205,10 @@ function resolveScheduleByRange(
   };
 }
 
-function resolveTodaySchedule(context) {
+function resolveTodaySchedule(
+  context,
+  userId
+) {
   const today =
     new Date().toLocaleDateString(
       "sv-SE",
@@ -219,7 +224,7 @@ function resolveTodaySchedule(context) {
   );
 
   const routines =
-    getTodayRoutines();
+  getTodayRoutines(userId);
 
   if (
     tasks.length === 0 &&

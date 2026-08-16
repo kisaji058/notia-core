@@ -169,10 +169,11 @@ if (isNewRequest) {
       },
     };
 
-    result =
-      taskManager.handle(
-        fixedAnalysis
-      );
+   result =
+  taskManager.handle(
+    fixedAnalysis,
+    userId
+  );
   }
 
   const nextTaskIndex =
@@ -387,7 +388,10 @@ if (!analyzedDueDate && !wantsNoDueDate) {
     dateExpression: null,
   };
 
-  const result = taskManager.handle(fixedAnalysis);
+  const result = taskManager.handle(
+  fixedAnalysis,
+  userId
+);
 
   sessionManager.clear(userId);
 
