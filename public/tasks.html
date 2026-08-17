@@ -2,216 +2,464 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Notia タスク一覧</title>
 
-  <link rel="prefetch" href="/">
-<link rel="prefetch" href="/today">
-<link rel="prefetch" href="/tasks">
-<link rel="prefetch" href="/calendar">
-  <link rel="stylesheet" href="/css/common.css">
-<link rel="stylesheet" href="/css/chat.css">
-<link rel="stylesheet" href="/css/style.css">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  />
+
+  <title>Notia プラン</title>
+
+  <link rel="prefetch" href="/" />
+  <link rel="prefetch" href="/today" />
+  <link rel="prefetch" href="/tasks" />
+  <link rel="prefetch" href="/calendar" />
+
+  <link rel="stylesheet" href="/css/common.css" />
+  <link rel="stylesheet" href="/css/chat.css" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/tasks.css" />
 </head>
-<body class="tasks-page">
+
+<body class="tasks-page plan-page">
+
+  <!-- =========================
+       共通ヘッダー
+  ========================== -->
 
   <header class="chat-header">
-  <div class="chat-header-brand">
-    <img
-      class="chat-header-logo"
-      src="/images/notia-logo.png"
-      alt=""
-    >
+    <div class="chat-header-brand">
+      <img
+        class="chat-header-logo"
+        src="/images/notia-logo.png"
+        alt=""
+      />
 
-    <img
-      class="chat-header-wordmark"
-      src="/images/notia-wordmark.png"
-      alt="Notia"
-    >
-  </div>
-
-  <button
-    class="account-button"
-    type="button"
-    aria-label="アカウントを開く"
-    title="アカウント"
-  >
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <circle
-        cx="12"
-        cy="8"
-        r="3.5"
-      ></circle>
-
-      <path
-        d="M5 20c.7-4 3.2-6 7-6s6.3 2 7 6"
-      ></path>
-    </svg>
-  </button>
-</header>
-  
-<div
-  id="sheetOverlay"
-  class="sheet-overlay"
-  hidden
-></div>
-
-<div
-  id="sheetModal"
-  class="sheet-modal"
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="sheetTitle"
-  hidden
->
-  <div class="sheet-header">
-    <h3 id="sheetTitle"></h3>
+      <img
+        class="chat-header-wordmark"
+        src="/images/notia-wordmark.png"
+        alt="Notia"
+      />
+    </div>
 
     <button
-      id="closeSheetButton"
+      class="account-button"
       type="button"
-      aria-label="シートを閉じる"
+      aria-label="アカウントを開く"
+      title="アカウント"
     >
-      ✕
+      <svg
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <circle
+          cx="12"
+          cy="8"
+          r="3.5"
+        ></circle>
+
+        <path
+          d="M5 20c.7-4 3.2-6 7-6s6.3 2 7 6"
+        ></path>
+      </svg>
     </button>
-  </div>
+  </header>
+
+
+  <!-- =========================
+       共通ボトムシート
+  ========================== -->
 
   <div
-    id="sheetContent"
-    class="sheet-content"
+    id="sheetOverlay"
+    class="sheet-overlay"
+    hidden
   ></div>
-</div>
 
-  <main class="app task-app">
-    <header class="task-header">
-  <div class="task-progress-row">
-  <p class="task-progress-text">
-    <strong id="taskProgressCount">0</strong>
-    件のタスクが進行中
-  </p>
-
-  <button
-    id="addTaskButton"
-    class="task-add-button"
-    type="button"
+  <div
+    id="sheetModal"
+    class="sheet-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="sheetTitle"
+    hidden
   >
-    <span aria-hidden="true">＋</span>
-    <span>タスクを追加</span>
-  </button>
-</div>
+    <div class="sheet-header">
+      <h3 id="sheetTitle"></h3>
 
-  <div class="task-header-actions">
+      <button
+        id="closeSheetButton"
+        type="button"
+        aria-label="シートを閉じる"
+      >
+        ✕
+      </button>
+    </div>
+
+    <div
+      id="sheetContent"
+      class="sheet-content"
+    ></div>
+  </div>
 
 
-  <button
-    id="filterButton"
-    type="button"
-    aria-label="絞り込み"
-  >
-    <span>🔍</span>
-    <span>絞り込み</span>
-  </button>
+  <!-- =========================
+       プランページ
+  ========================== -->
 
-  <button
-  id="settingsButton"
+  <main class="app task-app plan-app">
+
+    <!-- ページ上部 -->
+
+    <section class="plan-header">
+
+      <div class="plan-heading-row">
+
+        <div class="plan-heading-copy">
+          <h1 class="plan-title">
+            プラン
+          </h1>
+
+          <p class="plan-summary">
+            タスク
+<strong
+  id="planTaskCount"
+  class="plan-summary-count"
+>0</strong><span class="plan-summary-unit">件</span>
+<span aria-hidden="true">・</span>
+
+予定
+<strong
+  id="planEventCount"
+  class="plan-summary-count"
+>0</strong><span class="plan-summary-unit">件</span>
+<span aria-hidden="true">・</span>
+
+ルーティーン
+<strong
+  id="planRoutineCount"
+  class="plan-summary-count"
+>0</strong><span class="plan-summary-unit">件</span>
+        </div>
+
+        <button
+          id="addTaskButton"
+          class="plan-add-button task-add-button"
+          type="button"
+        >
+          <span
+            class="plan-add-icon"
+            aria-hidden="true"
+          >
+            ＋
+          </span>
+
+          <span>
+            追加
+          </span>
+        </button>
+
+      </div>
+
+
+      <!-- 種類切り替え -->
+
+      <div
+        class="plan-segment"
+        role="tablist"
+        aria-label="プランの種類"
+      >
+
+        <button
+          id="planTabAll"
+          class="plan-segment-button active"
+          type="button"
+          role="tab"
+          aria-selected="true"
+          data-plan-type="all"
+        >
+          すべて
+        </button>
+
+        <button
+          id="planTabTasks"
+          class="plan-segment-button"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          data-plan-type="tasks"
+        >
+          タスク
+        </button>
+
+        <button
+          id="planTabEvents"
+          class="plan-segment-button"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          data-plan-type="events"
+        >
+          予定
+        </button>
+
+        <button
+          id="planTabRoutines"
+          class="plan-segment-button"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          data-plan-type="routines"
+        >
+          ルーティーン
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         プラン内容
+    ========================== -->
+
+    <section
+      id="planContent"
+      class="plan-content"
+    >
+
+      <!--
+        STEP 1では既存tasks.jsとの互換性を優先。
+        現時点ではタスク一覧をここに表示する。
+      -->
+
+      <section
+        id="planTaskSection"
+        class="plan-section plan-task-section"
+      >
+
+      <button
+  class="plan-section-heading"
+  id="planTaskSectionButton"
   type="button"
-  hidden
 >
-    <span>⚙</span>
-    <span>設定</span>
-  </button>
-</div>
-</header>
-
-
-  <section class="task-section task-page">
-  <div id="taskList">
-    <p class="task-status">読み込み中...</p>
-  </div>
-
-  <div class="completed-link-area">
-    <a
-      class="completed-link-button"
-      href="/tasks-completed"
-    >
-      過去50件の完了タスクを見る
-      <span aria-hidden="true">›</span>
-    </a>
-  </div>
-</section>
-
-<nav class="bottom-nav">
-  <a
-    href="/"
-    aria-label="チャット"
-  >
-    <img
-      src="/images/nav/chat-unselected.png"
-      alt=""
-      class="bottom-nav-icon"
-    >
-    <span>チャット</span>
-  </a>
-
-  <a
-    href="/today"
-    aria-label="Today"
-  >
-    <img
-      src="/images/nav/today-unselected.png"
-      alt=""
-      class="today-nav-icon"
-    >
-    <span>Today</span>
-  </a>
-
-  <a
-    href="/tasks"
-    class="active"
-    aria-current="page"
-    aria-label="タスク"
-  >
+  <span class="plan-section-title">
     <img
       src="/images/nav/task-selected.png"
       alt=""
-      class="bottom-nav-icon bottom-nav-icon-task"
-    >
-    <span>タスク</span>
-  </a>
-
-  <a
-    href="/calendar"
-    aria-label="カレンダー"
-  >
-    <svg
-      class="bottom-nav-icon"
-      viewBox="0 0 24 24"
+      class="plan-section-icon-image"
       aria-hidden="true"
     >
-      <rect
-        x="4"
-        y="5"
-        width="16"
-        height="15"
-        rx="2"
-      ></rect>
 
-      <path
-        d="M8 3v4M16 3v4M4 9h16"
-      ></path>
-    </svg>
+    <span>タスク</span>
+  </span>
+</button>
 
-    <span>カレンダー</span>
-  </a>
-</nav>
 
-<script src="/js/authGuard.js?v=app-ready-1"></script>
-<script src="/js/components/cardFactory.js"></script>
-<script src="/js/taskUtils.js"></script>
-<script src="/js/components/accountMenu.js"></script>
-<script src="/js/tasks.js"></script>
+        <!-- 既存tasks.jsが使用 -->
+        <div id="taskList">
+          <p class="task-status">
+            読み込み中...
+          </p>
+        </div>
+
+
+        <div class="completed-link-area">
+          <a
+            class="completed-link-button"
+            href="/tasks-completed"
+          >
+            完了済みを見る
+            <span aria-hidden="true">›</span>
+          </a>
+        </div>
+
+      </section>
+
+
+      <!-- 予定：後続STEPで接続 -->
+
+      <section
+        id="planEventSection"
+        class="plan-section plan-event-section"
+        hidden
+      >
+
+      <button
+  class="plan-section-heading"
+  id="planEventSectionButton"
+  type="button"
+>
+  <span class="plan-section-title">
+    <img
+      src="/images/nav/point-selected.png"
+      alt=""
+      class="plan-section-icon-image"
+      aria-hidden="true"
+    >
+
+    <span>予定</span>
+  </span>
+</button>
+
+        <div id="eventList"></div>
+      </section>
+
+
+      <!-- ルーティーン：後続STEPで接続 -->
+
+      <section
+        id="planRoutineSection"
+        class="plan-section plan-routine-section"
+        hidden
+      >
+
+      <button
+  class="plan-section-heading"
+  id="planRoutineSectionButton"
+  type="button"
+>
+  <span class="plan-section-title">
+    <img
+      src="/images/nav/routine-icon-concept.png"
+      alt=""
+      class="plan-section-icon-image"
+      aria-hidden="true"
+    >
+
+    <span>ルーティーン</span>
+  </span>
+</button>
+
+        <div id="routineList"></div>
+      </section>
+
+    </section>
+
+
+    <!-- =========================
+         既存JS互換用
+    ========================== -->
+
+    <div
+      class="plan-legacy-controls"
+      hidden
+    >
+      <strong id="taskProgressCount">0</strong>
+
+      <button
+        id="filterButton"
+        type="button"
+      >
+        絞り込み
+      </button>
+
+      <button
+        id="settingsButton"
+        type="button"
+      >
+        設定
+      </button>
+    </div>
+
+  </main>
+
+
+  <!-- =========================
+       下部ナビ
+  ========================== -->
+
+  <nav class="bottom-nav">
+
+    <a
+      href="/"
+      aria-label="チャット"
+    >
+      <img
+        src="/images/nav/chat-unselected.png"
+        alt=""
+        class="bottom-nav-icon"
+      />
+
+      <span>
+        チャット
+      </span>
+    </a>
+
+
+    <a
+      href="/today"
+      aria-label="Today"
+    >
+      <img
+        src="/images/nav/today-unselected.png"
+        alt=""
+        class="today-nav-icon"
+      />
+
+      <span>
+        Today
+      </span>
+    </a>
+
+
+    <a
+      href="/tasks"
+      class="active"
+      aria-current="page"
+      aria-label="プラン"
+    >
+      <img
+        src="/images/nav/task-selected.png"
+        alt=""
+        class="bottom-nav-icon bottom-nav-icon-task"
+      />
+
+      <span>
+        プラン
+      </span>
+    </a>
+
+
+    <a
+      href="/calendar"
+      aria-label="カレンダー"
+    >
+      <svg
+        class="bottom-nav-icon"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <rect
+          x="4"
+          y="5"
+          width="16"
+          height="15"
+          rx="2"
+        ></rect>
+
+        <path
+          d="M8 3v4M16 3v4M4 9h16"
+        ></path>
+      </svg>
+
+      <span>
+        カレンダー
+      </span>
+    </a>
+
+  </nav>
+
+
+  <!-- =========================
+       Scripts
+  ========================== -->
+
+  <script src="/js/authGuard.js?v=app-ready-1"></script>
+  <script src="/js/components/cardFactory.js"></script>
+  <script src="/js/taskUtils.js"></script>
+  <script src="/js/components/accountMenu.js"></script>
+  <script src="/js/tasks.js"></script>
+
 </body>
 </html>

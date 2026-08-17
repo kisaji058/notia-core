@@ -26,6 +26,7 @@ const {
   getEventsByDateRange,
   updateEventById,
   deleteEventById,
+  getActiveEvents,
   convertEventToTask,
 } = require("./database");
 
@@ -536,6 +537,30 @@ app.get("/tasks-completed", (req, res) => {
 // =====================
 // Notia events API
 // =====================
+
+app.get(
+  "/api/events",
+  (req, res) => {
+    try {
+      const events =
+        getActiveEvents(
+          req.session.userId
+        );
+
+      return res.json(events);
+    } catch (error) {
+      console.error(
+        "予定一覧取得エラー:",
+        error
+      );
+
+      return res.status(500).json({
+        error:
+          "予定一覧の取得に失敗しました。",
+      });
+    }
+  }
+);
 
 app.get("/api/events/:id", (req, res) => {
   try {

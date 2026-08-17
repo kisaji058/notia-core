@@ -71,3 +71,2106 @@
   font-size: 14px;
   color: #666;
 }
+
+/* ==================================================
+   Plan page
+   ================================================== */
+
+body.plan-page {
+  background: #f7f9f8;
+}
+
+
+/* ---------- main ---------- */
+
+body.plan-page .plan-app {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+
+  padding:
+    34px
+    28px
+    calc(
+      110px +
+      env(safe-area-inset-bottom, 0px)
+    );
+}
+
+
+/* ---------- header ---------- */
+
+body.plan-page .plan-header {
+  margin-bottom: 28px;
+}
+
+body.plan-page .plan-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+}
+
+body.plan-page .plan-heading-copy {
+  min-width: 0;
+}
+
+body.plan-page .plan-title {
+  margin: 0;
+
+  color: #102f5c;
+
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.15;
+
+  letter-spacing: -0.02em;
+}
+
+body.plan-page .plan-summary {
+  margin:
+    12px
+    0
+    0;
+
+  color: #5f696d;
+
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.5;
+
+  white-space: nowrap;
+}
+
+body.plan-page .plan-summary strong {
+  color: #13aaa6;
+
+  font-size: 22px;
+  font-weight: 700;
+}
+
+
+/* ---------- add button ---------- */
+
+body.plan-page .plan-add-button {
+  flex-shrink: 0;
+
+  min-width: 112px;
+  min-height: 54px;
+
+  margin: 0;
+  padding: 0 20px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  border: 0;
+  border-radius: 25px;
+
+  background: #20aaa6;
+  color: #fff;
+
+  box-shadow:
+    0 8px 18px
+    rgba(15, 141, 137, 0.14);
+
+  font-size: 18px;
+  font-weight: 700;
+}
+
+body.plan-page .plan-add-icon {
+  font-size: 29px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+
+/* ---------- segment ---------- */
+
+body.plan-page .plan-segment {
+  width: 100%;
+
+  margin-top: 28px;
+
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+
+  overflow: hidden;
+
+  border: 1px solid #d9e2e1;
+  border-radius: 18px;
+
+  background: #fff;
+}
+
+body.plan-page
+.plan-segment-button {
+  min-width: 0;
+  min-height: 48px;
+
+  padding: 0 8px;
+
+  border: 0;
+  border-right:
+    1px solid #d9e2e1;
+
+  border-radius: 0;
+
+  background: transparent;
+
+  color: #62696d;
+
+  font-size: 16px;
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+body.plan-page
+.plan-segment-button:last-child {
+  border-right: 0;
+}
+
+body.plan-page
+.plan-segment-button.active {
+  position: relative;
+
+  background: #fff;
+
+  color: #0fa39f;
+  font-weight: 700;
+}
+
+body.plan-page
+.plan-segment-button.active::after {
+  content: "";
+
+  position: absolute;
+
+  left: 12px;
+  right: 12px;
+  bottom: 0;
+
+  height: 3px;
+
+  border-radius: 3px;
+
+  background: #16aaa5;
+}
+
+
+/* ---------- content ---------- */
+
+body.plan-page .plan-content {
+  margin-top: 0;
+}
+
+body.plan-page .plan-section {
+  margin: 0;
+}
+
+
+/* ---------- section heading ---------- */
+
+body.plan-page
+.plan-section-heading {
+  width: 100%;
+  min-height: 54px;
+
+  padding: 0 4px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  border: 0;
+  background: transparent;
+
+  color: #102f5c;
+}
+
+body.plan-page
+.plan-section-title {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  font-size: 21px;
+  font-weight: 700;
+}
+
+body.plan-page
+.plan-section-icon {
+  width: 29px;
+  height: 29px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 2px solid #18aaa5;
+  border-radius: 50%;
+
+  color: #18aaa5;
+
+  font-size: 16px;
+  line-height: 1;
+}
+
+body.plan-page
+.plan-section-count {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  color: #697376;
+
+  font-size: 17px;
+  font-weight: 500;
+}
+
+
+/* ---------- task preview ---------- */
+
+body.plan-page
+#taskList {
+  display: flex;
+  flex-direction: column;
+
+  gap: 12px;
+}
+
+body.plan-page
+#taskList > .task-card {
+  margin: 0;
+}
+
+
+/* ---------- cards ---------- */
+
+body.plan-page .task-card {
+  min-height: 82px;
+
+  border:
+    1px solid
+    rgba(207, 216, 215, 0.8);
+
+  border-radius: 17px;
+
+  background: #fff;
+
+  box-shadow:
+    0 5px 14px
+    rgba(23, 45, 52, 0.06);
+}
+
+body.plan-page
+.task-card .task-info {
+  min-height: 82px;
+
+  padding:
+    14px
+    20px;
+}
+
+
+/* ---------- completed link ---------- */
+
+body.plan-page
+.completed-link-area {
+  display: none;
+}
+
+
+/* ---------- legacy ---------- */
+
+body.plan-page
+.plan-legacy-controls {
+  display: none !important;
+}
+
+
+/* ---------- mobile ---------- */
+
+@media (max-width: 520px) {
+  body.plan-page .plan-app {
+    padding:
+      30px
+      22px
+      calc(
+        105px +
+        env(safe-area-inset-bottom, 0px)
+      );
+  }
+
+  body.plan-page .plan-title {
+    font-size: 34px;
+  }
+
+  body.plan-page .plan-summary {
+    font-size: 15px;
+  }
+
+  body.plan-page
+  .plan-summary strong {
+    font-size: 20px;
+  }
+
+  body.plan-page
+  .plan-add-button {
+    min-width: 104px;
+    min-height: 52px;
+
+    padding: 0 17px;
+
+    font-size: 17px;
+  }
+
+  body.plan-page
+  .plan-segment-button {
+    min-height: 46px;
+
+    font-size: 15px;
+  }
+}
+
+/* ==================================================
+   Plan task cards
+   ================================================== */
+
+body.plan-page .task-card {
+  min-height: 76px;
+
+  padding:
+    10px
+    14px
+    10px
+    16px;
+
+  gap: 10px;
+}
+
+body.plan-page
+.task-card .task-info {
+  min-height: 0;
+
+  padding: 0;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+body.plan-page
+.task-card .task-title {
+  gap: 7px;
+
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+body.plan-page
+.task-card .task-meta {
+  margin-top: 5px;
+
+  gap: 9px;
+
+  font-size: 14px;
+}
+
+body.plan-page
+.task-card .task-date,
+body.plan-page
+.task-card .task-time,
+body.plan-page
+.task-card .task-category {
+  font-size: 14px;
+}
+
+body.plan-page
+.task-actions {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  flex-shrink: 0;
+}
+
+body.plan-page
+.task-actions
+.complete-button.task-icon-button {
+  width: 38px;
+  min-width: 38px;
+  height: 38px;
+
+  padding: 3px;
+}
+
+body.plan-page
+.task-actions
+.complete-button img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+}
+
+body.plan-page
+.task-card-chevron {
+  width: 20px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #718083;
+
+  font-size: 30px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+
+/* すべて画面ではカード間をさらに詰める */
+
+body.plan-page
+#taskList {
+  gap: 10px;
+}
+
+/* ==================================================
+   Plan polish
+   ================================================== */
+
+body.plan-page .plan-heading-row {
+  align-items: flex-start;
+}
+
+body.plan-page .plan-add-button {
+  min-width: 100px;
+  min-height: 48px;
+
+  padding: 0 16px;
+
+  border-radius: 24px;
+
+  font-size: 16px;
+}
+
+body.plan-page .plan-add-icon {
+  font-size: 26px;
+}
+
+body.plan-page .plan-summary {
+  margin-top: 10px;
+
+  font-size: 14px;
+  letter-spacing: -0.01em;
+}
+
+body.plan-page .plan-summary strong {
+  font-size: 19px;
+}
+
+body.plan-page .plan-segment {
+  margin-top: 24px;
+}
+
+body.plan-page .plan-segment-button {
+  min-height: 44px;
+
+  padding: 0 4px;
+
+  font-size: 14px;
+}
+
+body.plan-page .plan-section-heading {
+  min-height: 50px;
+}
+
+body.plan-page .plan-content {
+  margin-top: -2px;
+}
+
+body.plan-page .task-card {
+  min-height: 72px;
+}
+
+body.plan-page
+.task-card .task-title {
+  font-size: 17px;
+}
+
+body.plan-page
+.task-card .task-date,
+body.plan-page
+.task-card .task-time,
+body.plan-page
+.task-card .task-category {
+  font-size: 13px;
+}
+
+/* ==================================================
+   Plan event cards
+   ================================================== */
+
+body.plan-page
+#eventList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+body.plan-page
+.plan-event-card {
+  min-height: 72px;
+
+  padding:
+    10px
+    14px
+    10px
+    16px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  border:
+    1px solid
+    rgba(207, 216, 215, 0.8);
+
+  border-radius: 17px;
+
+  background: #fff;
+
+  box-shadow:
+    0 5px 14px
+    rgba(23, 45, 52, 0.06);
+}
+
+body.plan-page
+.plan-event-info {
+  flex: 1;
+  min-width: 0;
+
+  cursor: pointer;
+}
+
+body.plan-page
+.plan-event-title {
+  color: #202326;
+
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+body.plan-page
+.plan-event-meta {
+  margin-top: 5px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+
+  color: #6b7280;
+
+  font-size: 13px;
+}
+
+body.plan-page
+.plan-event-chevron {
+  width: 20px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #718083;
+
+  font-size: 30px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+/* ==========================================
+   Plan routine section
+   ========================================== */
+
+body.plan-page
+#routineList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+body.plan-page
+#routineList
+.routine-card {
+  margin: 0;
+}
+
+body.plan-page
+.plan-routine-section {
+  margin-top: 24px;
+}
+
+body.plan-page
+.plan-event-section {
+  margin-top: 24px;
+}
+
+/* ==================================================
+   Plan page scroll fix
+   ================================================== */
+
+html {
+  height: auto;
+  min-height: 100%;
+}
+
+body.tasks-page.plan-page {
+  display: block;
+
+  height: auto;
+  min-height: 100dvh;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  overscroll-behavior-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.tasks-page.plan-page
+.task-app,
+body.tasks-page.plan-page
+.plan-app {
+  display: block;
+
+  height: auto;
+  min-height: 0;
+
+  overflow: visible;
+}
+
+body.tasks-page.plan-page
+.plan-content {
+  overflow: visible;
+}
+
+/* 下部ナビに内容が隠れないよう余白を確保 */
+body.tasks-page.plan-page
+.plan-app {
+  padding-bottom:
+    calc(
+      120px +
+      env(safe-area-inset-bottom, 0px)
+    );
+}
+
+/* ==================================================
+   Plan routine cards
+   ================================================== */
+
+body.plan-page
+#routineList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+body.plan-page
+.plan-routine-card {
+  min-height: 72px;
+
+  margin: 0;
+  padding:
+    10px
+    14px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  border:
+    1px solid
+    rgba(207, 216, 215, 0.8);
+
+  border-radius: 17px;
+
+  background: #fff;
+
+  box-shadow:
+    0 5px 14px
+    rgba(23, 45, 52, 0.06);
+
+  cursor: pointer;
+}
+
+
+/* 繰り返しアイコン */
+
+body.plan-page
+.plan-routine-icon {
+  width: 38px;
+  height: 38px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #16aaa5;
+}
+
+body.plan-page
+.plan-routine-icon svg {
+  width: 30px;
+  height: 30px;
+
+  fill: none;
+
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+
+/* 中央 */
+
+body.plan-page
+.plan-routine-info {
+  flex: 1;
+  min-width: 0;
+}
+
+body.plan-page
+.plan-routine-title {
+  overflow: hidden;
+
+  color: #202326;
+
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+body.plan-page
+.plan-routine-meta {
+  margin-top: 5px;
+
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+
+  color: #6b7280;
+
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+body.plan-page
+.plan-routine-meta-dot {
+  margin: 0 3px;
+}
+
+
+/* 右側 */
+
+body.plan-page
+.plan-routine-side {
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+}
+
+body.plan-page
+.plan-routine-state {
+  padding:
+    4px
+    9px;
+
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+body.plan-page
+.plan-routine-state.is-active {
+  background:
+    rgba(
+      22,
+      170,
+      165,
+      0.09
+    );
+
+  color: #119b97;
+}
+
+body.plan-page
+.plan-routine-state.is-paused {
+  background: #eef0f0;
+  color: #747c7e;
+}
+
+body.plan-page
+.plan-routine-chevron {
+  width: 16px;
+
+  color: #718083;
+
+  font-size: 30px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+/* ==========================================
+   Plan create type switch
+   ========================================== */
+
+body.plan-page
+.plan-create-tabs {
+  width: 100%;
+
+  margin-bottom: 22px;
+
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  overflow: hidden;
+
+  border: 1px solid #d5e2e0;
+  border-radius: 16px;
+
+  background: #f8fbfa;
+}
+
+body.plan-page
+.plan-create-tab {
+  min-height: 46px;
+
+  padding: 0 8px;
+
+  border: 0;
+  border-right:
+    1px solid #d5e2e0;
+
+  background: transparent;
+
+  color: #667275;
+
+  font-size: 15px;
+  font-weight: 700;
+}
+
+body.plan-page
+.plan-create-tab:last-child {
+  border-right: 0;
+}
+
+body.plan-page
+.plan-create-tab.active {
+  position: relative;
+
+  background: #fff;
+  color: #0fa39f;
+}
+
+body.plan-page
+.plan-create-tab.active::after {
+  content: "";
+
+  position: absolute;
+
+  left: 12px;
+  right: 12px;
+  bottom: 0;
+
+  height: 3px;
+
+  border-radius: 3px;
+
+  background: #16aaa5;
+}
+
+/* ==========================================
+   Plan event create form
+   ========================================== */
+
+body.plan-page
+.plan-event-time-fields {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 12px;
+}
+
+body.plan-page
+.plan-event-time-fields > div {
+  min-width: 0;
+}
+
+body.plan-page
+.plan-create-help {
+  margin:
+    -2px
+    0
+    18px;
+
+  color: #768184;
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ==================================================
+   Plan create sheet layout
+   ================================================== */
+
+body.plan-page
+.sheet-modal:has(.plan-create-content) {
+  top: auto;
+  right: auto;
+  bottom: 0;
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  width: 100%;
+  max-width: 560px;
+  max-height: calc(100dvh - 24px);
+
+  padding:
+    20px
+    20px
+    calc(
+      22px +
+      env(safe-area-inset-bottom, 0px)
+    );
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  box-sizing: border-box;
+
+  background: #ffffff;
+
+  border-radius:
+    22px
+    22px
+    0
+    0;
+
+  box-shadow:
+    0 -12px 40px
+    rgba(29, 54, 49, 0.20);
+}
+
+
+/* シート内部 */
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.sheet-content {
+  width: 100%;
+  min-width: 0;
+}
+
+body.plan-page
+.plan-create-content {
+  width: 100%;
+  min-width: 0;
+}
+
+body.plan-page
+.plan-create-content
+.task-create-form {
+  width: 100%;
+  min-width: 0;
+}
+
+
+/* 3種類タブ */
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.plan-create-tabs {
+  width: 100%;
+  max-width: 100%;
+
+  box-sizing: border-box;
+}
+
+
+/* PC */
+
+@media (min-width: 641px) {
+  body.plan-page
+  .sheet-modal:has(.plan-create-content) {
+    bottom: 16px;
+
+    border-radius: 22px;
+  }
+}
+
+/* ==================================================
+   Shared Plan create form styles
+   ================================================== */
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-form {
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+
+  width: 100%;
+  min-width: 0;
+
+  padding: 0;
+}
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-label {
+  margin: 5px 0 0;
+
+  color: #41534f;
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-input {
+  display: block;
+
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+
+  min-height: 52px;
+
+  margin: 0;
+  padding: 12px 14px;
+
+  box-sizing: border-box;
+
+  color: #263b37;
+  background: #ffffff;
+
+  border: 1px solid #cedbd7;
+  border-radius: 12px;
+
+  outline: none;
+
+  font: inherit;
+  font-size: 16px;
+}
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-input:focus {
+  border-color: #2fa99d;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(47, 169, 157, 0.12);
+}
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-input[type="date"],
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-input[type="time"] {
+  height: 52px;
+  min-height: 52px;
+
+  padding: 0 14px;
+}
+
+
+/* 整理カード */
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-organize-card {
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+
+  margin-top: 6px;
+  padding: 12px 16px;
+
+  background: #ffffff;
+
+  border: 1px solid #dbe6e3;
+  border-radius: 18px;
+
+  box-shadow:
+    0 4px 14px
+    rgba(44, 82, 76, 0.06);
+}
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-organize-title {
+  margin: 0;
+
+  color: #0f2f66;
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-organize-row {
+  display: grid;
+
+  grid-template-columns:
+    22px
+    42px
+    minmax(0, 1fr)
+    12px;
+
+  align-items: center;
+
+  gap: 10px;
+
+  min-height: 48px;
+}
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-organize-row
++ .task-create-organize-row {
+  border-top:
+    1px solid #e3e9e7;
+}
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-organize-icon {
+  width: 20px;
+  height: 20px;
+
+  fill: none;
+  stroke: #2f8f87;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-organize-label {
+  color: #65716f;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-organize-select {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+
+  padding: 0;
+
+  color: #202124;
+  background: transparent;
+
+  border: 0;
+  border-radius: 0;
+
+  outline: 0;
+  box-shadow: none;
+
+  appearance: none;
+  -webkit-appearance: none;
+
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+
+  text-align: right;
+  text-align-last: right;
+}
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-organize-chevron {
+  color: #9aa5a2;
+
+  font-size: 22px;
+  line-height: 1;
+}
+
+
+/* 優先度 */
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-priority-row {
+  grid-template-columns:
+    22px
+    42px
+    minmax(0, 1fr);
+}
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-priority-switch {
+  display: grid;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  justify-self: end;
+
+  width: min(100%, 200px);
+
+  padding: 3px;
+
+  background: #e8f0ee;
+
+  border-radius: 11px;
+}
+
+
+/* メモ */
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-textarea {
+  min-height: 90px;
+
+  resize: vertical;
+}
+
+
+/* 登録ボタン */
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-submit {
+  position: static;
+
+  width: 100%;
+  min-height: 48px;
+
+  margin-top: 2px;
+  padding: 12px 16px;
+
+  color: #ffffff;
+  background: #2fa99d;
+
+  border: 1px solid #2fa99d;
+  border-radius: 13px;
+
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* ==========================================
+   Plan routine create form
+   ========================================== */
+
+body.plan-page
+.plan-routine-create-days {
+  margin: 4px 0 0;
+  padding: 0;
+
+  border: 0;
+}
+
+body.plan-page
+.plan-routine-create-days legend {
+  margin-bottom: 6px;
+
+  color: #41534f;
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+body.plan-page
+.plan-routine-day-options {
+  display: grid;
+
+  grid-template-columns:
+    repeat(7, minmax(0, 1fr));
+
+  gap: 6px;
+}
+
+body.plan-page
+.plan-routine-day-option {
+  cursor: pointer;
+}
+
+body.plan-page
+.plan-routine-day-option input {
+  position: absolute;
+
+  width: 1px;
+  height: 1px;
+
+  opacity: 0;
+  pointer-events: none;
+}
+
+body.plan-page
+.plan-routine-day-option span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 42px;
+
+  border: 1px solid #d3dfdc;
+  border-radius: 11px;
+
+  background: #f8fbfa;
+
+  color: #65716f;
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+body.plan-page
+.plan-routine-day-option
+input:checked
++ span {
+  color: #ffffff;
+  background: #2fa99d;
+
+  border-color: #2fa99d;
+}
+
+body.plan-page
+.plan-routine-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 16px;
+
+  min-height: 64px;
+
+  padding: 12px 14px;
+
+  border: 1px solid #dbe6e3;
+  border-radius: 16px;
+
+  background: #ffffff;
+
+  cursor: pointer;
+}
+
+body.plan-page
+.plan-routine-toggle-row > span:first-child {
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+body.plan-page
+.plan-routine-toggle-row strong {
+  color: #263b37;
+
+  font-size: 14px;
+}
+
+body.plan-page
+.plan-routine-toggle-row small {
+  color: #7a8683;
+
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+body.plan-page
+.plan-routine-switch {
+  position: relative;
+
+  flex-shrink: 0;
+
+  width: 46px;
+  height: 28px;
+}
+
+body.plan-page
+.plan-routine-switch input {
+  position: absolute;
+
+  opacity: 0;
+}
+
+body.plan-page
+.plan-routine-switch-track {
+  position: absolute;
+  inset: 0;
+
+  border-radius: 999px;
+
+  background: #d7dfdd;
+
+  transition:
+    background 0.2s ease;
+}
+
+body.plan-page
+.plan-routine-switch-track::after {
+  content: "";
+
+  position: absolute;
+
+  top: 3px;
+  left: 3px;
+
+  width: 22px;
+  height: 22px;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 1px 4px
+    rgba(0, 0, 0, 0.18);
+
+  transition:
+    transform 0.2s ease;
+}
+
+body.plan-page
+.plan-routine-switch
+input:checked
++ .plan-routine-switch-track {
+  background: #2fa99d;
+}
+
+body.plan-page
+.plan-routine-switch
+input:checked
++ .plan-routine-switch-track::after {
+  transform:
+    translateX(18px);
+}
+
+/* ==========================================
+   Plan section heading icons
+   ========================================== */
+
+body.plan-page
+.plan-section-title {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 10px;
+}
+
+body.plan-page
+.plan-section-icon-image {
+  display: block;
+
+  width: 30px;
+  height: 30px;
+
+  flex-shrink: 0;
+
+  object-fit: contain;
+}
+
+/* ==========================================
+   Plan section icon optical size
+   ========================================== */
+
+body.plan-page
+.plan-section-icon-image {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* タスクは少し小さく */
+body.plan-page
+.plan-task-section
+.plan-section-icon-image {
+  width: 27px;
+  height: 27px;
+}
+
+/* 予定は少し大きく */
+body.plan-page
+.plan-event-section
+.plan-section-icon-image {
+  width: 32px;
+  height: 32px;
+}
+
+/* ルーティーンも少し大きく */
+body.plan-page
+.plan-routine-section
+.plan-section-icon-image {
+  width: 32px;
+  height: 32px;
+}
+
+/* ==========================================
+   Plan compact spacing polish
+   ========================================== */
+
+/* ページ上端
+   header下からプランまでを詰める */
+body.plan-page
+.plan-app {
+  padding-top: 18px;
+}
+
+/* 余計に足していた上余白を消す */
+body.plan-page
+.plan-header {
+  padding-top: 0;
+  margin-bottom: 10px;
+}
+
+
+/* タイトル＋追加 */
+
+body.plan-page
+.plan-heading-row {
+  align-items: center;
+}
+
+body.plan-page
+.plan-add-button {
+  min-width: 94px;
+
+  height: 40px;
+  min-height: 40px;
+
+  padding: 0 14px;
+
+  gap: 5px;
+
+  border-radius: 20px;
+
+  font-size: 15px;
+}
+
+body.plan-page
+.plan-add-icon {
+  font-size: 22px;
+}
+
+
+/* プラン直下の件数 */
+
+body.plan-page
+.plan-summary {
+  margin-top: 5px;
+}
+
+
+/* タブを上へ */
+
+body.plan-page
+.plan-segment {
+  margin-top: 14px;
+}
+
+
+/* タブから最初の項目まで */
+
+body.plan-page
+.plan-content {
+  margin-top: 0;
+}
+
+
+/* 各項目 */
+
+body.plan-page
+.plan-section {
+  margin-top: 0;
+}
+
+body.plan-page
+.plan-event-section,
+body.plan-page
+.plan-routine-section {
+  margin-top: 8px;
+}
+
+
+/* タスク・予定・ルーティーン見出し */
+
+body.plan-page
+.plan-section-heading {
+  min-height: 40px;
+
+  margin: 0 0 3px;
+
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+
+/* 件数 */
+
+body.plan-page
+.plan-section-count {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 0;
+}
+
+body.plan-page
+.plan-section-count-number {
+  display: inline-block;
+}
+
+body.plan-page
+.plan-section-count-unit {
+  display: inline-block;
+
+  margin-left: 7px;
+}
+
+body.plan-page
+.plan-section-count-chevron {
+  display: inline-block;
+
+  margin-left: 8px;
+}
+
+
+/* 上部サマリーの数字と件 */
+
+body.plan-page
+.plan-summary-count {
+  margin-left: 4px;
+}
+
+body.plan-page
+.plan-summary-unit {
+  margin-left: 4px;
+}
+
+/* ==========================================
+   Plan header fine tune
+   ========================================== */
+
+body.plan-page .plan-heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+body.plan-page .plan-heading-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+body.plan-page .plan-title {
+  margin: 0;
+  line-height: 1.05;
+}
+
+body.plan-page .plan-add-button {
+  align-self: flex-start;
+
+  height: 40px;
+  min-height: 40px;
+  min-width: 112px;
+
+  margin-top: 6px;
+  padding: 0 18px;
+
+  border-radius: 20px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+body.plan-page .plan-add-icon {
+  font-size: 21px;
+  line-height: 1;
+}
+
+/* ==========================================
+   Plan task action buttons
+   ========================================== */
+
+body.plan-page .task-actions {
+  gap: 6px;
+}
+
+body.plan-page
+.task-actions
+.complete-button.task-icon-button {
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  padding: 1px;
+}
+
+body.plan-page
+.task-actions
+.complete-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+body.plan-page
+.task-card-chevron {
+  width: 16px;
+  font-size: 24px;
+}
+
+/* ==========================================
+   Plan routine card simplify
+   ========================================== */
+
+/* 左の丸い図を消す */
+body.plan-page .plan-routine-card-icon,
+body.plan-page .plan-routine-icon,
+body.plan-page .routine-card-icon,
+body.plan-page .routine-leading-icon {
+  display: none !important;
+}
+
+/* 有効バッジを消す */
+body.plan-page .plan-routine-status,
+body.plan-page .plan-routine-badge,
+body.plan-page .routine-status,
+body.plan-page .routine-status-badge {
+  display: none !important;
+}
+
+/* 左アイコンを消した後の余白調整 */
+body.plan-page .plan-routine-card,
+body.plan-page .routine-card {
+  padding-left: 20px;
+}
+
+body.plan-page .plan-routine-info,
+body.plan-page .routine-card-body {
+  margin-left: 0 !important;
+}
+
+/* ルーティーンカードの状態表示を消す */
+body.plan-page
+.plan-routine-state {
+  display: none !important;
+}
+
+body.plan-page
+.plan-add-button {
+  margin-top: -4px;
+}
+
+/* 上部4分割タブを薄くする */
+body.plan-page
+.plan-segment-button {
+  min-height: 34px;
+  height: 34px;
+
+  padding-top: 0;
+  padding-bottom: 0;
+
+  font-size: 12px;
+}
+
+body.plan-page
+.plan-section + .plan-section {
+  margin-top: 14px;
+}
+
+/* ==========================================
+   Plan grouped lists
+   ========================================== */
+
+body.plan-page
+.plan-item-group {
+  margin: 0;
+}
+
+body.plan-page
+.plan-item-group
++ .plan-item-group {
+  margin-top: 12px;
+}
+
+
+/* 見出し */
+
+body.plan-page
+.plan-item-group-heading {
+  width: 100%;
+  min-height: 42px;
+
+  padding: 0 4px;
+
+  display: grid;
+
+  grid-template-columns:
+    28px
+    minmax(0, 1fr)
+    auto
+    22px;
+
+  align-items: center;
+
+  gap: 8px;
+
+  border: 0;
+
+  background: transparent;
+
+  color: #263b37;
+
+  text-align: left;
+}
+
+
+/* アイコン */
+
+body.plan-page
+.plan-item-group-icon {
+  width: 26px;
+  height: 26px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #18aaa5;
+}
+
+body.plan-page
+.plan-item-group-icon svg {
+  width: 22px;
+  height: 22px;
+
+  fill: none;
+
+  stroke: currentColor;
+  stroke-width: 1.8;
+
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+
+/* タイトル */
+
+body.plan-page
+.plan-item-group-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+
+/* 件数 */
+
+body.plan-page
+.plan-item-group-count {
+  color: #8a9493;
+
+  font-size: 15px;
+  font-weight: 600;
+}
+
+
+/* 矢印 */
+
+body.plan-page
+.plan-item-group-chevron {
+  width: 22px;
+  height: 22px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #768481;
+
+  transition:
+    transform 0.18s ease;
+}
+
+body.plan-page
+.plan-item-group-chevron svg {
+  width: 18px;
+  height: 18px;
+
+  fill: none;
+
+  stroke: currentColor;
+  stroke-width: 2;
+
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body.plan-page
+.plan-item-group.is-collapsed
+.plan-item-group-chevron {
+  transform:
+    rotate(-90deg);
+}
+
+
+/* カード群 */
+
+body.plan-page
+.plan-item-group-list {
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+}
+
+body.plan-page
+.plan-item-group-list[hidden] {
+  display: none;
+}
+
+body.plan-page
+.plan-item-group-icon-image {
+  display: block;
+
+  width: 26px;
+  height: 26px;
+
+  object-fit: contain;
+}
+
+/* ==========================================
+   Plan create date / time vertical center
+   ========================================== */
+
+body.plan-page
+.plan-create-content
+.task-create-input[type="date"],
+body.plan-page
+.plan-create-content
+.task-create-input[type="time"] {
+  display: flex;
+  align-items: center;
+
+  height: 52px;
+  min-height: 52px;
+
+  padding-top: 0;
+  padding-bottom: 0;
+
+  line-height: normal;
+
+  box-sizing: border-box;
+}
+
+/* Safari / WebKit */
+body.plan-page
+.plan-create-content
+.task-create-input[type="date"]
+::-webkit-date-and-time-value,
+body.plan-page
+.plan-create-content
+.task-create-input[type="time"]
+::-webkit-date-and-time-value {
+  display: flex;
+  align-items: center;
+
+  width: 100%;
+  height: 100%;
+
+  margin: 0;
+  padding: 0;
+
+  line-height: normal;
+}
+
+/* 日付だけは中央寄せ */
+body.plan-page
+.plan-create-content
+.task-create-input[type="date"]
+::-webkit-date-and-time-value {
+  justify-content: center;
+  text-align: center;
+}
+
+/* 時間は今の左位置を維持しつつ縦中央 */
+body.plan-page
+.plan-create-content
+.task-create-input[type="time"]
+::-webkit-date-and-time-value {
+  justify-content: flex-start;
+}
+
+/* Safari内部要素も縦中央 */
+body.plan-page
+.plan-create-content
+.task-create-input[type="date"]
+::-webkit-datetime-edit,
+body.plan-page
+.plan-create-content
+.task-create-input[type="time"]
+::-webkit-datetime-edit {
+  display: flex;
+  align-items: center;
+
+  height: 100%;
+
+  margin: 0;
+  padding: 0;
+}

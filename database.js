@@ -2366,6 +2366,29 @@ function getEventsByDateRange(
   );
 }
 
+function getActiveEvents(
+  userId
+) {
+  return db.prepare(`
+    SELECT *
+    FROM events
+    WHERE user_id = ?
+      AND status = 'active'
+    ORDER BY
+      event_date ASC,
+      CASE
+        WHEN start_time IS NULL
+          OR start_time = ''
+        THEN 1
+        ELSE 0
+      END,
+      start_time ASC,
+      id ASC
+  `).all(
+    userId
+  );
+}
+
 module.exports = {
   getAllUsers,
   getUserById,
@@ -2423,6 +2446,7 @@ getEventsByDate,
 getEventsByDateRange,
 updateEventById,
 deleteEventById,
+getActiveEvents,
   convertTaskToEvent,
   convertEventToTask,
   getEventNotificationTargets,

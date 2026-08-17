@@ -15,7 +15,10 @@ function createTaskCard(task, options = {}) {
   categoryText = "",
   timeText = "",
   overdueDate = false,
-  showActions = true,
+
+  showComplete = true,
+  showDelete = false,
+  showChevron = true,
 } = options;
 
   const card =
@@ -171,41 +174,62 @@ if (variant === "calendar") {
       </div>
     </div>
 
-    ${
-      showActions
-        ? `
-          <div class="task-actions">
-  <button
-    type="button"
-    class="complete-button task-icon-button"
-    aria-label="${escapeCardHtml(
-      task.title
-    )}を完了する"
-    title="完了"
-  >
-    <img
-      src="/images/tasks/notia-chek-icon.png"
-      alt=""
-    >
-  </button>
+   <div class="task-actions">
 
-  <button
-    type="button"
-    class="delete-button task-icon-button"
-    aria-label="${escapeCardHtml(
-      task.title
-    )}を削除する"
-    title="削除"
-  >
-    <img
-      src="/images/tasks/notia-trash-icon-gray.png"
-      alt=""
-    >
-  </button>
+  ${
+    showComplete
+      ? `
+        <button
+          type="button"
+          class="complete-button task-icon-button"
+          aria-label="${escapeCardHtml(
+            task.title
+          )}を完了する"
+          title="完了"
+        >
+          <img
+            src="/images/tasks/notia-chek-icon.png"
+            alt=""
+          >
+        </button>
+      `
+      : ""
+  }
+
+  ${
+    showDelete
+      ? `
+        <button
+          type="button"
+          class="delete-button task-icon-button"
+          aria-label="${escapeCardHtml(
+            task.title
+          )}を削除する"
+          title="削除"
+        >
+          <img
+            src="/images/tasks/notia-trash-icon-gray.png"
+            alt=""
+          >
+        </button>
+      `
+      : ""
+  }
+
+  ${
+    showChevron
+      ? `
+        <span
+          class="task-card-chevron"
+          aria-hidden="true"
+        >
+          ›
+        </span>
+      `
+      : ""
+  }
+
 </div>
-        `
-        : ""
-    }
   `;
 
   return card;
@@ -216,6 +240,7 @@ function createRoutineCard(
   options = {}
 ) {
   const {
+    variant = "default",
     dayLabel = "曜日未設定",
     categoryLabel = "その他",
     timeText = "時間未設定",
@@ -229,6 +254,83 @@ function createRoutineCard(
 
   card.className =
     "routine-card";
+
+
+  // =========================
+  // プランページ用
+  // =========================
+
+  if (variant === "plan") {
+    card.classList.add(
+      "plan-routine-card"
+    );
+
+    const metaParts = [
+      timeText,
+      categoryLabel,
+    ].filter(Boolean);
+
+    card.innerHTML = `
+
+      <div
+        class="plan-routine-info"
+      >
+        <div
+          class="plan-routine-title"
+        >
+          ${escapeCardHtml(
+            routine.title
+          )}
+        </div>
+
+        <div
+          class="plan-routine-meta"
+        >
+          ${metaParts
+            .map(
+              (part) =>
+                `<span>${escapeCardHtml(
+                  part
+                )}</span>`
+            )
+            .join(
+              `<span
+                class="plan-routine-meta-dot"
+                aria-hidden="true"
+              >・</span>`
+            )}
+        </div>
+      </div>
+
+     <div
+  class="plan-routine-side"
+>
+  <span
+    class="plan-routine-chevron"
+    aria-hidden="true"
+  >
+    ›
+  </span>
+</div>
+    `;
+
+    if (
+      typeof onClick ===
+      "function"
+    ) {
+      card.addEventListener(
+        "click",
+        onClick
+      );
+    }
+
+    return card;
+  }
+
+
+  // =========================
+  // 従来のルーティーンページ
+  // =========================
 
   card.innerHTML = `
     <div class="routine-card-top">
@@ -259,7 +361,8 @@ function createRoutineCard(
   `;
 
   if (
-    typeof onClick === "function"
+    typeof onClick ===
+    "function"
   ) {
     card.addEventListener(
       "click",
