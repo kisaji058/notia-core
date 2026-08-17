@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const crypto = require("crypto");
 
 const googleProvider =
   require("../calendar/providers/GoogleCalendarProvider");
@@ -40,15 +41,41 @@ router.post("/google/logout", (req, res) => {
 
 // Google認証開始
 router.get("/google", (req, res) => {
+  const state =
+    crypto.randomBytes(32).toString("hex");
+
+  req.session.googleCalendarState =
+    state;
+
   res.redirect(
-  googleProvider.getAuthUrl()
-);
+    googleProvider.getAuthUrl(
+      state
+    )
+  );
 });
 
 // Google認証コールバック
 router.get("/google/callback", async (req, res) => {
   try {
-    const { code } = req.query;
+    const {
+  code,
+  state,
+} = req.query;
+
+if (
+  !state ||
+  !req.session.googleCalendarState ||
+  state !==
+    req.session.googleCalendarState
+) {
+  return res
+    .status(400)
+    .send(
+      "認証状態の確認に失敗しました。"
+    );
+}
+
+delete req.session.googleCalendarState;
 
     if (!code) {
       return res.status(400).send(

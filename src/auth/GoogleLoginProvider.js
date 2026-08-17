@@ -1,12 +1,17 @@
 const { google } = require("googleapis");
 
-const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_LOGIN_REDIRECT_URI
-);
+function createOAuth2Client() {
+  return new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_LOGIN_REDIRECT_URI
+  );
+}
 
-function getAuthUrl() {
+function getAuthUrl(state) {
+  const oauth2Client =
+    createOAuth2Client();
+
   return oauth2Client.generateAuthUrl({
     scope: [
       "openid",
@@ -14,6 +19,7 @@ function getAuthUrl() {
       "https://www.googleapis.com/auth/userinfo.profile",
     ],
     prompt: "select_account",
+    state,
   });
 }
 
@@ -23,6 +29,9 @@ async function authenticate(code) {
       "Google認証コードが指定されていません。"
     );
   }
+
+  const oauth2Client =
+    createOAuth2Client();
 
   const { tokens } =
     await oauth2Client.getToken(code);
@@ -36,10 +45,12 @@ async function authenticate(code) {
   const ticket =
     await oauth2Client.verifyIdToken({
       idToken: tokens.id_token,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience:
+        process.env.GOOGLE_CLIENT_ID,
     });
 
-  const payload = ticket.getPayload();
+  const payload =
+    ticket.getPayload();
 
   if (
     !payload ||
@@ -54,7 +65,8 @@ async function authenticate(code) {
   return {
     googleSub: payload.sub,
     email: payload.email,
-    displayName: payload.name || null,
+    displayName:
+      payload.name || null,
   };
 }
 

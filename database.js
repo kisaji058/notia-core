@@ -9,11 +9,32 @@ const db = new Database("notia.db");
 db.prepare(`
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  google_sub TEXT UNIQUE NOT NULL,
   email TEXT NOT NULL,
   display_name TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+)
+`).run();
+
+// =====================
+// auth_identities
+// =====================
+
+db.prepare(`
+CREATE TABLE IF NOT EXISTS auth_identities (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  provider TEXT NOT NULL,
+  provider_user_id TEXT NOT NULL,
+  email TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE(provider, provider_user_id),
+
+  FOREIGN KEY (user_id)
+    REFERENCES users(id)
+    ON DELETE CASCADE
 )
 `).run();
 
@@ -37,34 +58,90 @@ function getUserById(userId) {
   `).get(userId);
 }
 
-function getUserByGoogleSub(googleSub) {
+function getUserByAuthIdentity(
+  provider,
+  providerUserId
+) {
   return db.prepare(`
-    SELECT *
-    FROM users
-    WHERE google_sub = ?
+    SELECT users.*
+    FROM auth_identities
+    INNER JOIN users
+      ON users.id = auth_identities.user_id
+    WHERE auth_identities.provider = ?
+      AND auth_identities.provider_user_id = ?
     LIMIT 1
-  `).get(googleSub);
+  `).get(
+    provider,
+    providerUserId
+  );
 }
 
-function createUser({
-  googleSub,
+function createAuthIdentity(
+  userId,
+  {
+    provider,
+    providerUserId,
+    email = null,
+  }
+) {
+  db.prepare(`
+    INSERT INTO auth_identities (
+      user_id,
+      provider,
+      provider_user_id,
+      email
+    )
+    VALUES (?, ?, ?, ?)
+  `).run(
+    userId,
+    provider,
+    providerUserId,
+    email
+  );
+
+  return getUserById(userId);
+}
+
+function createUserWithAuthIdentity({
+  provider,
+  providerUserId,
   email,
   displayName = null,
 }) {
-  const result = db.prepare(`
-    INSERT INTO users (
-      google_sub,
+  const transaction = db.transaction(() => {
+    const result = db.prepare(`
+      INSERT INTO users (
+        email,
+        display_name
+      )
+      VALUES (?, ?)
+    `).run(
       email,
-      display_name
-    )
-    VALUES (?, ?, ?)
-  `).run(
-    googleSub,
-    email,
-    displayName
-  );
+      displayName
+    );
 
-  return getUserById(result.lastInsertRowid);
+    const userId =
+      result.lastInsertRowid;
+
+    db.prepare(`
+      INSERT INTO auth_identities (
+        user_id,
+        provider,
+        provider_user_id,
+        email
+      )
+      VALUES (?, ?, ?, ?)
+    `).run(
+      userId,
+      provider,
+      providerUserId,
+      email
+    );
+
+    return getUserById(userId);
+  });
+
+  return transaction();
 }
 
 // =====================
@@ -2292,8 +2369,6 @@ function getEventsByDateRange(
 module.exports = {
   getAllUsers,
   getUserById,
-getUserByGoogleSub,
-createUser,
   saveConversation,
   getRecentConversations,
 
@@ -2356,4 +2431,7 @@ hasDailyNotificationBeenSent,
 markDailyNotificationSent,
 getNotificationSettings,
 updateNotificationSettings,
+getUserByAuthIdentity,
+createAuthIdentity,
+createUserWithAuthIdentity,
 };

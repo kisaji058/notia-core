@@ -1,18 +1,27 @@
 const express = require("express");
 const router = express.Router();
-
+const crypto = require("crypto");
 const googleLoginProvider =
   require("../auth/GoogleLoginProvider");
 
 const {
   getUserById,
-  getUserByGoogleSub,
-  createUser,
 } = require("../../database");
 
+const authService =
+  require("../services/AuthService");
+
 router.get("/google", (req, res) => {
+  const state =
+    crypto.randomBytes(32).toString("hex");
+
+  req.session.googleLoginState =
+    state;
+
   res.redirect(
-    googleLoginProvider.getAuthUrl()
+    googleLoginProvider.getAuthUrl(
+      state
+    )
   );
 });
 
@@ -20,21 +29,40 @@ router.get(
   "/google/callback",
   async (req, res) => {
     try {
-      const { code } = req.query;
+      const {
+        code,
+        state,
+      } = req.query;
+
+      if (
+        !state ||
+        !req.session.googleLoginState ||
+        state !==
+          req.session.googleLoginState
+      ) {
+        return res
+          .status(400)
+          .send(
+            "認証状態の確認に失敗しました。"
+          );
+      }
+
+      delete req.session.googleLoginState;
 
       const identity =
         await googleLoginProvider.authenticate(
           code
         );
 
-      let user =
-        getUserByGoogleSub(
-          identity.googleSub
-        );
-
-      if (!user) {
-        user = createUser(identity);
-      }
+      const user =
+        authService.findOrCreateUser({
+          provider: "google",
+          providerUserId:
+            identity.googleSub,
+          email: identity.email,
+          displayName:
+            identity.displayName,
+        });
 
       req.session.userId = user.id;
 

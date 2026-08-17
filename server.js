@@ -116,6 +116,18 @@ function requireAuth(req, res, next) {
   next();
 }
 
+function requirePageAuth(
+  req,
+  res,
+  next
+) {
+  if (!req.session?.userId) {
+    return res.redirect("/login");
+  }
+
+  next();
+}
+
 app.use("/api", requireAuth);
 const documentUpload = multer({
   storage: multer.memoryStorage(),
@@ -330,6 +342,21 @@ app.get("/api/integrations", (req, res) => {
 app.use("/auth", googleAuthRouter);
 
 app.use(express.json());
+
+app.get("/", (req, res) => {
+  if (!req.session?.userId) {
+    return res.redirect("/login");
+  }
+
+  return res.sendFile(
+    path.join(
+      __dirname,
+      "public",
+      "index.html"
+    )
+  );
+});
+
 app.use(
   express.static(
     path.join(__dirname, "public"),
@@ -362,6 +389,23 @@ app.use(
       },
     }
   )
+);
+
+app.get(
+  "/login",
+  (req, res) => {
+    if (req.session?.userId) {
+      return res.redirect("/");
+    }
+
+    return res.sendFile(
+      path.join(
+        __dirname,
+        "public",
+        "login.html"
+      )
+    );
+  }
 );
 
 app.get("/api/notification-settings", (req, res) => {
@@ -447,9 +491,19 @@ return res.json({
   }
 });
 
-app.get("/tasks", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "tasks.html"));
-});
+app.get(
+  "/tasks",
+  requirePageAuth,
+  (req, res) => {
+    res.sendFile(
+      path.join(
+        __dirname,
+        "public",
+        "tasks.html"
+      )
+    );
+  }
+);
 
 app.get("/calendar", (req, res) => {
   res.sendFile(

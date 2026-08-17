@@ -472,6 +472,45 @@ async function saveNotificationSettings(
     );
   }
 
+    async function logoutNotia() {
+    const confirmed =
+      confirm(
+        "Notiaからログアウトしますか？"
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const response =
+        await fetch(
+          "/login/logout",
+          {
+            method: "POST",
+          }
+        );
+
+      if (!response.ok) {
+        throw new Error(
+          `ログアウト失敗: ${response.status}`
+        );
+      }
+
+      window.location.href =
+        "/login";
+    } catch (error) {
+      console.error(
+        "Notia logout error:",
+        error
+      );
+
+      alert(
+        "ログアウトに失敗しました。"
+      );
+    }
+  }
+
   async function openAccountMenu(
     accountButton
   ) {
@@ -509,18 +548,25 @@ async function saveNotificationSettings(
         </div>
       </div>
 
-      <button
-  class="account-menu-item account-menu-notifications"
-  type="button"
->
-  通知設定
-</button>
+           <button
+        class="account-menu-item account-menu-notifications"
+        type="button"
+      >
+        通知設定
+      </button>
 
       <button
         class="account-menu-item account-menu-about"
         type="button"
       >
         Notiaについて
+      </button>
+
+      <button
+        class="account-menu-item account-menu-logout"
+        type="button"
+      >
+        ログアウト
       </button>
     `;
 
@@ -635,7 +681,18 @@ async function saveNotificationSettings(
         "click",
         showAbout
       );
+
+      menu
+      .querySelector(
+        ".account-menu-logout"
+      )
+      .addEventListener(
+        "click",
+        logoutNotia
+      );
   }
+
+      
 
   accountButtons.forEach(
     (button) => {
