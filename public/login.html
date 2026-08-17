@@ -20,98 +20,63 @@
     </section>
 
     <section class="login-panel">
-      <div class="login-panel-inner">
-        <h1 class="login-title">Notiaへようこそ</h1>
+  <div class="login-panel-inner">
 
-        <p class="login-subtitle">
-          会話から、あなたの毎日を整えます。
-        </p>
+    <h1 class="login-title">
+      Notiaへようこそ
+    </h1>
 
-        <a
-          href="/login/google"
-          class="google-login-link"
-          aria-label="Googleで続ける"
-        >
-          <img
-            src="/images/login/google-signin.png"
-            alt="Googleで続ける"
-            class="google-login-image"
-          />
-        </a>
+    <p class="login-subtitle">
+      会話から、あなたの毎日を整えます。
+    </p>
 
-       <button
-  type="button"
-  class="apple-login-link"
-  id="apple-login-button"
-  aria-label="Appleで続ける"
->
-  <img
-    src="/images/login/apple-signin.png"
-    alt="Appleで続ける"
-    class="apple-login-image"
-  />
-</button>
+    <a
+      href="/login/google"
+      class="google-login-link"
+      aria-label="Googleで続ける"
+    >
+      <img
+        src="/images/login/google-signin.png"
+        alt="Googleで続ける"
+        class="google-login-image"
+      />
+    </a>
 
-        <div class="login-divider">
-          <span></span>
-          <p>または</p>
-          <span></span>
-        </div>
+    <button
+      type="button"
+      class="apple-login-link"
+      id="apple-login-button"
+      aria-label="Appleで続ける"
+    >
+      <img
+        src="/images/login/apple-signin.png"
+        alt="Appleで続ける"
+        class="apple-login-image"
+      />
+    </button>
 
-        <button
-          type="button"
-          class="email-register-button"
-          id="email-register-button"
-        >
-          メールアドレスで登録
-        </button>
+    <footer class="login-footer">
+      <a href="/terms">
+        利用規約
+      </a>
 
-        <p class="login-switch-text">
-          すでにアカウントをお持ちですか？
-          <button
-            type="button"
-            class="login-switch-button"
-            id="email-login-button"
-          >
-            ログイン
-          </button>
-        </p>
+      <span>|</span>
 
-        <footer class="login-footer">
-          <a href="/terms">利用規約</a>
-          <span>|</span>
-          <a href="/privacy">プライバシーポリシー</a>
-        </footer>
-      </div>
-    </section>
+      <a href="/privacy">
+        プライバシーポリシー
+      </a>
+    </footer>
+
+  </div>
+</section>
   </main>
 
   <script>
-  function showComingSoon(message) {
-    alert(message);
-  }
-
   document
     .getElementById("apple-login-button")
     .addEventListener("click", () => {
-      showComingSoon(
+      alert(
         "Appleでのログインは現在準備中です。"
-      );
-    });
-
-  document
-    .getElementById("email-register-button")
-    .addEventListener("click", () => {
-      showComingSoon(
-        "メールアドレスでの登録は現在準備中です。"
-      );
-    });
-
-  document
-    .getElementById("email-login-button")
-    .addEventListener("click", () => {
-      showComingSoon(
-        "メールアドレスでのログインは現在準備中です。"
       );
     });
 </script>
