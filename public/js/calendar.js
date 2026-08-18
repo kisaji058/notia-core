@@ -276,7 +276,6 @@ function updateHeader() {
   } else {
     calendarTitle.textContent =
       date.toLocaleDateString("ja-JP", {
-        year: "numeric",
         month: "long",
         day: "numeric",
         weekday: "short",
