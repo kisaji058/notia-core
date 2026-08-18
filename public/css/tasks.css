@@ -2256,3 +2256,42 @@ body.plan-page
   margin: 0;
   padding: 0;
 }
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.sheet-delete-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  min-height: 46px;
+
+  margin-top: 4px;
+  padding: 11px 16px;
+
+  color: #b84b4b;
+  background: #fffafa;
+
+  border: 1px solid #e8caca;
+  border-radius: 13px;
+
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.sheet-delete-button:active {
+  background: #fbeeee;
+}
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.sheet-delete-button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}

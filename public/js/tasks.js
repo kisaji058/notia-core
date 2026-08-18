@@ -2016,6 +2016,9 @@ function openSheet(title, html) {
 
   sheetOverlay.hidden = false;
   sheetModal.hidden = false;
+
+  sheetModal.scrollTop = 0;
+  sheetContent.scrollTop = 0;
 }
 
 function createCompletedTaskHistoryGroup() {
@@ -2738,8 +2741,6 @@ function openPlanEventEditSheet(
   openSheet(
     "予定を編集",
     `
-      ${renderCreateTypeTabs()}
-
       <div
         class="plan-create-content"
       >
@@ -2749,8 +2750,6 @@ function openPlanEventEditSheet(
       </div>
     `
   );
-
-  bindCreateTypeTabs();
 
   bindEventEditForm(
     eventItem
@@ -2883,49 +2882,71 @@ function renderEventEditForm(
         </h3>
 
         <div
-          class="task-create-organize-row"
-        >
-          <span
-            class="task-create-organize-label"
-          >
-            分類
-          </span>
+  class="task-create-organize-row"
+>
+  <svg
+    class="task-create-organize-icon"
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+  >
+    <path
+      d="M20 13 11 22 2 13V3h10l8 8a1.4 1.4 0 0 1 0 2Z"
+    />
+    <circle
+      cx="7"
+      cy="8"
+      r="1.5"
+    />
+  </svg>
 
-          <select
-            id="editEventCategory"
-            class="task-create-organize-select"
-          >
-            <option value="work"
-              ${category === "work" ? "selected" : ""}
-            >
-              仕事
-            </option>
+  <span
+    class="task-create-organize-label"
+  >
+    分類
+  </span>
 
-            <option value="school"
-              ${category === "school" ? "selected" : ""}
-            >
-              学校
-            </option>
+  <select
+    id="editEventCategory"
+    class="task-create-organize-select"
+  >
+    <option value="work"
+      ${category === "work" ? "selected" : ""}
+    >
+      仕事
+    </option>
 
-            <option value="shopping"
-              ${category === "shopping" ? "selected" : ""}
-            >
-              買い物
-            </option>
+    <option value="school"
+      ${category === "school" ? "selected" : ""}
+    >
+      学校
+    </option>
 
-            <option value="private"
-              ${category === "private" ? "selected" : ""}
-            >
-              プライベート
-            </option>
+    <option value="shopping"
+      ${category === "shopping" ? "selected" : ""}
+    >
+      買い物
+    </option>
 
-            <option value="other"
-              ${category === "other" ? "selected" : ""}
-            >
-              その他
-            </option>
-          </select>
-        </div>
+    <option value="private"
+      ${category === "private" ? "selected" : ""}
+    >
+      プライベート
+    </option>
+
+    <option value="other"
+      ${category === "other" ? "selected" : ""}
+    >
+      その他
+    </option>
+  </select>
+
+  <span
+    class="task-create-organize-chevron"
+    aria-hidden="true"
+  >
+    ›
+  </span>
+</div>
 
         <div
           class="
@@ -2933,6 +2954,18 @@ function renderEventEditForm(
             task-create-priority-row
           "
         >
+
+        <svg
+  class="task-create-organize-icon"
+  viewBox="0 0 24 24"
+  aria-hidden="true"
+>
+  <path d="M5 21V4" />
+  <path
+    d="M5 5c4-3 7 3 13 0v9c-6 3-9-3-13 0"
+  />
+</svg>
+
           <span
             class="task-create-organize-label"
           >
@@ -2979,6 +3012,18 @@ function renderEventEditForm(
         <div
           class="task-create-organize-row"
         >
+
+        <svg
+  class="task-create-organize-icon"
+  viewBox="0 0 24 24"
+  aria-hidden="true"
+>
+  <path
+    d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"
+  />
+  <path d="M10 21h4" />
+</svg>
+
           <span
             class="task-create-organize-label"
           >
@@ -3060,7 +3105,14 @@ function renderEventEditForm(
             >
               前日
             </option>
-          </select>
+                    </select>
+
+          <span
+            class="task-create-organize-chevron"
+            aria-hidden="true"
+          >
+            ›
+          </span>
         </div>
       </section>
 
