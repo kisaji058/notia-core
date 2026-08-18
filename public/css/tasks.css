@@ -80,39 +80,51 @@ body.plan-page {
   background: #f7f9f8;
 }
 
+body.tasks-page.plan-page
+> .chat-header {
+  position: relative;
+
+  flex-shrink: 0;
+
+  z-index: 30;
+}
 
 /* ---------- main ---------- */
 
 body.plan-page .plan-app {
   width: 100%;
   max-width: 720px;
+
   margin: 0 auto;
 
   padding:
-    34px
+    18px
     28px
     calc(
       110px +
       env(safe-area-inset-bottom, 0px)
     );
-}
 
+  background: #f5f7f6;
+}
 
 /* ---------- header ---------- */
 
 body.plan-page .plan-header {
-  margin-bottom: 28px;
+  padding-top: 0;
+  margin-bottom: 10px;
 }
 
 body.plan-page .plan-heading-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
 
-  gap: 20px;
+  gap: 18px;
 }
 
 body.plan-page .plan-heading-copy {
+  flex: 1;
   min-width: 0;
 }
 
@@ -123,22 +135,24 @@ body.plan-page .plan-title {
 
   font-size: 36px;
   font-weight: 700;
-  line-height: 1.15;
+  line-height: 1.05;
 
   letter-spacing: -0.02em;
 }
 
 body.plan-page .plan-summary {
   margin:
-    12px
+    5px
     0
     0;
 
   color: #5f696d;
 
-  font-size: 17px;
+  font-size: 14px;
   font-weight: 500;
   line-height: 1.5;
+
+  letter-spacing: -0.01em;
 
   white-space: nowrap;
 }
@@ -146,7 +160,7 @@ body.plan-page .plan-summary {
 body.plan-page .plan-summary strong {
   color: #13aaa6;
 
-  font-size: 22px;
+  font-size: 19px;
   font-weight: 700;
 }
 
@@ -155,21 +169,23 @@ body.plan-page .plan-summary strong {
 
 body.plan-page .plan-add-button {
   flex-shrink: 0;
+  align-self: flex-start;
 
   min-width: 112px;
-  min-height: 54px;
+  height: 40px;
+  min-height: 40px;
 
-  margin: 0;
-  padding: 0 20px;
+  margin: -4px 0 0;
+  padding: 0 18px;
 
   display: inline-flex;
   align-items: center;
   justify-content: center;
 
-  gap: 7px;
+  gap: 6px;
 
   border: 0;
-  border-radius: 25px;
+  border-radius: 20px;
 
   background: #20aaa6;
   color: #fff;
@@ -178,23 +194,20 @@ body.plan-page .plan-add-button {
     0 8px 18px
     rgba(15, 141, 137, 0.14);
 
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
 }
 
 body.plan-page .plan-add-icon {
-  font-size: 29px;
+  font-size: 21px;
   font-weight: 300;
   line-height: 1;
 }
 
-
-/* ---------- segment ---------- */
-
 body.plan-page .plan-segment {
   width: 100%;
 
-  margin-top: 28px;
+  margin-top: 14px;
 
   display: grid;
   grid-template-columns:
@@ -211,9 +224,10 @@ body.plan-page .plan-segment {
 body.plan-page
 .plan-segment-button {
   min-width: 0;
-  min-height: 48px;
+  height: 34px;
+  min-height: 34px;
 
-  padding: 0 8px;
+  padding: 0 4px;
 
   border: 0;
   border-right:
@@ -225,7 +239,7 @@ body.plan-page
 
   color: #62696d;
 
-  font-size: 16px;
+  font-size: 12px;
   font-weight: 600;
 
   white-space: nowrap;
@@ -280,8 +294,9 @@ body.plan-page .plan-section {
 body.plan-page
 .plan-section-heading {
   width: 100%;
-  min-height: 54px;
+  min-height: 40px;
 
+  margin: 0 0 3px;
   padding: 0 4px;
 
   display: flex;
@@ -298,7 +313,7 @@ body.plan-page
 
 body.plan-page
 .plan-section-title {
-  display: flex;
+  display: inline-flex;
   align-items: center;
 
   gap: 10px;
@@ -308,29 +323,11 @@ body.plan-page
 }
 
 body.plan-page
-.plan-section-icon {
-  width: 29px;
-  height: 29px;
-
+.plan-section-count {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
 
-  border: 2px solid #18aaa5;
-  border-radius: 50%;
-
-  color: #18aaa5;
-
-  font-size: 16px;
-  line-height: 1;
-}
-
-body.plan-page
-.plan-section-count {
-  display: flex;
-  align-items: center;
-
-  gap: 8px;
+  gap: 0;
 
   color: #697376;
 
@@ -342,14 +339,6 @@ body.plan-page
 /* ---------- task preview ---------- */
 
 body.plan-page
-#taskList {
-  display: flex;
-  flex-direction: column;
-
-  gap: 12px;
-}
-
-body.plan-page
 #taskList > .task-card {
   margin: 0;
 }
@@ -358,7 +347,19 @@ body.plan-page
 /* ---------- cards ---------- */
 
 body.plan-page .task-card {
-  min-height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  min-height: 72px;
+
+  padding:
+    10px
+    14px
+    10px
+    16px;
+
+  gap: 10px;
 
   border:
     1px solid
@@ -371,25 +372,133 @@ body.plan-page .task-card {
   box-shadow:
     0 5px 14px
     rgba(23, 45, 52, 0.06);
+
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 body.plan-page
 .task-card .task-info {
-  min-height: 82px;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
 
-  padding:
-    14px
-    20px;
+  padding: 0;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  cursor: pointer;
 }
 
+body.plan-page
+.task-card .task-title {
+  display: flex;
+  align-items: center;
 
-/* ---------- completed link ---------- */
+  gap: 7px;
+
+  color: #202124;
+
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+
+  overflow-wrap: anywhere;
+}
 
 body.plan-page
-.completed-link-area {
+.task-card .task-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+
+  margin-top: 5px;
+
+  gap: 9px;
+}
+
+body.plan-page
+.task-card .task-date,
+body.plan-page
+.task-card .task-time {
+  margin: 0;
+
+  color: #6b7280;
+
+  font-size: 13px;
+
+  white-space: nowrap;
+}
+
+body.plan-page
+.task-card .task-category {
+  display: inline-block;
+
+  margin: 0;
+  padding: 0;
+
+  border: 0;
+  border-radius: 0;
+
+  background: transparent;
+  color: #666;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+body.plan-page
+.task-card .priority-icon {
+  flex-shrink: 0;
+
+  margin-top: 0;
+
+  font-size: 13px;
+}
+
+body.plan-page
+.task-card .priority-icon:empty {
   display: none;
 }
 
+body.plan-page
+.task-card--important .priority-icon {
+  color: #e56b67;
+
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+body.plan-page
+.task-card .task-date--overdue {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 5px;
+
+  color: #e58a45;
+
+  font-weight: 600;
+}
+
+body.plan-page
+.task-card .task-date-calendar-icon {
+  width: 15px;
+  height: 15px;
+
+  flex: 0 0 auto;
+
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
 /* ---------- legacy ---------- */
 
@@ -403,222 +512,438 @@ body.plan-page
 
 @media (max-width: 520px) {
   body.plan-page .plan-app {
-    padding:
-      30px
-      22px
+    padding-right: 22px;
+    padding-bottom:
       calc(
         105px +
         env(safe-area-inset-bottom, 0px)
       );
+    padding-left: 22px;
   }
 
   body.plan-page .plan-title {
     font-size: 34px;
   }
-
-  body.plan-page .plan-summary {
-    font-size: 15px;
-  }
-
-  body.plan-page
-  .plan-summary strong {
-    font-size: 20px;
-  }
-
-  body.plan-page
-  .plan-add-button {
-    min-width: 104px;
-    min-height: 52px;
-
-    padding: 0 17px;
-
-    font-size: 17px;
-  }
-
-  body.plan-page
-  .plan-segment-button {
-    min-height: 46px;
-
-    font-size: 15px;
-  }
 }
 
 /* ==================================================
-   Plan task cards
+   Plan task date groups
    ================================================== */
 
-body.plan-page .task-card {
-  min-height: 76px;
+body.plan-page
+#taskList {
+  display: flex;
+  flex-direction: column;
 
-  padding:
-    10px
-    14px
-    10px
-    16px;
-
-  gap: 10px;
+  gap: 14px;
 }
 
 body.plan-page
-.task-card .task-info {
-  min-height: 0;
+.task-date-group {
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+body.plan-page
+.task-date-group-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  gap: 4px;
+
+  margin-bottom: 0;
+}
+
+body.plan-page
+.task-date-group-toggle {
+  display: flex;
+  align-items: center;
+
+  gap: 6px;
+
+  width: 100%;
 
   padding: 0;
 
+  color: inherit;
+  font: inherit;
+
+  text-align: left;
+
+  background: transparent;
+
+  border: 0;
+
+  box-shadow: none;
+
+  appearance: none;
+  -webkit-appearance: none;
+
+  cursor: pointer;
+}
+
+body.plan-page
+.task-date-group-toggle:focus-visible {
+  outline: 2px solid #2aa79b;
+  outline-offset: 4px;
+
+  border-radius: 4px;
+}
+
+body.plan-page
+.task-date-group-title {
+  margin: 0;
+
+  color: #283432;
+
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+body.plan-page
+.task-date-group-count {
+  margin: 0;
+  margin-left: 1px;
+
+  color: #98a29f;
+
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1;
+
+  white-space: nowrap;
+}
+
+body.plan-page
+.task-date-group-list {
   display: flex;
   flex-direction: column;
+
+  gap: 0;
+
+  margin-top: 0;
+}
+
+body.plan-page
+.task-date-group-list[hidden] {
+  display: none;
+}
+
+body.plan-page
+.task-date-group-icon {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+
+  width: 23px;
+  height: 23px;
+
+  flex: 0 0 23px;
+
+  color: #345653;
 }
 
 body.plan-page
-.task-card .task-title {
-  gap: 7px;
+.task-date-group-icon svg {
+  display: block;
 
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1.25;
+  width: 100%;
+  height: 100%;
+
+  fill: none;
+
+  stroke: currentColor;
+  stroke-width: 1.8;
+
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 body.plan-page
-.task-card .task-meta {
-  margin-top: 5px;
-
-  gap: 9px;
-
-  font-size: 14px;
+.task-date-group-icon--overdue {
+  color: #e58a45;
 }
 
 body.plan-page
-.task-card .task-date,
-body.plan-page
-.task-card .task-time,
-body.plan-page
-.task-card .task-category {
-  font-size: 14px;
+.task-date-group-icon--today {
+  color: #2aa79b;
 }
 
 body.plan-page
-.task-actions {
+.task-date-group-icon--unscheduled svg {
+  fill: currentColor;
+  stroke: none;
+}
+
+body.plan-page
+.task-group-icon-dot {
+  fill: currentColor;
+  stroke: none;
+}
+
+body.plan-page
+.task-date-group-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 22px;
+  height: 22px;
+
+  margin-left: auto;
+
+  color: #71817f;
+
+  transition:
+    transform 0.2s ease;
+}
+
+body.plan-page
+.task-date-group-chevron svg {
+  width: 18px;
+  height: 18px;
+
+  fill: none;
+
+  stroke: currentColor;
+  stroke-width: 2;
+
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body.plan-page
+.task-date-group--collapsed
+.task-date-group-chevron {
+  transform:
+    rotate(-90deg);
+}
+
+/* ==================================================
+   Plan completed task history
+   ================================================== */
+
+body.plan-page
+.completed-task-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 14px;
+
+  min-height: 72px;
+
+  padding:
+    13px
+    14px;
+
+  background: #fbfcfc;
+
+  border: 1px solid #e1e8e6;
+  border-radius: 16px;
+
+  box-shadow:
+    0 3px 10px
+    rgba(38, 65, 60, 0.04);
+}
+
+body.plan-page
+.completed-task-info {
+  flex: 1;
+  min-width: 0;
+}
+
+body.plan-page
+.completed-task-title {
   display: flex;
   align-items: center;
 
   gap: 8px;
 
-  flex-shrink: 0;
+  color: #66726f;
+
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 body.plan-page
-.task-actions
-.complete-button.task-icon-button {
-  width: 38px;
-  min-width: 38px;
-  height: 38px;
+.completed-task-title > span:last-child {
+  text-decoration: line-through;
 
-  padding: 3px;
+  text-decoration-color:
+    rgba(102, 114, 111, 0.55);
+
+  text-decoration-thickness: 1px;
 }
 
 body.plan-page
-.task-actions
-.complete-button img {
-  width: 100%;
-  height: 100%;
-
-  object-fit: contain;
-}
-
-body.plan-page
-.task-card-chevron {
-  width: 20px;
-
-  display: inline-flex;
+.completed-task-meta {
+  display: flex;
   align-items: center;
-  justify-content: center;
+  flex-wrap: wrap;
 
-  color: #718083;
+  gap:
+    5px
+    10px;
 
-  font-size: 30px;
-  font-weight: 300;
-  line-height: 1;
+  margin-top: 7px;
+
+  color: #8a9693;
+
+  font-size: 12px;
 }
-
-
-/* すべて画面ではカード間をさらに詰める */
 
 body.plan-page
-#taskList {
-  gap: 10px;
+.completed-task-card .task-category {
+  margin: 0;
+  padding: 0;
+
+  border: 0;
+  border-radius: 0;
+
+  background: transparent;
+
+  color: #8a9693;
+
+  font-size: 12px;
 }
+
+body.plan-page
+.completed-task-card .priority-icon {
+  flex-shrink: 0;
+
+  font-size: 13px;
+}
+
+body.plan-page
+.completed-task-card .priority-icon:empty {
+  display: none;
+}
+
+body.plan-page
+.restore-button {
+  flex-shrink: 0;
+
+  min-width: 62px;
+  height: 36px;
+
+  padding:
+    0
+    13px;
+
+  border:
+    1px solid
+    #d7e3e0;
+
+  border-radius: 11px;
+
+  background: #edf4f2;
+
+  color: #4f746c;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+body.plan-page
+.restore-button:active {
+  transform: scale(0.98);
+}
+
+body.plan-page
+.restore-button:disabled {
+  opacity: 0.45;
+
+  cursor: default;
+}
+
 
 /* ==================================================
-   Plan polish
+   Plan loading / empty / error states
    ================================================== */
 
-body.plan-page .plan-heading-row {
-  align-items: flex-start;
+body.plan-page
+.task-status,
+body.plan-page
+.empty-state,
+body.plan-page
+.error-state {
+  padding:
+    32px
+    20px;
+
+  text-align: center;
+
+  color: #6b7280;
 }
 
-body.plan-page .plan-add-button {
-  min-width: 100px;
-  min-height: 48px;
+body.plan-page
+.empty-title {
+  margin: 0;
 
-  padding: 0 16px;
-
-  border-radius: 24px;
+  color: #303432;
 
   font-size: 16px;
+  font-weight: 700;
 }
 
-body.plan-page .plan-add-icon {
-  font-size: 26px;
-}
-
-body.plan-page .plan-summary {
-  margin-top: 10px;
+body.plan-page
+.empty-message {
+  margin:
+    8px
+    0
+    0;
 
   font-size: 14px;
-  letter-spacing: -0.01em;
+  line-height: 1.7;
 }
 
-body.plan-page .plan-summary strong {
-  font-size: 19px;
+body.plan-page
+.error-state p {
+  margin:
+    0
+    0
+    12px;
 }
 
-body.plan-page .plan-segment {
-  margin-top: 24px;
-}
+body.plan-page
+.error-state button {
+  padding:
+    9px
+    16px;
 
-body.plan-page .plan-segment-button {
-  min-height: 44px;
+  border: 0;
+  border-radius: 999px;
 
-  padding: 0 4px;
+  background: #222;
+
+  color: #fff;
 
   font-size: 14px;
-}
 
-body.plan-page .plan-section-heading {
-  min-height: 50px;
-}
-
-body.plan-page .plan-content {
-  margin-top: -2px;
-}
-
-body.plan-page .task-card {
-  min-height: 72px;
+  cursor: pointer;
 }
 
 body.plan-page
-.task-card .task-title {
-  font-size: 17px;
-}
+.task-create-error {
+  margin:
+    -4px
+    0
+    0;
 
-body.plan-page
-.task-card .task-date,
-body.plan-page
-.task-card .task-time,
-body.plan-page
-.task-card .task-category {
-  font-size: 13px;
+  color: #c85550;
+
+  font-size: 0.84rem;
 }
 
 /* ==================================================
@@ -1374,6 +1699,53 @@ body.plan-page
   border-radius: 11px;
 }
 
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-priority-switch label {
+  position: relative;
+}
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-priority-switch input {
+  position: absolute;
+
+  opacity: 0;
+
+  pointer-events: none;
+}
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-priority-switch span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 34px;
+
+  padding: 0 12px;
+
+  color: #687a77;
+
+  border-radius: 8px;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+body.plan-page
+.sheet-modal:has(.plan-create-content)
+.task-create-priority-switch
+input:checked + span {
+  color: #ffffff;
+
+  background: #2fa99d;
+
+  box-shadow:
+    0 2px 7px
+    rgba(43, 91, 84, 0.12);
+}
 
 /* メモ */
 
@@ -1604,14 +1976,6 @@ input:checked
    ========================================== */
 
 body.plan-page
-.plan-section-title {
-  display: inline-flex;
-  align-items: center;
-
-  gap: 10px;
-}
-
-body.plan-page
 .plan-section-icon-image {
   display: block;
 
@@ -1626,14 +1990,6 @@ body.plan-page
 /* ==========================================
    Plan section icon optical size
    ========================================== */
-
-body.plan-page
-.plan-section-icon-image {
-  width: 30px;
-  height: 30px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
 
 /* タスクは少し小さく */
 body.plan-page
@@ -1663,110 +2019,11 @@ body.plan-page
    Plan compact spacing polish
    ========================================== */
 
-/* ページ上端
-   header下からプランまでを詰める */
-body.plan-page
-.plan-app {
-  padding-top: 18px;
-}
-
-/* 余計に足していた上余白を消す */
-body.plan-page
-.plan-header {
-  padding-top: 0;
-  margin-bottom: 10px;
-}
-
-
-/* タイトル＋追加 */
-
-body.plan-page
-.plan-heading-row {
-  align-items: center;
-}
-
-body.plan-page
-.plan-add-button {
-  min-width: 94px;
-
-  height: 40px;
-  min-height: 40px;
-
-  padding: 0 14px;
-
-  gap: 5px;
-
-  border-radius: 20px;
-
-  font-size: 15px;
-}
-
-body.plan-page
-.plan-add-icon {
-  font-size: 22px;
-}
-
-
-/* プラン直下の件数 */
-
-body.plan-page
-.plan-summary {
-  margin-top: 5px;
-}
-
-
-/* タブを上へ */
-
-body.plan-page
-.plan-segment {
-  margin-top: 14px;
-}
-
-
-/* タブから最初の項目まで */
-
-body.plan-page
-.plan-content {
-  margin-top: 0;
-}
-
-
-/* 各項目 */
-
-body.plan-page
-.plan-section {
-  margin-top: 0;
-}
-
 body.plan-page
 .plan-event-section,
 body.plan-page
 .plan-routine-section {
   margin-top: 8px;
-}
-
-
-/* タスク・予定・ルーティーン見出し */
-
-body.plan-page
-.plan-section-heading {
-  min-height: 40px;
-
-  margin: 0 0 3px;
-
-  padding-top: 0;
-  padding-bottom: 0;
-}
-
-
-/* 件数 */
-
-body.plan-page
-.plan-section-count {
-  display: inline-flex;
-  align-items: center;
-
-  gap: 0;
 }
 
 body.plan-page
@@ -1802,55 +2059,36 @@ body.plan-page
 }
 
 /* ==========================================
-   Plan header fine tune
-   ========================================== */
-
-body.plan-page .plan-heading-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-}
-
-body.plan-page .plan-heading-copy {
-  flex: 1;
-  min-width: 0;
-}
-
-body.plan-page .plan-title {
-  margin: 0;
-  line-height: 1.05;
-}
-
-body.plan-page .plan-add-button {
-  align-self: flex-start;
-
-  height: 40px;
-  min-height: 40px;
-  min-width: 112px;
-
-  margin-top: 6px;
-  padding: 0 18px;
-
-  border-radius: 20px;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-
-body.plan-page .plan-add-icon {
-  font-size: 21px;
-  line-height: 1;
-}
-
-/* ==========================================
    Plan task action buttons
    ========================================== */
 
 body.plan-page .task-actions {
+  display: flex;
+  align-items: center;
+
   gap: 6px;
+
+  flex-shrink: 0;
+}
+
+body.plan-page
+.task-actions
+.task-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  background: transparent;
+
+  border: 0;
+  border-radius: 0;
+
+  box-shadow: none;
+
+  appearance: none;
+  -webkit-appearance: none;
+
+  cursor: pointer;
 }
 
 body.plan-page
@@ -1859,21 +2097,44 @@ body.plan-page
   width: 24px;
   min-width: 24px;
   height: 24px;
+
   padding: 1px;
 }
 
 body.plan-page
 .task-actions
-.complete-button img {
+.task-icon-button img {
+  display: block;
+
   width: 100%;
   height: 100%;
+
   object-fit: contain;
+}
+
+body.plan-page
+.task-actions
+.task-icon-button:hover {
+  background: transparent;
+
+  border: 0;
+
+  box-shadow: none;
 }
 
 body.plan-page
 .task-card-chevron {
   width: 16px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #718083;
+
   font-size: 24px;
+  font-weight: 300;
+  line-height: 1;
 }
 
 /* ==========================================
@@ -1911,23 +2172,6 @@ body.plan-page .routine-card-body {
 body.plan-page
 .plan-routine-state {
   display: none !important;
-}
-
-body.plan-page
-.plan-add-button {
-  margin-top: -4px;
-}
-
-/* 上部4分割タブを薄くする */
-body.plan-page
-.plan-segment-button {
-  min-height: 34px;
-  height: 34px;
-
-  padding-top: 0;
-  padding-bottom: 0;
-
-  font-size: 12px;
 }
 
 body.plan-page
@@ -2094,6 +2338,8 @@ body.plan-page
 
   object-fit: contain;
 }
+
+
 
 /* ==========================================
    Plan create date / time vertical center
