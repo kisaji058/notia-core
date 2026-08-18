@@ -528,12 +528,6 @@ app.get("/tasks/:id", (req, res) => {
   );
 });
 
-app.get("/tasks-completed", (req, res) => {
-  res.sendFile(
-    path.join(__dirname, "public", "tasks-completed.html")
-  );
-});
-
 // =====================
 // Notia events API
 // =====================
@@ -1480,25 +1474,6 @@ timeline.sort((a, b) => {
     return res.status(500).json({
       error:
         "Todayデータの取得に失敗しました。",
-    });
-  }
-});
-
-app.get("/api/tasks/completed", (req, res) => {
-  try {
-    const tasks = taskListManager.formatTasksForApi(
-      getRecentlyCompletedTasks(
-  req.session.userId,
-  50
-)
-    );
-
-    return res.json(tasks);
-  } catch (error) {
-    console.error(error);
-
-    return res.status(500).json({
-      error: "完了タスクの取得に失敗しました。",
     });
   }
 });
