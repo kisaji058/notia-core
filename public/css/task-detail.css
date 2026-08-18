@@ -833,16 +833,6 @@ select.field-control {
   cursor: default;
 }
 
-/* ===== 全体の縦幅調整 ===== */
-
-.task-detail-section {
-  padding: 14px 20px 24px;
-}
-
-.task-form {
-  gap: 8.5px;
-}
-
 /* ===== ヘッダーの縦幅調整 ===== */
 
 .task-detail-header {
@@ -851,14 +841,6 @@ select.field-control {
   z-index: 100;
 
   padding: 6px 20px 10px;
-}
-
-.task-detail-section {
-  padding-bottom:
-    calc(
-      220px +
-      env(safe-area-inset-bottom, 0px)
-    );
 }
 
 /* ===== 画面全体を固定 ===== */
