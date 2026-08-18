@@ -504,36 +504,6 @@ color: #ffffff;
   }
 }
 
-.bottom-nav-icon,
-.today-nav-icon {
-  display: block;
-
-  width: 25px;
-  height: 25px;
-
-  margin: 0 auto 3px;
-
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
-.bottom-nav svg.bottom-nav-icon {
-  width: 25px;
-  height: 25px;
-
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.bottom-nav-icon-task {
-  width: 25px;
-  height: 25px;
-  margin: 0 auto 3px;
-}
-
 /* ===== Attachment Preview ===== */
 
 .attachment-preview {
