@@ -322,20 +322,6 @@ body.plan-page
   font-weight: 700;
 }
 
-body.plan-page
-.plan-section-count {
-  display: inline-flex;
-  align-items: center;
-
-  gap: 0;
-
-  color: #697376;
-
-  font-size: 17px;
-  font-weight: 500;
-}
-
-
 /* ---------- task preview ---------- */
 
 body.plan-page
@@ -664,22 +650,6 @@ body.plan-page
 
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-
-body.plan-page
-.task-date-group-icon--overdue {
-  color: #e58a45;
-}
-
-body.plan-page
-.task-date-group-icon--today {
-  color: #2aa79b;
-}
-
-body.plan-page
-.task-date-group-icon--unscheduled svg {
-  fill: currentColor;
-  stroke: none;
 }
 
 body.plan-page
@@ -1949,26 +1919,6 @@ body.plan-page
 .plan-routine-section {
   margin-top: 8px;
 }
-
-body.plan-page
-.plan-section-count-number {
-  display: inline-block;
-}
-
-body.plan-page
-.plan-section-count-unit {
-  display: inline-block;
-
-  margin-left: 7px;
-}
-
-body.plan-page
-.plan-section-count-chevron {
-  display: inline-block;
-
-  margin-left: 8px;
-}
-
 
 /* 上部サマリーの数字と件 */
 
