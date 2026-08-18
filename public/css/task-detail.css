@@ -96,12 +96,6 @@
   font-weight: 700;
 }
 
-.field-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-}
-
 /* タスク名 */
 
 .notification-button {
@@ -153,13 +147,6 @@ select.field-control {
   padding-bottom: 0;
 }
 
-/* 優先度 */
-
-.priority-select {
-  font-size: 15px;
-  line-height: normal;
-}
-
 /* フォーカス */
 
 .field-control:focus {
@@ -182,46 +169,11 @@ select.field-control {
     gap: 22px;
   }
 
-  .field-row {
-    grid-template-columns: 1fr;
-    gap: 22px;
-  }
-
   .notification-button {
     width: 48px;
     height: 48px;
     font-size: 21px;
   }
-}
-
-.completed-link-area {
-  width: 100%;
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 12px;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-.completed-link-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 100%;
-  color: #666;
-  font-size: 14px;
-  line-height: 1.4;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.completed-link-button:hover {
-  text-decoration: underline;
-}
-
-.chat {
-  padding: 16px;
-  padding-bottom: 110px;
 }
 
 .sheet-overlay {
@@ -435,10 +387,6 @@ select.field-control {
   border: 1px solid #dbe6e3;
   border-radius: 18px;
   box-shadow: 0 4px 14px rgba(44, 82, 76, 0.06);
-}
-
-.task-title-row {
-  display: block;
 }
 
 .task-title-input {
