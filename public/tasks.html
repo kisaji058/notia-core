@@ -159,7 +159,6 @@
 
       </div>
 
-
       <!-- 種類切り替え -->
 
       <div
@@ -169,7 +168,6 @@
       >
 
         <button
-          id="planTabAll"
           class="plan-segment-button active"
           type="button"
           role="tab"
@@ -180,7 +178,6 @@
         </button>
 
         <button
-          id="planTabTasks"
           class="plan-segment-button"
           type="button"
           role="tab"
@@ -191,7 +188,6 @@
         </button>
 
         <button
-          id="planTabEvents"
           class="plan-segment-button"
           type="button"
           role="tab"
@@ -202,7 +198,6 @@
         </button>
 
         <button
-          id="planTabRoutines"
           class="plan-segment-button"
           type="button"
           role="tab"
@@ -222,14 +217,8 @@
     ========================== -->
 
     <section
-      id="planContent"
       class="plan-content"
     >
-
-      <!--
-        STEP 1では既存tasks.jsとの互換性を優先。
-        現時点ではタスク一覧をここに表示する。
-      -->
 
       <section
         id="planTaskSection"
@@ -253,8 +242,6 @@
   </span>
 </button>
 
-
-        <!-- 既存tasks.jsが使用 -->
         <div id="taskList">
           <p class="task-status">
             読み込み中...
@@ -262,9 +249,6 @@
         </div>
 
       </section>
-
-
-      <!-- 予定：後続STEPで接続 -->
 
       <section
         id="planEventSection"
@@ -291,9 +275,6 @@
 
         <div id="eventList"></div>
       </section>
-
-
-      <!-- ルーティーン：後続STEPで接続 -->
 
       <section
         id="planRoutineSection"
