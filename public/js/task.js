@@ -203,20 +203,20 @@ function renderTask(task) {
   taskDueTime.value = task.due_time || "";
   taskCategory.value = task.category || "other";
   const isImportant =
-  task.priority === "high" ||
-  task.priority === "important";
+    task.priority === "high" ||
+    task.priority === "important";
 
-taskPriorityImportant.checked = isImportant;
-taskPriorityNormal.checked = !isImportant;
+  taskPriorityImportant.checked = isImportant;
+  taskPriorityNormal.checked = !isImportant;
 
-taskLocation.value =
-  task.location || "";
+  taskLocation.value =
+    task.location || "";
 
-taskDescription.value =
-  task.description || "";
+  taskDescription.value =
+    task.description || "";
 
-taskNotification.value =
-  task.notification || "none";
+  taskNotification.value =
+    task.notification || "none";
 
   updateDateTimeState();
 
@@ -361,16 +361,16 @@ async function saveTask() {
     const updates = getTaskFormState();
 
     const isConvertingToEvent =
-  updates.taskType === "event";
+      updates.taskType === "event";
 
-const endpoint = isConvertingToEvent
-  ? `/api/tasks/${taskId}/convert-to-event`
-  : `/api/tasks/${taskId}`;
+    const endpoint = isConvertingToEvent
+      ? `/api/tasks/${taskId}/convert-to-event`
+      : `/api/tasks/${taskId}`;
 
-const res = await fetch(endpoint, {
-  method: isConvertingToEvent
-    ? "POST"
-    : "PATCH",
+    const res = await fetch(endpoint, {
+      method: isConvertingToEvent
+        ? "POST"
+        : "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
@@ -516,10 +516,10 @@ backLink.addEventListener("click", async (event) => {
   const saved = await saveTask();
 
   if (saved) {
-  location.href = taskTypeEvent.checked
-    ? "/calendar"
-    : destination;
-}
+    location.href = taskTypeEvent.checked
+      ? "/calendar"
+      : destination;
+  }
 });
 
 window.addEventListener("beforeunload", (event) => {
