@@ -667,13 +667,7 @@ select.field-control {
   resize: vertical;
 }
 
-.task-card-title {
-  margin: 0;
 
-  color: #0f2f66;
-  font-size: 14px;
-  font-weight: 700;
-}
 
 .task-description-input {
   width: 100%;
@@ -704,12 +698,11 @@ select.field-control {
 .task-action-area {
   display: flex;
   flex-direction: column;
+  flex: 0 0 auto;
   gap: 8px;
-
   width: 100%;
-  margin-top: auto;
-  padding: 0;
-
+  margin-top: 12px;
+  padding: 0 0 8px;
   background: transparent;
 }
 
@@ -839,7 +832,8 @@ select.field-control {
 .task-title-group .field-label,
 .task-card-title,
 .task-description-group .field-label {
- color:#0f2f66;
+  margin: 0;
+  color: #0f2f66;
   font-size: 16px;
   font-weight: 700;
   line-height: 1.4;
@@ -1075,16 +1069,6 @@ body > main.app {
   min-height: 0;
 
   gap: 8.5px;
-}
-
-/* 保存・完了・削除 */
-.task-action-area {
-  flex: 0 0 auto;
-
-  width: 100%;
-
-  margin-top: 12px;
-  padding: 0 0 8px;
 }
 
 /* ===== Task Detail common bottom space reset ===== */
