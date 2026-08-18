@@ -51,7 +51,7 @@ const notificationSheetItems =
   document.querySelectorAll(
     ".notification-sheet-item"
   );
-  const saveTaskButton =
+const saveTaskButton =
   document.getElementById("saveTaskButton");
 const completeTaskButton =
   document.getElementById("completeTaskButton");
@@ -73,14 +73,14 @@ function updateNotificationButton() {
     taskNotification.value !== "none";
 
   const notificationText = {
-  none: "通知なし",
-  same_day: "当日",
-  at_time: "予定時刻",
-  "10_minutes_before": "10分前",
-  "30_minutes_before": "30分前",
-  "1_hour_before": "1時間前",
-  day_before: "前日",
-}[taskNotification.value] || "通知なし";
+    none: "通知なし",
+    same_day: "当日",
+    at_time: "予定時刻",
+    "10_minutes_before": "10分前",
+    "30_minutes_before": "30分前",
+    "1_hour_before": "1時間前",
+    day_before: "前日",
+  }[taskNotification.value] || "通知なし";
 
   notificationButtonContent.textContent =
     notificationText;
@@ -500,7 +500,6 @@ saveTaskButton.addEventListener("click", async () => {
     saveTaskButton.textContent = "変更を保存";
   }, 1200);
 });
-
 
 
 backLink.addEventListener("click", async (event) => {
