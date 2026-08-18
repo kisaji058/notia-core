@@ -211,44 +211,6 @@ select.field-control {
   box-sizing: border-box;
 }
 
-.sheet-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  margin-bottom: 18px;
-}
-
-.sheet-header h3 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-}
-
-#closeSheetButton {
-  width: 36px;
-  height: 36px;
-
-  border: none;
-  border-radius: 999px;
-
-  background: #f3f4f4;
-
-  cursor: pointer;
-
-  font-size: 18px;
-}
-
-#closeSheetButton:hover {
-  background: #e7e8e8;
-}
-
-.sheet-content {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
 .sheet-item {
   display: flex;
   align-items: center;
