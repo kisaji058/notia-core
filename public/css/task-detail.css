@@ -1097,37 +1097,6 @@ body > main.app {
   padding-bottom: 0 !important;
 }
 
-/* ===== 場所を説明・備考と同じ見た目に寄せる ===== */
-
-.task-location-group .field-control {
-  width: 100%;
-  min-height: 74px;
-  padding: 0 18px;
-
-  color: #1f3152;
-  font: inherit;
-  font-size: 16px;
-  font-weight: 500;
-
-  background: #ffffff;
-  border: 1.5px solid #d7e2df;
-  border-radius: 18px;
-  box-sizing: border-box;
-
-  outline: none;
-}
-
-.task-location-group .field-control::placeholder {
-  color: #1f3152;
-  opacity: 0.35;
-}
-
-.task-location-group .field-control:focus {
-  background: #ffffff;
-  border-color: #c9d8d4;
-  box-shadow: none;
-}
-
 /* ===== 場所：説明・備考とデザイン統一 ===== */
 
 .task-location-group {
