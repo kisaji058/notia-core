@@ -852,13 +852,6 @@ color: #ffffff;
   font-size: 24px;
 }
 
-.document-editor-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding-top: 2px;
-}
-
 .document-editor-type-switch {
   display: grid;
   grid-template-columns:
@@ -903,39 +896,6 @@ input:checked + span {
   background: #2aa79f;
 }
 
-.document-sheet-label {
-  margin: 0 0 4px;
-
-  color: #41534f;
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-.document-sheet-input {
-  display: block;
-
-  width: 100%;
-  min-width: 0;
-  min-height: 52px;
-
-  padding: 12px 14px;
-
-  box-sizing: border-box;
-
-  color: #263b37;
-
-  background: #ffffff;
-
-  border: 1px solid #cedbd7;
-  border-radius: 14px;
-
-  outline: none;
-
-  font: inherit;
-  font-size: 16px;
-}
-
 .document-sheet-input:focus {
   border-color: #2fa99d;
 
@@ -955,42 +915,9 @@ input:checked + span {
   text-align: left;
 }
 
-.document-editor-time-fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  align-items: start;
-}
-
-
-.document-editor-time-fields > div {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  gap: 8px;
-}
-
 .document-sheet-input[type="time"],
 .document-sheet-input[type="date"] {
   min-height: 54px;
-}
-
-.document-sheet-help {
-  margin: -6px 0 2px;
-
-  color: #718481;
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.document-organize-card {
-  padding: 20px 18px;
-
-  background: #ffffff;
-  border: 1px solid #d6e2df;
-  border-radius: 20px;
-
-  box-shadow: 0 4px 14px rgba(36, 54, 79, 0.05);
 }
 
 .document-organize-title {
@@ -1083,20 +1010,6 @@ input:checked + span {
 input:checked + span {
   color: #ffffff;
   background: #2aa79f;
-}
-
-.document-sheet-textarea {
-  min-height: 150px;
-  resize: vertical;
-}
-
-.document-editor-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-
-  margin-top: 10px;
-  padding-top: 4px;
 }
 
 .document-editor-cancel,
@@ -1202,6 +1115,7 @@ input:checked + span {
 
 .document-editor-time-fields {
   display: grid;
+  align-items: start;
   grid-template-columns:
     repeat(2, minmax(0, 1fr));
 
