@@ -1037,26 +1037,9 @@ body.plan-page
    ========================================== */
 
 body.plan-page
-#routineList {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-body.plan-page
 #routineList
 .routine-card {
   margin: 0;
-}
-
-body.plan-page
-.plan-routine-section {
-  margin-top: 24px;
-}
-
-body.plan-page
-.plan-event-section {
-  margin-top: 24px;
 }
 
 /* ==================================================
@@ -1124,9 +1107,12 @@ body.plan-page
   min-height: 72px;
 
   margin: 0;
+
   padding:
     10px
-    14px;
+    14px
+    10px
+    20px;
 
   display: flex;
   align-items: center;
@@ -1148,43 +1134,14 @@ body.plan-page
   cursor: pointer;
 }
 
-
-/* 繰り返しアイコン */
-
-body.plan-page
-.plan-routine-icon {
-  width: 38px;
-  height: 38px;
-
-  flex-shrink: 0;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  color: #16aaa5;
-}
-
-body.plan-page
-.plan-routine-icon svg {
-  width: 30px;
-  height: 30px;
-
-  fill: none;
-
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-
 /* 中央 */
 
 body.plan-page
 .plan-routine-info {
   flex: 1;
   min-width: 0;
+
+  margin-left: 0;
 }
 
 body.plan-page
@@ -1231,39 +1188,6 @@ body.plan-page
   align-items: center;
 
   gap: 8px;
-}
-
-body.plan-page
-.plan-routine-state {
-  padding:
-    4px
-    9px;
-
-  border-radius: 999px;
-
-  font-size: 12px;
-  font-weight: 700;
-
-  white-space: nowrap;
-}
-
-body.plan-page
-.plan-routine-state.is-active {
-  background:
-    rgba(
-      22,
-      170,
-      165,
-      0.09
-    );
-
-  color: #119b97;
-}
-
-body.plan-page
-.plan-routine-state.is-paused {
-  background: #eef0f0;
-  color: #747c7e;
 }
 
 body.plan-page
@@ -2141,38 +2065,8 @@ body.plan-page
    Plan routine card simplify
    ========================================== */
 
-/* 左の丸い図を消す */
-body.plan-page .plan-routine-card-icon,
-body.plan-page .plan-routine-icon,
-body.plan-page .routine-card-icon,
-body.plan-page .routine-leading-icon {
-  display: none !important;
-}
-
-/* 有効バッジを消す */
-body.plan-page .plan-routine-status,
-body.plan-page .plan-routine-badge,
-body.plan-page .routine-status,
-body.plan-page .routine-status-badge {
-  display: none !important;
-}
 
 /* 左アイコンを消した後の余白調整 */
-body.plan-page .plan-routine-card,
-body.plan-page .routine-card {
-  padding-left: 20px;
-}
-
-body.plan-page .plan-routine-info,
-body.plan-page .routine-card-body {
-  margin-left: 0 !important;
-}
-
-/* ルーティーンカードの状態表示を消す */
-body.plan-page
-.plan-routine-state {
-  display: none !important;
-}
 
 body.plan-page
 .plan-section + .plan-section {
