@@ -99,8 +99,6 @@ function updateNotificationButton() {
 }
 
 async function loadTask() {
-  const taskId = getTaskId();
-
   if (!taskId) {
     showError("タスクIDを取得できませんでした。");
     return;
@@ -140,6 +138,8 @@ function getTaskId() {
 
   return pathParts[1];
 }
+
+const taskId = getTaskId();
 
 const taskDueDateDisplay =
   document.getElementById("taskDueDateDisplay");
@@ -349,8 +349,6 @@ async function saveTask() {
     return true;
   }
 
-  const taskId = getTaskId();
-
   if (!taskId) {
     return false;
   }
@@ -399,8 +397,6 @@ async function saveTask() {
 }
 
 completeTaskButton.addEventListener("click", async () => {
-  const taskId = getTaskId();
-
   if (!taskId) {
     alert("タスクIDを取得できませんでした。");
     return;
@@ -435,8 +431,6 @@ completeTaskButton.addEventListener("click", async () => {
 });
 
 deleteTaskButton.addEventListener("click", async () => {
-  const taskId = getTaskId();
-
   if (!taskId) {
     alert("タスクIDを取得できませんでした。");
     return;
