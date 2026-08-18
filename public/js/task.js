@@ -1,5 +1,3 @@
-console.log("task.js loaded");
-
 const taskStatus = document.getElementById("taskStatus");
 const taskForm = document.getElementById("taskForm");
 const taskNotification = document.getElementById("taskNotification");
@@ -63,6 +61,13 @@ const deleteTaskButton =
 let originalTaskState = null;
 let isSaving = false;
 
+const notificationValuesRequiringTime = [
+  "at_time",
+  "10_minutes_before",
+  "30_minutes_before",
+  "1_hour_before",
+];
+
 function updateNotificationButton() {
   const isOn =
     taskNotification.value !== "none";
@@ -94,7 +99,6 @@ function updateNotificationButton() {
 }
 
 async function loadTask() {
-  console.log("loadTask started");
   const taskId = getTaskId();
 
   if (!taskId) {
@@ -163,16 +167,9 @@ function updateDateTimeState() {
     !hasTime
   );
 
-  const requiresTimeValues = [
-    "at_time",
-    "10_minutes_before",
-    "30_minutes_before",
-    "1_hour_before",
-  ];
-
   if (
     !hasTime &&
-    requiresTimeValues.includes(
+    notificationValuesRequiringTime.includes(
       taskNotification.value
     )
   ) {
@@ -250,16 +247,9 @@ function openNotificationSheet() {
   const hasDueTime =
     Boolean(taskDueTime.value);
 
-  const requiresTimeValues = [
-    "at_time",
-    "10_minutes_before",
-    "30_minutes_before",
-    "1_hour_before",
-  ];
-
   notificationSheetItems.forEach((item) => {
     const requiresTime =
-      requiresTimeValues.includes(
+      notificationValuesRequiringTime.includes(
         item.dataset.notificationValue
       );
 
@@ -354,9 +344,6 @@ function hasTaskChanged() {
 }
 
 async function saveTask() {
-  console.log("saveTask called");
-  console.log("changed:", hasTaskChanged());
-  console.log(getTaskFormState());
 
   if (!hasTaskChanged() || isSaving) {
     return true;
