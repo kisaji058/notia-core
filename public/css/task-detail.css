@@ -996,22 +996,19 @@ body {
 
 body {
   height: 100dvh;
-
   display: flex;
   flex-direction: column;
+  padding-bottom: 0 !important;
 }
 
 body > main.app {
   display: flex;
   flex-direction: column;
-
   width: 100%;
   height: 100dvh;
   min-height: 0;
-
-
   flex: 1 1 auto;
-
+  padding-bottom: 0 !important;
   overflow: hidden;
 }
 
@@ -1058,16 +1055,6 @@ body > main.app {
   min-height: 0;
 
   gap: 8.5px;
-}
-
-/* ===== Task Detail common bottom space reset ===== */
-
-body {
-  padding-bottom: 0 !important;
-}
-
-body > main.app {
-  padding-bottom: 0 !important;
 }
 
 /* ===== 場所：説明・備考とデザイン統一 ===== */
