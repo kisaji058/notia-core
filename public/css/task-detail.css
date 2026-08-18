@@ -84,13 +84,6 @@
   gap: 22px;
 }
 
-/* タスク／予定 切り替え */
-
-.task-type-option input:focus-visible + span {
-  outline: 2px solid #4c8f86;
-  outline-offset: 2px;
-}
-
 .field-group {
   display: flex;
   flex-direction: column;
@@ -446,10 +439,6 @@ select.field-control {
 
 .task-title-row {
   display: block;
-}
-
-.task-title-group .field-label {
-  font-size: 14px;
 }
 
 .task-title-input {
