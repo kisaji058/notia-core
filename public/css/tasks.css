@@ -486,14 +486,6 @@ body.plan-page
   stroke-linejoin: round;
 }
 
-/* ---------- legacy ---------- */
-
-body.plan-page
-.plan-legacy-controls {
-  display: none !important;
-}
-
-
 /* ---------- mobile ---------- */
 
 @media (max-width: 520px) {
