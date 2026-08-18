@@ -35,43 +35,6 @@
   margin-bottom: 16px;
 }
 
-.sheet-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-}
-
-.sheet-item.is-selected {
-  font-weight: 700;
-}
-
-.sheet-item.is-selected::after {
-  content: "✓";
-  margin-left: auto;
-}
-
-.settings-section {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.settings-item {
-  padding: 8px 0;
-  border-bottom: 1px solid #e5e5e5;
-}
-
-.settings-title {
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.settings-description {
-  font-size: 14px;
-  color: #666;
-}
-
 /* ==================================================
    Plan page
    ================================================== */
