@@ -1,79 +1,9 @@
-.today-page {
-  min-height: 100vh;
-  background: var(--color-bg);
-}
-
-.today-header {
-  padding: 28px 20px 16px;
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.today-header h1 {
-  margin: 2px 0 0;
-  font-size: 28px;
-  line-height: 1.2;
-}
-
-.today-date {
-  margin: 0;
-  color: var(--color-muted);
-  font-size: 13px;
-}
-
 .today-main {
   display: grid;
   gap: 14px;
   max-width: 680px;
   margin: 0 auto;
   padding: 16px 14px 28px;
-}
-
-.today-section {
-  padding: 16px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  box-shadow: var(--shadow-soft);
-}
-
-.today-section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.today-section-header h2 {
-  margin: 0;
-  font-size: 16px;
-}
-
-.today-count {
-  display: grid;
-  place-items: center;
-  min-width: 24px;
-  height: 24px;
-  padding: 0 7px;
-  color: var(--color-primary);
-  background: var(--color-primary-soft);
-  border-radius: var(--radius-pill);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.today-list {
-  display: grid;
-  gap: 8px;
-}
-
-.today-loading,
-.today-empty {
-  margin: 0;
-  padding: 16px 4px;
-  color: var(--color-muted);
-  font-size: 13px;
-  text-align: center;
 }
 
 /* ===== Today Hero ===== */
@@ -291,16 +221,6 @@
   font-weight: 600;
   line-height: 1.1;
 }
-
-.timeline-item-subtitle {
-  margin-top: 3px;
-
-  color: #8a989e;
-  font-size: 0.68rem;
-  font-weight: 400;
-  line-height: 1.2;
-}
-
 
 /* ---------- Tag ---------- */
 
@@ -602,8 +522,6 @@ body {
   color: #7c878b;
 }
 
-.timeline-item-content--completed
-.timeline-item-subtitle,
 .unscheduled-item--completed
 .unscheduled-item-main p {
   color: #9aa2a5;
