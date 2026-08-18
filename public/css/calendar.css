@@ -457,6 +457,7 @@ position: sticky;
 
 .week-calendar-item-title {
   overflow: hidden;
+  min-width: 0;
 
   color: #0f2f66;
   font-size: 14px;
@@ -581,6 +582,8 @@ position: sticky;
 }
 
 .day-view {
+  min-height: 0;
+  padding-bottom: 0;
   background: #f7faf9;
 }
 
@@ -1369,6 +1372,16 @@ body.calendar-page {
 
   min-height: 48px;
   padding-left: 50px;
+
+  color: #203852;
+  background: #ffffff !important;
+
+  border: 1px solid #dce8e5 !important;
+  border-left: 4px solid #2FA99D !important;
+
+  box-shadow:
+    0 2px 8px
+    rgba(38, 83, 79, 0.06);
 }
 
 .day-view .day-item-type-icon {
@@ -1379,8 +1392,16 @@ body.calendar-page {
   display: grid;
   place-items: center;
 
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
+
+  background: #ffffff;
+  border: 1px solid #d6e4e1;
+  border-radius: 50%;
+
+  box-shadow:
+    0 1px 3px
+    rgba(25, 70, 68, 0.08);
 
   pointer-events: none;
   transform: translateY(-50%);
@@ -1396,50 +1417,20 @@ body.calendar-page {
 
 .day-view
 .day-item-type-icon--task img {
-  width: 26px;
-  height: 26px;
+  width: 23px;
+  height: 23px;
 }
 
 /* 予定：照準／コンパス */
 
 .day-view
 .day-item-type-icon--calendar img {
-  width: 30px;
-  height: 30px;
+  width: 27px;
+  height: 27px;
 }
 
 /* ルーティーン：周回する星 */
 
-.day-view
-.day-item-type-icon--routine img {
-  width: 30px;
-  height: 30px;
-}
-
-/* 種別アイコンを丸で囲む */
-
-.day-view .day-item-type-icon {
-  width: 34px;
-  height: 34px;
-
-  background: #ffffff;
-  border: 1px solid #d6e4e1;
-  border-radius: 50%;
-  box-shadow:
-    0 1px 3px
-    rgba(25, 70, 68, 0.08);
-}
-
-/* 丸の中に収まるよう調整 */
-
-.day-view
-.day-item-type-icon--task img {
-  width: 23px;
-  height: 23px;
-}
-
-.day-view
-.day-item-type-icon--calendar img,
 .day-view
 .day-item-type-icon--routine img {
   width: 27px;
@@ -1488,10 +1479,7 @@ body.calendar-page {
   min-height: 30px;
 }
 
-.day-view {
-  min-height: 0;
-  padding-bottom: 0;
-}
+
 
 /* 時間未設定カードをコンパクトにする */
 
@@ -1512,28 +1500,6 @@ body.calendar-page {
   min-height: 34px;
 }
 
-/* ===== 日表示カードのデザイン統一 ===== */
-
-.day-view .day-item-with-type-icon {
-  background: #ffffff !important;
-
-  border:
-    1px solid #dce8e5 !important;
-  border-left:
-    4px solid #2FA99D !important;
-
-  box-shadow:
-    0 2px 8px
-    rgba(38, 83, 79, 0.06);
-}
-
-/* 重要タスクだけ薄緑 */
-
-.day-view
-.day-item-with-type-icon.day-item--important {
-  background: #edf8f5 !important;
-}
-
 /* 時間未設定カードは左端の緑線なし */
 
 .day-view
@@ -1541,13 +1507,6 @@ body.calendar-page {
 .day-item-with-type-icon {
   border-left:
     1px solid #dce8e5 !important;
-}
-
-/* 日表示カード内の文字色を統一 */
-
-.day-view
-.day-item-with-type-icon {
-  color: #203852;
 }
 
 .day-view
@@ -1578,15 +1537,6 @@ body.calendar-page {
   .day-item-time
 ) {
   font-weight: 600;
-}
-
-/* 重要タスクの丸アイコンもカードと同じ薄緑にする */
-
-.day-view
-.day-item--important
-.day-item-type-icon {
-  background: #edf8f5;
-  border-color: #c9e2dc;
 }
 
 /* 現在時刻ラインをNotia Tealに変更 */
@@ -1771,10 +1721,6 @@ body.calendar-page {
   height: 24px;
 
   object-fit: contain;
-}
-
-.week-calendar-item-title {
-  min-width: 0;
 }
 
 @media (max-width: 420px) {
