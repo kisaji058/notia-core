@@ -1826,25 +1826,6 @@ function getRoutinesByDayOfWeek(
     .map(normalizeRoutineRow);
 }
 
-function archiveRoutineById(
-  userId,
-  id
-) {
-  const result = db
-    .prepare(`
-      UPDATE routines
-      SET status = 'archived'
-      WHERE user_id = ?
-        AND id = ?
-    `)
-    .run(
-      userId,
-      id
-    );
-
-  return result.changes > 0;
-}
-
 function getCurrentDayOfWeek() {
   const dateText = new Date().toLocaleDateString(
     "sv-SE",
@@ -2402,7 +2383,6 @@ module.exports = {
   getActiveRoutines,
   getRoutinesByDayOfWeek,
   getTodayRoutines,
-  archiveRoutineById,
   updateRoutineById,
   deleteRoutineById,
   getUnsyncedGoogleRoutines,
