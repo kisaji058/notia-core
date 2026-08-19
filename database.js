@@ -76,32 +76,6 @@ function getUserByAuthIdentity(
   );
 }
 
-function createAuthIdentity(
-  userId,
-  {
-    provider,
-    providerUserId,
-    email = null,
-  }
-) {
-  db.prepare(`
-    INSERT INTO auth_identities (
-      user_id,
-      provider,
-      provider_user_id,
-      email
-    )
-    VALUES (?, ?, ?, ?)
-  `).run(
-    userId,
-    provider,
-    providerUserId,
-    email
-  );
-
-  return getUserById(userId);
-}
-
 function createUserWithAuthIdentity({
   provider,
   providerUserId,
@@ -2309,6 +2283,5 @@ markDailyNotificationSent,
 getNotificationSettings,
 updateNotificationSettings,
 getUserByAuthIdentity,
-createAuthIdentity,
 createUserWithAuthIdentity,
 };
