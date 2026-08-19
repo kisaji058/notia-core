@@ -1516,22 +1516,6 @@ function getExternalCalendarEventsByDateRange(
   );
 }
 
-function deleteExternalCalendarEventsByProvider(
-  userId,
-  provider
-) {
-  const result = db.prepare(`
-    DELETE FROM external_calendar_events
-    WHERE user_id = ?
-      AND provider = ?
-  `).run(
-    userId,
-    provider
-  );
-
-  return result.changes;
-}
-
 // =====================
 // task calendar link functions
 // =====================
@@ -2372,7 +2356,6 @@ module.exports = {
     saveExternalCalendarEvent,
     getExternalCalendarEventsByDate,
   getExternalCalendarEventsByDateRange,
-  deleteExternalCalendarEventsByProvider,
   saveTaskCalendarLink,
   getTaskCalendarLink,
   getUnsyncedTimedTasks,
