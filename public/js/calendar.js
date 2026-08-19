@@ -1342,20 +1342,6 @@ function getMonthDetailPanel() {
   return panel;
 }
 
-function activateRoutineAdd() {
-  const sourceButton =
-    document.querySelector(
-      ".calendar-add-button--routine"
-    );
-
-  if (sourceButton) {
-    sourceButton.click();
-    return;
-  }
-
-  window.location.href = "/routines";
-}
-
 function renderMonthDetail(entries) {
   const panel = getMonthDetailPanel();
   const visibleEntries = entries.filter(
