@@ -517,34 +517,6 @@ function getCompletedTasksByDate(
   );
 }
 
-function getCompletedTasksByDateRange(
-  userId,
-  startDate,
-  endDate
-) {
-  return db.prepare(`
-    SELECT *
-    FROM tasks
-    WHERE user_id = ?
-      AND status = 'completed'
-      AND due_date BETWEEN ? AND ?
-    ORDER BY
-      due_date ASC,
-      CASE
-        WHEN due_time IS NULL
-          OR due_time = ''
-        THEN 1
-        ELSE 0
-      END,
-      due_time ASC,
-      id ASC
-  `).all(
-    userId,
-    startDate,
-    endDate
-  );
-}
-
 function getNotificationTargets(
   userId,
   date
@@ -2412,7 +2384,6 @@ module.exports = {
     getTasksByDate,
   getTasksByDateRange,
   getCompletedTasksByDate,
-  getCompletedTasksByDateRange,
 
   saveIntegrationTokens,
   getIntegrationTokens,
