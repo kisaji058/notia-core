@@ -185,6 +185,12 @@ const VALID_CATEGORIES = [
   "other",
 ];
 
+const DATE_PATTERN =
+  /^\d{4}-\d{2}-\d{2}$/;
+
+const TIME_PATTERN =
+  /^([01]\d|2[0-3]):[0-5]\d$/;
+
 function normalizeRoutineDays(
   daysOfWeek,
   fallbackDayOfWeek
@@ -434,9 +440,6 @@ app.put("/api/notification-settings", (req, res) => {
       eveningTime,
     } = req.body;
 
-    const timePattern =
-      /^([01]\d|2[0-3]):[0-5]\d$/;
-
     if (
       typeof morningEnabled !== "boolean" ||
       typeof eveningEnabled !== "boolean"
@@ -448,8 +451,8 @@ app.put("/api/notification-settings", (req, res) => {
     }
 
     if (
-      !timePattern.test(morningTime) ||
-      !timePattern.test(eveningTime)
+      !TIME_PATTERN.test(morningTime) ||
+      !TIME_PATTERN.test(eveningTime)
     ) {
       return res.status(400).json({
         error:
@@ -608,19 +611,16 @@ app.post("/api/events", (req, res) => {
 
     if (
       typeof eventDate !== "string" ||
-      !/^\d{4}-\d{2}-\d{2}$/.test(eventDate)
+      !DATE_PATTERN.test(eventDate)
     ) {
       return res.status(400).json({
         error: "日付が正しくありません。",
       });
     }
 
-    const timePattern =
-      /^([01]\d|2[0-3]):[0-5]\d$/;
-
     if (
       startTime &&
-      !timePattern.test(startTime)
+      !TIME_PATTERN.test(startTime)
     ) {
       return res.status(400).json({
         error: "開始時刻が正しくありません。",
@@ -629,7 +629,7 @@ app.post("/api/events", (req, res) => {
 
     if (
       endTime &&
-      !timePattern.test(endTime)
+      !TIME_PATTERN.test(endTime)
     ) {
       return res.status(400).json({
         error: "終了時刻が正しくありません。",
@@ -742,19 +742,16 @@ app.put("/api/events/:id", (req, res) => {
 
     if (
       typeof eventDate !== "string" ||
-      !/^\d{4}-\d{2}-\d{2}$/.test(eventDate)
+      !DATE_PATTERN.test(eventDate)
     ) {
       return res.status(400).json({
         error: "日付が正しくありません。",
       });
     }
 
-    const timePattern =
-      /^([01]\d|2[0-3]):[0-5]\d$/;
-
     if (
       startTime &&
-      !timePattern.test(startTime)
+      !TIME_PATTERN.test(startTime)
     ) {
       return res.status(400).json({
         error: "開始時刻が正しくありません。",
@@ -763,7 +760,7 @@ app.put("/api/events/:id", (req, res) => {
 
     if (
       endTime &&
-      !timePattern.test(endTime)
+      !TIME_PATTERN.test(endTime)
     ) {
       return res.status(400).json({
         error: "終了時刻が正しくありません。",
@@ -1596,7 +1593,7 @@ app.patch("/api/tasks/:id", (req, res) => {
       dueTime !== undefined &&
       dueTime !== null &&
       dueTime !== "" &&
-      !/^([01]\d|2[0-3]):[0-5]\d$/.test(dueTime)
+      !TIME_PATTERN.test(dueTime)
     ) {
       return res.status(400).json({
         error: "時間の形式が正しくありません。",
@@ -1766,7 +1763,7 @@ app.post(
       }
 
       if (
-        !/^\d{4}-\d{2}-\d{2}$/.test(
+        !DATE_PATTERN.test(
           eventDate
         )
       ) {
@@ -1780,7 +1777,7 @@ app.post(
         dueTime !== undefined &&
         dueTime !== null &&
         dueTime !== "" &&
-        !/^([01]\d|2[0-3]):[0-5]\d$/.test(
+        !TIME_PATTERN.test(
           dueTime
         )
       ) {
@@ -1894,7 +1891,7 @@ app.post(
 
       if (
         !dueDate ||
-        !/^\d{4}-\d{2}-\d{2}$/.test(
+        !DATE_PATTERN.test(
           dueDate
         )
       ) {
@@ -1908,7 +1905,7 @@ app.post(
         startTime !== undefined &&
         startTime !== null &&
         startTime !== "" &&
-        !/^([01]\d|2[0-3]):[0-5]\d$/.test(
+        !TIME_PATTERN.test(
           startTime
         )
       ) {
@@ -2205,7 +2202,7 @@ app.post(
         routineTime !== null &&
         routineTime !== undefined &&
         routineTime !== "" &&
-        !/^([01]\d|2[0-3]):[0-5]\d$/.test(
+        !TIME_PATTERN.test(
           routineTime
         )
       ) {
@@ -2322,7 +2319,7 @@ app.put(
         routineTime !== null &&
         routineTime !== undefined &&
         routineTime !== "" &&
-        !/^([01]\d|2[0-3]):[0-5]\d$/.test(
+        !TIME_PATTERN.test(
           routineTime
         )
       ) {
