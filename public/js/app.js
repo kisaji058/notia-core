@@ -1498,11 +1498,6 @@ function addDocumentCandidateCards(
       type.className =
         "document-candidate-type";
 
-      type.textContent =
-        item.type === "event"
-          ? "予定"
-          : "タスク";
-
       const body =
         document.createElement("div");
 
@@ -1515,57 +1510,14 @@ function addDocumentCandidateCards(
       title.className =
         "document-candidate-title";
 
-      title.textContent =
-        item.title ||
-        "名称未設定";
-
       const date =
         document.createElement("p");
 
       date.className =
         "document-candidate-date";
 
-      const candidateTime =
-        item.type === "event"
-          ? item.startTime
-          : item.dueTime;
-
-      date.textContent =
-        formatDocumentCandidateDate(
-          item.date,
-          candidateTime
-        );
-
       body.appendChild(title);
       body.appendChild(date);
-
-      if (item.location) {
-        const location =
-          document.createElement("p");
-
-        location.className =
-          "document-candidate-detail";
-
-        location.textContent =
-          `場所：${item.location}`;
-
-        body.appendChild(location);
-      }
-
-      if (item.description) {
-        const description =
-          document.createElement("p");
-
-        description.className =
-          "document-candidate-detail";
-
-        description.textContent =
-          item.description;
-
-        body.appendChild(
-          description
-        );
-      }
 
       const addButton =
   document.createElement("button");
@@ -1636,6 +1588,11 @@ addButton.addEventListener(
 row.appendChild(type);
 row.appendChild(body);
 row.appendChild(addButton);
+
+refreshDocumentCandidateRow(
+  row,
+  item
+);
 
 list.appendChild(row);
 
