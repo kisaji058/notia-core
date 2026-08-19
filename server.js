@@ -41,7 +41,6 @@ const {
   getTasksByDate,
   getTasksByDateRange,
   getCompletedTasksByDate,
-  getCompletedTasksByDateRange,
   getExternalCalendarEventsByDate,
   getExternalCalendarEventsByDateRange,
   getRecentlyCompletedTasks,
