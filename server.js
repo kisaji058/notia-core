@@ -28,14 +28,6 @@ const {
   deleteEventById,
   getActiveEvents,
   convertEventToTask,
-} = require("./database");
-
-const {
-  syncGoogleCalendar,
-} = require("./src/managers/CalendarSyncManager");
-const notificationManager = require("./src/managers/NotificationManager");
-
-const {
   addTask,
   getActiveTasks,
   getTasksByDate,
@@ -49,7 +41,7 @@ const {
   completeTask,
   restoreTaskById,
   deleteTaskById,
-    convertTaskToEvent,
+  convertTaskToEvent,
   getGoogleIntegration,
   getActiveRoutines,
   createRoutine,
@@ -58,10 +50,15 @@ const {
   getTodayRoutines,
   getAllUsers,
   hasDailyNotificationBeenSent,
-markDailyNotificationSent,
-getNotificationSettings,
-updateNotificationSettings,
+  markDailyNotificationSent,
+  getNotificationSettings,
+  updateNotificationSettings,
 } = require("./database");
+
+const {
+  syncGoogleCalendar,
+} = require("./src/managers/CalendarSyncManager");
+const notificationManager = require("./src/managers/NotificationManager");
 
 const {
   extractDocumentSchedule,
