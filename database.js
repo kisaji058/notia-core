@@ -1150,64 +1150,6 @@ CREATE TABLE IF NOT EXISTS memories (
 )
 `).run();
 
-function saveOrUpdateMemory(
-  userId,
-  category,
-  key,
-  value
-) {
-  const existing = db.prepare(`
-    SELECT *
-    FROM memories
-    WHERE user_id = ?
-      AND category = ?
-      AND memory_key = ?
-    LIMIT 1
-  `).get(
-    userId,
-    category,
-    key
-  );
-
-  if (existing) {
-    db.prepare(`
-      UPDATE memories
-      SET memory_value = ?
-      WHERE user_id = ?
-        AND id = ?
-    `).run(
-      value,
-      userId,
-      existing.id
-    );
-
-    return {
-      action: "updated",
-      id: existing.id,
-    };
-  }
-
-  const result = db.prepare(`
-    INSERT INTO memories (
-      user_id,
-      category,
-      memory_key,
-      memory_value
-    )
-    VALUES (?, ?, ?, ?)
-  `).run(
-    userId,
-    category,
-    key,
-    value
-  );
-
-  return {
-    action: "created",
-    id: result.lastInsertRowid,
-  };
-}
-
 function getAllMemories(
   userId
 ) {
@@ -2321,7 +2263,6 @@ module.exports = {
   findActiveTasks,
   updateTaskById,
 
-  saveOrUpdateMemory,
   getAllMemories,
 
   deleteTaskById,
