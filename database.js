@@ -1557,25 +1557,6 @@ function saveTaskCalendarLink(
   );
 }
 
-function getTaskCalendarLink(
-  userId,
-  taskId,
-  provider
-) {
-  return db.prepare(`
-    SELECT *
-    FROM task_calendar_links
-    WHERE user_id = ?
-      AND task_id = ?
-      AND provider = ?
-    LIMIT 1
-  `).get(
-    userId,
-    taskId,
-    provider
-  );
-}
-
 function getUnsyncedTimedTasks(
   userId,
   provider
@@ -2357,7 +2338,6 @@ module.exports = {
     getExternalCalendarEventsByDate,
   getExternalCalendarEventsByDateRange,
   saveTaskCalendarLink,
-  getTaskCalendarLink,
   getUnsyncedTimedTasks,
   getGoogleIntegration,
   updateIntegrationLastSync,
