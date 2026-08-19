@@ -3,7 +3,7 @@ const {
   addEvent,
   findActiveTasks,
   updateTaskById,
-  completeTaskById,
+  completeTask,
 } = require("../../database");
 
 class TaskManager {
@@ -244,7 +244,7 @@ if (task.itemType === "event") {
       };
     }
 
-    const success = completeTaskById(
+    const success = completeTask(
       userId,
       analysis.targetTaskId
     );

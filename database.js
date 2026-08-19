@@ -752,21 +752,6 @@ function findActiveTasks(
 `).all(userId);
 }
 
-function completeTaskById(
-  userId,
-  id
-) {
-  const result = db.prepare(`
-    UPDATE tasks
-    SET status = 'completed',
-        completed_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-    AND user_id = ?
-  `).run(id, userId);
-
-  return result.changes > 0;
-}
-
 function updateTaskById(
   userId,
   id,
@@ -2233,7 +2218,6 @@ module.exports = {
   getActiveTasks,
   getTaskById,
   completeTask,
-  completeTaskById,
   findActiveTasks,
   updateTaskById,
 
