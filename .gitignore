@@ -5,3 +5,11 @@ notia.db
 # Local SQLite databases / backups
 sessions.db
 notia.db.before-*
+
+# Local environment backups
+.env.save
+.env.save.*
+
+# SQLite production / migration backups
+notia.db.backup-*
+notia.db.pre-migration-*
