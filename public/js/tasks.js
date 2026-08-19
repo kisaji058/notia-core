@@ -3176,6 +3176,42 @@ function renderEventEditForm(
   `;
 }
 
+function syncEventNotificationAvailability(
+  startTimeInput,
+  notificationInput
+) {
+  const timeDependentNotifications = [
+    "at_time",
+    "10_minutes_before",
+    "30_minutes_before",
+    "1_hour_before",
+  ];
+
+  const hasStartTime =
+    Boolean(startTimeInput.value);
+
+  for (
+    const option
+    of notificationInput.options
+  ) {
+    option.disabled =
+      timeDependentNotifications.includes(
+        option.value
+      ) &&
+      !hasStartTime;
+  }
+
+  if (
+    !hasStartTime &&
+    timeDependentNotifications.includes(
+      notificationInput.value
+    )
+  ) {
+    notificationInput.value =
+      "none";
+  }
+}
+
 function bindEventEditForm(
   eventItem
 ) {
@@ -3212,41 +3248,12 @@ function bindEventEditForm(
     document.getElementById(
       "eventEditError"
     );
-
-  const timeDependentNotifications = [
-    "at_time",
-    "10_minutes_before",
-    "30_minutes_before",
-    "1_hour_before",
-  ];
-
-  function syncNotificationState() {
-    const hasStartTime =
-      Boolean(
-        startTimeInput.value
-      );
-
-    for (
-      const option
-      of notificationInput.options
-    ) {
-      option.disabled =
-        timeDependentNotifications.includes(
-          option.value
-        ) &&
-        !hasStartTime;
-    }
-
-    if (
-      !hasStartTime &&
-      timeDependentNotifications.includes(
-        notificationInput.value
-      )
-    ) {
-      notificationInput.value =
-        "none";
-    }
-  }
+  const syncNotificationState = () => {
+    syncEventNotificationAvailability(
+      startTimeInput,
+      notificationInput
+    );
+  };
 
   startTimeInput.addEventListener(
     "change",
@@ -3825,41 +3832,12 @@ function bindEventCreateForm() {
     document.getElementById(
       "saveNewEventButton"
     );
-
-  const timeDependentNotifications = [
-    "at_time",
-    "10_minutes_before",
-    "30_minutes_before",
-    "1_hour_before",
-  ];
-
-  function syncEventNotificationState() {
-    const hasStartTime =
-      Boolean(
-        startTimeInput.value
-      );
-
-    for (
-      const option
-      of notificationInput.options
-    ) {
-      option.disabled =
-        timeDependentNotifications.includes(
-          option.value
-        ) &&
-        !hasStartTime;
-    }
-
-    if (
-      !hasStartTime &&
-      timeDependentNotifications.includes(
-        notificationInput.value
-      )
-    ) {
-      notificationInput.value =
-        "none";
-    }
-  }
+  const syncEventNotificationState = () => {
+    syncEventNotificationAvailability(
+      startTimeInput,
+      notificationInput
+    );
+  };
 
   startTimeInput.addEventListener(
     "change",
