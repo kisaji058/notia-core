@@ -3176,6 +3176,17 @@ function renderEventEditForm(
   `;
 }
 
+function hasInvalidEventTimeRange(
+  startTime,
+  endTime
+) {
+  return Boolean(
+    startTime &&
+    endTime &&
+    endTime <= startTime
+  );
+}
+
 function syncEventNotificationAvailability(
   startTimeInput,
   notificationInput
@@ -3279,9 +3290,10 @@ function bindEventEditForm(
           .value || null;
 
       if (
-        startTime &&
-        endTime &&
-        endTime <= startTime
+        hasInvalidEventTimeRange(
+          startTime,
+          endTime
+        )
       ) {
         errorMessage.textContent =
           "終了時刻は開始時刻より後にしてください。";
@@ -3885,9 +3897,10 @@ function bindEventCreateForm() {
       }
 
       if (
-        startTime &&
-        endTime &&
-        endTime <= startTime
+        hasInvalidEventTimeRange(
+          startTime,
+          endTime
+        )
       ) {
         errorMessage.textContent =
           "終了時刻は開始時刻より後にしてください。";
