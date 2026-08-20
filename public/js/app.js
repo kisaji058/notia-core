@@ -2202,6 +2202,238 @@ async function requestNotificationPermission() {
 }
 
 
+const chatOnboardingImages = [
+  "/images/onboarding/notia_onboarding_chat_01.png",
+  "/images/onboarding/notia_onboarding_chat_02.png",
+  "/images/onboarding/notia_onboarding_chat_03.png",
+  "/images/onboarding/notia_onboarding_chat_04.png",
+];
+
+const chatOnboardingDescriptions = [
+  "予定ややることを、普段の会話のように送るだけ。<br>Notiaが内容を整理して、予定やタスクとしてまとめます。",
+  "やりたいことや期限を相談するだけ。<br>Notiaが内容を整理して、わかりやすくまとめます。",
+  "プリントや資料も、そのまま送れます。<br>Notiaが内容を読み取り、予定ややることを整理します。",
+  "思いついたことを、そのまま話しかけるだけ。<br>Notiaが毎日の整理をサポートします。",
+];
+
+let chatOnboardingIndex = 0;
+
+function renderChatOnboarding() {
+  const onboarding =
+    document.getElementById(
+      "chatOnboarding"
+    );
+
+  const image =
+    document.getElementById(
+      "chatOnboardingImage"
+    );
+
+  const prevButton =
+    document.getElementById(
+      "chatOnboardingPrev"
+    );
+
+  const nextButton =
+    document.getElementById(
+      "chatOnboardingNext"
+    );
+
+  const progress =
+    document.getElementById(
+      "chatOnboardingProgress"
+    );
+
+  const description =
+    document.getElementById(
+      "chatOnboardingDescription"
+    );
+
+  if (
+    !onboarding ||
+    !image ||
+    !prevButton ||
+    !nextButton ||
+    !progress ||
+    !description
+  ) {
+    return;
+  }
+
+  image.src =
+    chatOnboardingImages[
+      chatOnboardingIndex
+    ];
+
+  image.alt =
+    `Notiaチャットの使い方 ${
+      chatOnboardingIndex + 1
+    }`;
+
+  progress.textContent =
+    `${chatOnboardingIndex + 1} / ${
+      chatOnboardingImages.length
+    }`;
+
+  description.innerHTML =
+    chatOnboardingDescriptions[
+      chatOnboardingIndex
+    ];
+
+  prevButton.disabled =
+    chatOnboardingIndex === 0;
+
+  nextButton.textContent =
+    chatOnboardingIndex ===
+    chatOnboardingImages.length - 1
+      ? "閉じる"
+      : "次へ";
+}
+
+function showChatOnboarding() {
+  const onboarding =
+    document.getElementById(
+      "chatOnboarding"
+    );
+
+  if (!onboarding) {
+    return;
+  }
+
+  chatOnboardingIndex = 0;
+
+  renderChatOnboarding();
+
+  onboarding.hidden = false;
+
+  onboarding.setAttribute(
+    "aria-hidden",
+    "false"
+  );
+}
+
+function hideChatOnboarding() {
+  const onboarding =
+    document.getElementById(
+      "chatOnboarding"
+    );
+
+  if (!onboarding) {
+    return;
+  }
+
+  onboarding.hidden = true;
+
+  onboarding.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+}
+
+async function completeChatOnboarding() {
+  const response = await fetch(
+    "/api/onboarding/complete",
+    {
+      method: "POST",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "オンボーディング完了状態を保存できませんでした。"
+    );
+  }
+
+  hideChatOnboarding();
+}
+
+function setupChatOnboardingControls() {
+  const prevButton =
+    document.getElementById(
+      "chatOnboardingPrev"
+    );
+
+  const nextButton =
+    document.getElementById(
+      "chatOnboardingNext"
+    );
+
+  if (!prevButton || !nextButton) {
+    return;
+  }
+
+  prevButton.addEventListener(
+    "click",
+    () => {
+      if (chatOnboardingIndex === 0) {
+        return;
+      }
+
+      chatOnboardingIndex -= 1;
+
+      renderChatOnboarding();
+    }
+  );
+
+  nextButton.addEventListener(
+    "click",
+    async () => {
+      const isLastPage =
+        chatOnboardingIndex ===
+        chatOnboardingImages.length - 1;
+
+      if (!isLastPage) {
+        chatOnboardingIndex += 1;
+
+        renderChatOnboarding();
+
+        return;
+      }
+
+      nextButton.disabled = true;
+
+      try {
+        await completeChatOnboarding();
+      } catch (error) {
+        console.error(
+          "Chat onboarding completion error:",
+          error
+        );
+
+        nextButton.disabled = false;
+      }
+    }
+  );
+}
+
+async function loadChatOnboarding() {
+  try {
+    const response = await fetch(
+      "/api/onboarding"
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        "オンボーディング状態を取得できませんでした。"
+      );
+    }
+
+    const data = await response.json();
+
+    if (!data.completed) {
+      showChatOnboarding();
+    }
+  } catch (error) {
+    console.error(
+      "Chat onboarding load error:",
+      error
+    );
+  }
+}
+
+setupChatOnboardingControls();
+loadChatOnboarding();
+
 requestNotificationPermission();
 
 connectNotificationStream();

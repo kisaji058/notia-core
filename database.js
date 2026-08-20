@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   email TEXT NOT NULL,
   display_name TEXT,
+  onboarding_completed INTEGER NOT NULL DEFAULT 0,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 )
@@ -58,6 +59,16 @@ function getUserById(userId) {
   `).get(userId);
 }
 
+function markOnboardingCompleted(userId) {
+  return db.prepare(`
+    UPDATE users
+    SET
+      onboarding_completed = 1,
+      updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `).run(userId);
+}
+
 function getUserByAuthIdentity(
   provider,
   providerUserId
@@ -86,12 +97,14 @@ function createUserWithAuthIdentity({
     const result = db.prepare(`
       INSERT INTO users (
         email,
-        display_name
+        display_name,
+        onboarding_completed
       )
-      VALUES (?, ?)
+      VALUES (?, ?, ?)
     `).run(
       email,
-      displayName
+      displayName,
+      0
     );
 
     const userId =
@@ -201,6 +214,13 @@ function hasColumn(tableName, columnName) {
 }
 
 // 既存DB用マイグレーション
+
+if (!hasColumn("users", "onboarding_completed")) {
+  db.prepare(`
+    ALTER TABLE users
+    ADD COLUMN onboarding_completed INTEGER NOT NULL DEFAULT 1
+  `).run();
+}
 if (!hasColumn("tasks", "priority")) {
   db.prepare(`
     ALTER TABLE tasks
@@ -2266,6 +2286,7 @@ hasDailyNotificationBeenSent,
 markDailyNotificationSent,
 getNotificationSettings,
 updateNotificationSettings,
+markOnboardingCompleted,
 getUserByAuthIdentity,
 createUserWithAuthIdentity,
 };

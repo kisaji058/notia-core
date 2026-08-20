@@ -149,6 +149,62 @@
     </form>
   </main>
 
+  <div
+    id="chatOnboarding"
+    class="chat-onboarding"
+    hidden
+    aria-hidden="true"
+  >
+    <div class="chat-onboarding-backdrop"></div>
+
+    <section
+      class="chat-onboarding-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-label="チャットの使い方"
+    >
+      <img
+        id="chatOnboardingImage"
+        class="chat-onboarding-image"
+        src="/images/onboarding/notia_onboarding_chat_01.png"
+        alt="Notiaチャットの使い方 1"
+      >
+
+      <p
+        id="chatOnboardingDescription"
+        class="chat-onboarding-description"
+      >
+        予定ややることを、普段の会話のように送るだけ。<br>
+        Notiaが内容を整理して、予定やタスクとしてまとめます。
+      </p>
+
+      <div class="chat-onboarding-controls">
+        <button
+          type="button"
+          id="chatOnboardingPrev"
+          class="chat-onboarding-button chat-onboarding-button-secondary"
+        >
+          戻る
+        </button>
+
+        <span
+          id="chatOnboardingProgress"
+          class="chat-onboarding-progress"
+        >
+          1 / 4
+        </span>
+
+        <button
+          type="button"
+          id="chatOnboardingNext"
+          class="chat-onboarding-button chat-onboarding-button-primary"
+        >
+          次へ
+        </button>
+      </div>
+    </section>
+  </div>
+
   <nav class="bottom-nav">
   <a
     href="/"
