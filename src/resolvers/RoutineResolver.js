@@ -8,15 +8,14 @@ async function resolve(
   userId
 ) {
   if (
-  analysis?.intent ===
-  "routine_create"
-) {
-  return resolveRoutineQuery(
-  analysis.scheduleQuery?.range,
-  analysis.scheduleQuery?.dayOfWeek,
-  userId
-);
-}
+    analysis?.intent ===
+    "routine_create"
+  ) {
+    return resolveRoutineCreate(
+      analysis,
+      userId
+    );
+  }
 
 if (
   analysis?.intent ===
@@ -25,9 +24,9 @@ if (
     "routine"
 ) {
   return resolveRoutineQuery(
-    
     analysis.scheduleQuery?.range,
-    analysis.scheduleQuery?.dayOfWeek
+    analysis.scheduleQuery?.dayOfWeek,
+    userId
   );
 }
 
@@ -42,12 +41,32 @@ function resolveRoutineCreate(
 ) {
   const routine = analysis.routine;
 
+
+  const daysOfWeek =
+    Array.isArray(routine?.daysOfWeek) &&
+    routine.daysOfWeek.length > 0
+      ? [
+          ...new Set(
+            routine.daysOfWeek
+              .map((day) => Number(day))
+              .filter(
+                (day) =>
+                  Number.isInteger(day) &&
+                  day >= 0 &&
+                  day <= 6
+              )
+          ),
+        ].sort((a, b) => a - b)
+      : Number.isInteger(
+          routine?.dayOfWeek
+        )
+        ? [routine.dayOfWeek]
+        : [];
+
   if (
     !routine ||
     !routine.title ||
-    !Number.isInteger(
-      routine.dayOfWeek
-    )
+    daysOfWeek.length === 0
   ) {
     return {
       handled: true,
@@ -61,7 +80,8 @@ function resolveRoutineCreate(
   {
     title: routine.title,
     dayOfWeek:
-      routine.dayOfWeek,
+      daysOfWeek[0],
+    daysOfWeek,
     routineTime:
       routine.routineTime,
     category:
@@ -82,8 +102,12 @@ function resolveRoutineCreate(
     "土曜日",
   ];
 
-  const dayLabel =
-    dayLabels[routine.dayOfWeek];
+  const dayText =
+    daysOfWeek
+      .map(
+        (day) => dayLabels[day]
+      )
+      .join("・");
 
   const timeText =
     routine.routineTime
@@ -94,7 +118,7 @@ function resolveRoutineCreate(
     handled: true,
     reply:
       `「${routine.title}」を` +
-      `毎週${dayLabel}${timeText}` +
+      `毎週${dayText}${timeText}` +
       "行うルーティーンとして登録しました。",
   };
 }
@@ -199,7 +223,7 @@ function resolveRoutineQuery(
     handled: true,
      reply:
   `${label}のルーティーンは以下の通りです。\n\n` +
-  lines.join("\n"), 
+  lines.join("\n"),
   };
 }
 

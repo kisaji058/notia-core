@@ -113,6 +113,7 @@ JSONのみで返してください。
   "routine": {
   "title": "string | null",
   "dayOfWeek": "number | null",
+  "daysOfWeek": "number[]",
   "routineTime": "string | null",
   "category": "work | school | shopping | private | other | null",
   "googleCalendarEnabled": "boolean"
@@ -248,6 +249,31 @@ routine を返す。
 4 木
 5 金
 6 土
+
+複数曜日を指定された場合は、
+daysOfWeek にすべての曜日番号を配列で返す。
+
+例:
+
+「火曜日と金曜日にゴミ捨て」
+→ dayOfWeek: 2
+→ daysOfWeek: [2, 5]
+
+「月水金にジム」
+→ dayOfWeek: 1
+→ daysOfWeek: [1, 3, 5]
+
+単一曜日の場合も、
+daysOfWeek は必ず1件の配列にする。
+
+例:
+
+「月曜日に買い物」
+→ dayOfWeek: 1
+→ daysOfWeek: [1]
+
+dayOfWeek は互換性のため、
+daysOfWeek の先頭の曜日を返す。
 
 時間指定がない場合は
 routineTimeはnull。
@@ -1326,6 +1352,30 @@ ${userMessage}
 
       dayOfWeek:
         parsed.routine.dayOfWeek ?? null,
+
+      daysOfWeek:
+        Array.isArray(
+          parsed.routine.daysOfWeek
+        )
+          ? [
+              ...new Set(
+                parsed.routine.daysOfWeek
+                  .map((day) => Number(day))
+                  .filter(
+                    (day) =>
+                      Number.isInteger(day) &&
+                      day >= 0 &&
+                      day <= 6
+                  )
+              ),
+            ].sort((a, b) => a - b)
+          : Number.isInteger(
+              parsed.routine.dayOfWeek
+            )
+            ? [
+                parsed.routine.dayOfWeek
+              ]
+            : [],
 
       routineTime:
         parsed.routine.routineTime ?? null,
