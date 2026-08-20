@@ -13,3 +13,6 @@ notia.db.before-*
 # SQLite production / migration backups
 notia.db.backup-*
 notia.db.pre-migration-*
+
+# Automated database backups
+backups/
