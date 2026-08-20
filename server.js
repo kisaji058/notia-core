@@ -50,6 +50,7 @@ const {
   getTodayRoutines,
   getAllUsers,
   getUserById,
+  deleteUserAccount,
   markOnboardingCompleted,
   hasDailyNotificationBeenSent,
   markDailyNotificationSent,
@@ -106,9 +107,25 @@ app.use(
 app.use("/login", authRouter);
 
 function requireAuth(req, res, next) {
-  if (!req.session?.userId) {
+  const userId =
+    req.session?.userId;
+
+  if (!userId) {
     return res.status(401).json({
       error: "ログインが必要です。",
+    });
+  }
+
+  const user =
+    getUserById(userId);
+
+  if (!user) {
+    req.session.destroy(() => {});
+
+    res.clearCookie("connect.sid");
+
+    return res.status(401).json({
+      error: "アカウントが存在しません。",
     });
   }
 
@@ -396,6 +413,26 @@ app.use(
   )
 );
 
+app.get("/terms", (req, res) => {
+  return res.sendFile(
+    path.join(
+      __dirname,
+      "public",
+      "terms.html"
+    )
+  );
+});
+
+app.get("/privacy", (req, res) => {
+  return res.sendFile(
+    path.join(
+      __dirname,
+      "public",
+      "privacy.html"
+    )
+  );
+});
+
 app.get(
   "/login",
   (req, res) => {
@@ -412,6 +449,58 @@ app.get(
     );
   }
 );
+
+app.delete("/api/account", (req, res) => {
+  const userId =
+    req.session.userId;
+
+  try {
+    const deleted =
+      deleteUserAccount(userId);
+
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        error:
+          "アカウントが見つかりません。",
+      });
+    }
+
+    req.session.destroy((error) => {
+      if (error) {
+        console.error(
+          "Account session destroy error:",
+          error
+        );
+
+        res.clearCookie("connect.sid");
+
+        return res.status(500).json({
+          success: false,
+          error:
+            "アカウントは削除されましたが、ログアウト処理に失敗しました。",
+        });
+      }
+
+      res.clearCookie("connect.sid");
+
+      return res.json({
+        success: true,
+      });
+    });
+  } catch (error) {
+    console.error(
+      "Account deletion error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      error:
+        "アカウントの削除に失敗しました。",
+    });
+  }
+});
 
 app.get("/api/onboarding", (req, res) => {
   try {

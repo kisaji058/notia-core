@@ -472,6 +472,148 @@ async function saveNotificationSettings(
     );
   }
 
+  function openAccountDeleteSheet() {
+    closeAccountMenu();
+
+    document
+      .querySelectorAll(
+        ".account-delete-sheet"
+      )
+      .forEach((sheet) => {
+        sheet.remove();
+      });
+
+    const sheet =
+      document.createElement("div");
+
+    sheet.className =
+      "account-delete-sheet";
+
+    sheet.innerHTML = `
+      <div class="account-delete-card">
+        <h2>
+          アカウントを削除しますか？
+        </h2>
+
+        <p>
+          会話履歴、タスク、予定、
+          ルーティーンなど、
+          Notiaに保存されているデータが
+          削除されます。
+        </p>
+
+        <p class="account-delete-warning">
+          この操作は取り消せません。
+        </p>
+
+        <div class="account-delete-actions">
+          <button
+            type="button"
+            class="account-delete-cancel"
+          >
+            キャンセル
+          </button>
+
+          <button
+            type="button"
+            class="account-delete-confirm"
+          >
+            アカウントを完全に削除
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(sheet);
+
+    const cancelButton =
+      sheet.querySelector(
+        ".account-delete-cancel"
+      );
+
+    const deleteButton =
+      sheet.querySelector(
+        ".account-delete-confirm"
+      );
+
+    cancelButton.addEventListener(
+      "click",
+      () => {
+        sheet.remove();
+      }
+    );
+
+    sheet.addEventListener(
+      "click",
+      (event) => {
+        if (event.target === sheet) {
+          sheet.remove();
+        }
+      }
+    );
+
+    deleteButton.addEventListener(
+      "click",
+      async () => {
+        const confirmed =
+          confirm(
+            "本当にアカウントを完全に削除しますか？\n\nこの操作は取り消せません。"
+          );
+
+        if (!confirmed) {
+          return;
+        }
+
+        try {
+          deleteButton.disabled = true;
+          cancelButton.disabled = true;
+
+          deleteButton.textContent =
+            "削除中...";
+
+          const response =
+            await fetch(
+              "/api/account",
+              {
+                method: "DELETE",
+              }
+            );
+
+          const result =
+            await response.json();
+
+          if (
+            !response.ok ||
+            !result.success
+          ) {
+            throw new Error(
+              result.error ||
+              `削除失敗: ${response.status}`
+            );
+          }
+
+          window.location.href =
+            "/login";
+        } catch (error) {
+          console.error(
+            "Account deletion error:",
+            error
+          );
+
+          alert(
+            "アカウントを削除できませんでした。"
+          );
+
+          deleteButton.disabled = false;
+          cancelButton.disabled = false;
+
+          deleteButton.textContent =
+            "アカウントを完全に削除";
+        }
+      }
+    );
+  }
+
     async function logoutNotia() {
     const confirmed =
       confirm(
@@ -562,11 +704,32 @@ async function saveNotificationSettings(
         Notiaについて
       </button>
 
+      <a
+        class="account-menu-item account-menu-link"
+        href="/terms"
+      >
+        利用規約
+      </a>
+
+      <a
+        class="account-menu-item account-menu-link"
+        href="/privacy"
+      >
+        プライバシーポリシー
+      </a>
+
       <button
         class="account-menu-item account-menu-logout"
         type="button"
       >
         ログアウト
+      </button>
+
+      <button
+        class="account-menu-item account-menu-delete"
+        type="button"
+      >
+        アカウントを削除
       </button>
     `;
 
@@ -689,6 +852,15 @@ async function saveNotificationSettings(
       .addEventListener(
         "click",
         logoutNotia
+      );
+
+    menu
+      .querySelector(
+        ".account-menu-delete"
+      )
+      .addEventListener(
+        "click",
+        openAccountDeleteSheet
       );
   }
 

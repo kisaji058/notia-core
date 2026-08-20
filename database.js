@@ -59,6 +59,40 @@ function getUserById(userId) {
   `).get(userId);
 }
 
+function deleteUserAccount(userId) {
+  const transaction = db.transaction(() => {
+    const tables = [
+      "task_calendar_links",
+      "external_calendar_events",
+      "daily_notification_logs",
+      "notification_settings",
+      "memories",
+      "integrations",
+      "conversations",
+      "routines",
+      "events",
+      "tasks",
+      "auth_identities",
+    ];
+
+    for (const table of tables) {
+      db.prepare(`
+        DELETE FROM ${table}
+        WHERE user_id = ?
+      `).run(userId);
+    }
+
+    const result = db.prepare(`
+      DELETE FROM users
+      WHERE id = ?
+    `).run(userId);
+
+    return result.changes > 0;
+  });
+
+  return transaction();
+}
+
 function markOnboardingCompleted(userId) {
   return db.prepare(`
     UPDATE users
@@ -2286,6 +2320,7 @@ hasDailyNotificationBeenSent,
 markDailyNotificationSent,
 getNotificationSettings,
 updateNotificationSettings,
+deleteUserAccount,
 markOnboardingCompleted,
 getUserByAuthIdentity,
 createUserWithAuthIdentity,
