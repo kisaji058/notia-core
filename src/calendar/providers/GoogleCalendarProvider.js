@@ -30,13 +30,14 @@ function createOAuth2Client() {
 // OAuth
 // =====================
 
-function getAuthUrl() {
+function getAuthUrl(state) {
   const oauth2Client =
     createOAuth2Client();
 
   return oauth2Client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
+    state,
     scope: [
       "https://www.googleapis.com/auth/calendar",
       "https://www.googleapis.com/auth/userinfo.email",
