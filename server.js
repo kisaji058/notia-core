@@ -929,8 +929,8 @@ app.use(
         method:
           req.method,
         path:
-          req.originalUrl ||
-          req.url,
+          req.path ||
+          req.url?.split("?")[0],
         userId:
           req.session?.userId ??
           null,
