@@ -1,6 +1,14 @@
 const Database = require("better-sqlite3");
 
+const {
+  runMigrations,
+} = require(
+  "./src/database/migrationRunner"
+);
+
 const db = new Database("notia.db");
+
+runMigrations(db);
 
 // =====================
 // users
