@@ -257,6 +257,10 @@ function getChangedItems(taskResult) {
     none: "なし",
     same_day: "当日",
     day_before: "前日",
+    at_time: "予定時刻",
+    "10_minutes_before": "10分前",
+    "30_minutes_before": "30分前",
+    "1_hour_before": "1時間前",
   };
 
   const changedItems = [];

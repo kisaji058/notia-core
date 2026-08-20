@@ -21,6 +21,10 @@ const VALID_NOTIFICATIONS = [
   "none",
   "same_day",
   "day_before",
+  "at_time",
+  "10_minutes_before",
+  "30_minutes_before",
+  "1_hour_before",
 ];
 
 const VALID_PRIORITIES = [
@@ -54,6 +58,11 @@ function hasExplicitTaskUpdateCue(message) {
     /分類を/,
     /カテゴリを/,
     /通知を/,
+    /通知して/,
+    /通知あり/,
+    /通知なし/,
+    /通知オン/,
+    /通知オフ/,
     /タイトルを/,
     /説明を/,
   ];
@@ -94,7 +103,7 @@ JSONのみで返してください。
       "dueDate": "string | null",
       "dueTime": "string | null",
       "category": "work | school | shopping | private | other | null",
-      "notification": "none | same_day | day_before | null",
+      "notification": "none | same_day | day_before | at_time | 10_minutes_before | 30_minutes_before | 1_hour_before | null",
       "needsDateConfirmation": "boolean",
       "dateExpression": "string | null",
       "priority": "important | normal",
@@ -113,7 +122,7 @@ JSONのみで返してください。
   "dueDate": "string | null",
   "dueTime": "string | null",
   "category": "work | school | shopping | private | other | null",
-  "notification": "none | same_day | day_before | null",
+  "notification": "none | same_day | day_before | at_time | 10_minutes_before | 30_minutes_before | 1_hour_before | null",
   "targetTaskId": "number | null",
   "targetTaskTitle": "string | null",
   "scheduleQuery": {
@@ -133,7 +142,7 @@ JSONのみで返してください。
     "dueTime": "string | null",
     "priority": "important | normal | null",
     "category": "work | school | shopping | private | other | null",
-    "notification": "none | same_day | day_before | null"
+    "notification": "none | same_day | day_before | at_time | 10_minutes_before | 30_minutes_before | 1_hour_before | null"
   },
 
   "memories": [
@@ -438,6 +447,40 @@ task_createの場合:
 - updatesのすべての項目はnullにする。
 - ユーザーが通知を指定した場合は、
   対応するtasks要素のnotificationへ必ず設定する。
+通知指定の解釈:
+
+- 「通知して」
+- 「通知あり」
+- 「通知をオンにして」
+- 「当日に通知して」
+  → notification: "same_day"
+
+- 「前日に通知して」
+- 「通知を前日にして」
+  → notification: "day_before"
+
+- 「予定時刻に通知して」
+- 「時間になったら通知して」
+  → notification: "at_time"
+
+- 「10分前に通知して」
+  → notification: "10_minutes_before"
+
+- 「30分前に通知して」
+  → notification: "30_minutes_before"
+
+- 「1時間前に通知して」
+- 「60分前に通知して」
+  → notification: "1_hour_before"
+
+- 「通知しない」
+- 「通知なし」
+- 「通知をオフにして」
+  → notification: "none"
+
+単に「通知して」とだけ指定された場合は、
+必ずsame_dayを使用する。
+day_beforeにしてはいけない。
 - 複数のタスク・予定にまとめて通知指定がある場合は、
   指定対象となる各tasks要素へnotificationを設定する。
 
