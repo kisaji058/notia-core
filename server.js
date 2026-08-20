@@ -9,7 +9,6 @@ const SQLiteStore =
   );
 const path = require("path");
 const multer = require("multer");
-const taskListManager = require("./src/managers/TaskListManager");
 const googleAuthRouter = require("./src/routes/googleAuth");
 const authRouter =
   require("./src/routes/auth");
@@ -27,21 +26,17 @@ const tasksRouter =
   require("./src/routes/tasks");
 const routinesRouter =
   require("./src/routes/routines");
+const calendarRouter =
+  require("./src/routes/calendar");
+const todayRouter =
+  require("./src/routes/today");
 
 const {
   saveConversation,
   getRecentConversations,
   getEventsByDate,
-  getEventsByDateRange,
-  getActiveTasks,
   getTasksByDate,
-  getTasksByDateRange,
-  getCompletedTasksByDate,
-  getExternalCalendarEventsByDate,
-  getExternalCalendarEventsByDateRange,
   getGoogleIntegration,
-  getActiveRoutines,
-  getTodayRoutines,
   getAllUsers,
   getUserById,
   hasDailyNotificationBeenSent,
@@ -49,9 +44,6 @@ const {
   getNotificationSettings,
 } = require("./database");
 
-const {
-  syncGoogleCalendar,
-} = require("./src/managers/CalendarSyncManager");
 const notificationManager = require("./src/managers/NotificationManager");
 
 const {
@@ -202,44 +194,6 @@ const DATE_PATTERN =
 
 const TIME_PATTERN =
   /^([01]\d|2[0-3]):[0-5]\d$/;
-
-function normalizeRoutineDays(
-  daysOfWeek,
-  fallbackDayOfWeek
-) {
-  const source = Array.isArray(daysOfWeek)
-    ? daysOfWeek
-    : [fallbackDayOfWeek];
-
-  const normalized = [
-    ...new Set(source.map((day) => Number(day))),
-  ].sort((a, b) => a - b);
-
-  if (
-    normalized.length === 0 ||
-    normalized.some(
-      (day) =>
-        !Number.isInteger(day) ||
-        day < 0 ||
-        day > 6
-    )
-  ) {
-    return null;
-  }
-
-  return normalized;
-}
-
-function getRoutineDays(routine) {
-  return normalizeRoutineDays(
-    Array.isArray(routine.days_of_week)
-      ? routine.days_of_week
-      : typeof routine.days_of_week === "string"
-        ? routine.days_of_week.split(",")
-        : null,
-    routine.day_of_week
-  ) || [];
-}
 
 app.get(
   "/api/notifications/stream",
@@ -541,358 +495,9 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-app.post("/api/calendar/sync", async (req, res) => {
-  try {
-    const result =
-  await syncGoogleCalendar(
-    req.session.userId
-  );
-
-    res.json({
-  success: true,
-  importedEvents:
-    result.importedEvents,
-  exportedTasks:
-    result.exportedTasks,
-  exportedRoutines:
-    result.exportedRoutines,
-});
-  } catch (error) {
-    console.error(
-      "Calendar sync error:",
-      error
-    );
-
-    res.status(500).json({
-      success: false,
-      message:
-        "Google予定との同期に失敗しました。",
-    });
-  }
-});
-
-function expandRoutinesByDate(
-  routines,
-  startDate,
-  endDate
-) {
-  const expanded = [];
-
-  const current = new Date(
-    `${startDate}T00:00:00Z`
-  );
-
-  const end = new Date(
-    `${endDate}T00:00:00Z`
-  );
-
-  while (current <= end) {
-    const date = current
-      .toISOString()
-      .slice(0, 10);
-
-    const dayOfWeek =
-      current.getUTCDay();
-
-    for (const routine of routines) {
-      if (getRoutineDays(routine).includes(dayOfWeek)) {
-        expanded.push({
-          ...routine,
-          routine_date: date,
-        });
-      }
-    }
-
-    current.setUTCDate(
-      current.getUTCDate() + 1
-    );
-  }
-
-  return expanded;
-}
-
-app.get("/api/calendar", (req, res) => {
-  try {
-    const {
-      date,
-      startDate,
-      endDate,
-    } = req.query;
-
-    // 日表示
-    if (date) {
-      const tasks =
-  taskListManager.formatTasksForApi(
-    getTasksByDate(
-  req.session.userId,
-  date
-)
-  );
-
-      const events =
-        getEventsByDate(
-  req.session.userId,
-  date
-);
-
-      const routines =
-        expandRoutinesByDate(
-          getActiveRoutines(
-  req.session.userId
-),
-          date,
-          date
-        );
-
-      const externalEvents =
-        getExternalCalendarEventsByDate(
-  req.session.userId,
-  "google",
-  date
-);
-
-      return res.json({
-        tasks,
-        events,
-        routines,
-        externalEvents,
-      });
-    }
-
-    // 週・月表示
-    if (!startDate || !endDate) {
-      return res.status(400).json({
-        error:
-          "date、またはstartDateとendDateが必要です。",
-      });
-    }
-
-    if (startDate > endDate) {
-      return res.status(400).json({
-        error:
-          "startDateはendDate以前にしてください。",
-      });
-    }
-
-    const tasks =
-  taskListManager.formatTasksForApi(
-    getTasksByDateRange(
-      req.session.userId,
-      startDate,
-      endDate
-    )
-  );
-
-    const events =
-      getEventsByDateRange(
-  req.session.userId,
-  startDate,
-  endDate
-);
-
-    const routines =
-      expandRoutinesByDate(
-        getActiveRoutines(
-  req.session.userId
-),
-        startDate,
-        endDate
-      );
-
-    const externalEvents =
-      getExternalCalendarEventsByDateRange(
-  req.session.userId,
-  "google",
-  startDate,
-  endDate
-);
-
-    return res.json({
-      tasks,
-      events,
-      routines,
-      externalEvents,
-    });
-  } catch (error) {
-    console.error(
-      "Calendar fetch error:",
-      error
-    );
-
-    return res.status(500).json({
-      error:
-        "カレンダーの取得に失敗しました。",
-    });
-  }
-});
-
-app.get("/api/today", (req, res) => {
-  try {
-    const { date } = req.query;
-
-    if (!date) {
-      return res.status(400).json({
-        error: "date は必須です。",
-      });
-    }
-
-    const tasks =
-  taskListManager.formatTasksForApi([
-    ...getTasksByDate(
-  req.session.userId,
-  date
-),
-    ...getCompletedTasksByDate(
-  req.session.userId,
-  date
-),
-  ]);
-
-    const overdueTasks =
-  taskListManager
-    .formatTasksForApi(
-      getActiveTasks(
-  req.session.userId
-)
-    )
-    .filter(
-      (task) =>
-        task.due_date &&
-        task.due_date < date
-    );
-
-    const normalizedTasks = tasks.map(
-  (task) => ({
-    id: task.id,
-    type: "task",
-    source: "notia",
-
-    title: task.title,
-    description: task.description,
-
-    startTime: task.due_time,
-    endTime: null,
-
-    subtitle:
-      task.priority === "important"
-        ? "重要タスク"
-        : "通常タスク",
-
-    location: null,
-
-    dueDate: task.due_date,
-    priority: task.priority,
-    status: task.status,
-  })
-);
-
-    const events =
-      getEventsByDate(
-  req.session.userId,
-  date
-);
-
-    const externalEvents =
-  getExternalCalendarEventsByDate(
-    req.session.userId,
-    "google",
-    date
-  );
-
-    const routines =
-  getTodayRoutines(
-    req.session.userId
-  );
-  
-    const schedule = [
-      ...events.map((event) => ({
-        id: event.id,
-        type: "event",
-        source: "notia",
-        title: event.title,
-        description:
-          event.description,
-        startTime:
-          event.start_time,
-        endTime:
-          event.end_time,
-        subtitle: "Notia",
-        location:
-          event.location,
-      })),
-
-      ...externalEvents.map((event) => ({
-        id:
-          event.external_event_id,
-        type: "event",
-        source: "google",
-        title: event.title,
-        description:
-          event.description,
-
-        startTime: event.is_all_day
-          ? null
-          : event.start_datetime
-              ?.slice(11, 16),
-
-        endTime: event.is_all_day
-          ? null
-          : event.end_datetime
-              ?.slice(11, 16),
-
-        subtitle:
-          "Google予定",
-        location:
-          event.location,
-        isAllDay:
-          Boolean(event.is_all_day),
-      })),
-
-      ...routines.map((routine) => ({
-        id: routine.id,
-        type: "routine",
-        source: "notia",
-        title: routine.title,
-        description: null,
-        startTime:
-          routine.routine_time,
-        endTime: null,
-        subtitle:
-          "毎週のルーティーン",
-        location: null,
-      })),
-    ];
-
-    const timeline = [
-  ...normalizedTasks,
-  ...schedule,
-];
-
-timeline.sort((a, b) => {
-  const timeA = a.startTime ?? "99:99";
-  const timeB = b.startTime ?? "99:99";
-
-  return timeA.localeCompare(timeB);
-});
-
-    return res.json({
-  timeline,
-  overdueTasks,
-});
-  } catch (error) {
-    console.error(
-      "Today fetch error:",
-      error
-    );
-
-    return res.status(500).json({
-      error:
-        "Todayデータの取得に失敗しました。",
-    });
-  }
-});
-
 app.use("/api", routinesRouter);
+app.use("/api", calendarRouter);
+app.use("/api", todayRouter);
 
 function broadcastNotification(
   userId,
