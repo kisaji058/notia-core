@@ -86,6 +86,47 @@ const {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const nativeAppOrigins =
+  new Set([
+    "capacitor://localhost",
+  ]);
+
+app.use((req, res, next) => {
+  const origin =
+    req.headers.origin;
+
+  if (
+    origin &&
+    nativeAppOrigins.has(origin)
+  ) {
+    res.setHeader(
+      "Access-Control-Allow-Origin",
+      origin
+    );
+
+    res.setHeader(
+      "Vary",
+      "Origin"
+    );
+
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization"
+    );
+
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    );
+  }
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+
+  next();
+});
 const isProduction =
   process.env.NODE_ENV ===
   "production";
