@@ -2332,4 +2332,115 @@ deleteUserAccount,
 markOnboardingCompleted,
 getUserByAuthIdentity,
 createUserWithAuthIdentity,
+  createNativeAuthCodeRecord,
+  getNativeAuthCodeByHash,
+  markNativeAuthCodeUsed,
+  createNativeAuthTokenRecord,
+  getNativeAuthTokenByHash,
+  markNativeAuthTokenUsed,
+  revokeNativeAuthTokenByHash,
+
 };
+
+function createNativeAuthCodeRecord(
+  userId,
+  codeHash,
+  expiresAt
+) {
+  return db.prepare(`
+    INSERT INTO native_auth_codes (
+      user_id,
+      code_hash,
+      expires_at
+    )
+    VALUES (?, ?, ?)
+  `).run(
+    userId,
+    codeHash,
+    expiresAt
+  );
+}
+
+function getNativeAuthCodeByHash(
+  codeHash
+) {
+  return db.prepare(`
+    SELECT
+      id,
+      user_id,
+      expires_at,
+      used_at
+    FROM native_auth_codes
+    WHERE code_hash = ?
+    LIMIT 1
+  `).get(codeHash);
+}
+
+function markNativeAuthCodeUsed(
+  id
+) {
+  return db.prepare(`
+    UPDATE native_auth_codes
+    SET used_at =
+      CURRENT_TIMESTAMP
+    WHERE id = ?
+      AND used_at IS NULL
+  `).run(id);
+}
+
+function createNativeAuthTokenRecord(
+  userId,
+  tokenHash,
+  expiresAt
+) {
+  return db.prepare(`
+    INSERT INTO native_auth_tokens (
+      user_id,
+      token_hash,
+      expires_at
+    )
+    VALUES (?, ?, ?)
+  `).run(
+    userId,
+    tokenHash,
+    expiresAt
+  );
+}
+
+function getNativeAuthTokenByHash(
+  tokenHash
+) {
+  return db.prepare(`
+    SELECT
+      id,
+      user_id,
+      expires_at,
+      revoked_at
+    FROM native_auth_tokens
+    WHERE token_hash = ?
+    LIMIT 1
+  `).get(tokenHash);
+}
+
+function markNativeAuthTokenUsed(
+  id
+) {
+  return db.prepare(`
+    UPDATE native_auth_tokens
+    SET last_used_at =
+      CURRENT_TIMESTAMP
+    WHERE id = ?
+  `).run(id);
+}
+
+function revokeNativeAuthTokenByHash(
+  tokenHash
+) {
+  return db.prepare(`
+    UPDATE native_auth_tokens
+    SET revoked_at =
+      CURRENT_TIMESTAMP
+    WHERE token_hash = ?
+      AND revoked_at IS NULL
+  `).run(tokenHash);
+}
