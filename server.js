@@ -21,6 +21,8 @@ const onboardingRouter =
   require("./src/routes/onboarding");
 const accountRouter =
   require("./src/routes/account");
+const pagesRouter =
+  require("./src/routes/pages");
 
 const {
   saveConversation,
@@ -130,18 +132,6 @@ function requireAuth(req, res, next) {
     return res.status(401).json({
       error: "アカウントが存在しません。",
     });
-  }
-
-  next();
-}
-
-function requirePageAuth(
-  req,
-  res,
-  next
-) {
-  if (!req.session?.userId) {
-    return res.redirect("/login");
   }
 
   next();
@@ -382,19 +372,7 @@ app.use("/auth", googleAuthRouter);
 
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  if (!req.session?.userId) {
-    return res.redirect("/login");
-  }
-
-  return res.sendFile(
-    path.join(
-      __dirname,
-      "public",
-      "index.html"
-    )
-  );
-});
+app.use("/", pagesRouter);
 
 app.use(
   express.static(
@@ -429,79 +407,6 @@ app.use(
     }
   )
 );
-
-app.get("/terms", (req, res) => {
-  return res.sendFile(
-    path.join(
-      __dirname,
-      "public",
-      "terms.html"
-    )
-  );
-});
-
-app.get("/privacy", (req, res) => {
-  return res.sendFile(
-    path.join(
-      __dirname,
-      "public",
-      "privacy.html"
-    )
-  );
-});
-
-app.get(
-  "/login",
-  (req, res) => {
-    if (req.session?.userId) {
-      return res.redirect("/");
-    }
-
-    return res.sendFile(
-      path.join(
-        __dirname,
-        "public",
-        "login.html"
-      )
-    );
-  }
-);
-
-app.get(
-  "/tasks",
-  requirePageAuth,
-  (req, res) => {
-    res.sendFile(
-      path.join(
-        __dirname,
-        "public",
-        "tasks.html"
-      )
-    );
-  }
-);
-
-app.get("/calendar", (req, res) => {
-  res.sendFile(
-    path.join(__dirname, "public", "calendar.html")
-  );
-});
-
-app.get("/today", (req, res) => {
-  res.sendFile(
-    path.join(
-      __dirname,
-      "public",
-      "today.html"
-    )
-  );
-});
-
-app.get("/tasks/:id", (req, res) => {
-  res.sendFile(
-    path.join(__dirname, "public", "task.html")
-  );
-});
 
 // =====================
 // Notia events API
@@ -860,19 +765,6 @@ app.delete("/api/events/:id", (req, res) => {
     });
   }
 });
-
-app.get(
-  "/routines",
-  (req, res) => {
-    res.sendFile(
-      path.join(
-        __dirname,
-        "public",
-        "routines.html"
-      )
-    );
-  }
-);
 
 app.post("/api/tasks", (req, res) => {
   try {
