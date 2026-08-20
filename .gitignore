@@ -16,3 +16,6 @@ notia.db.pre-migration-*
 
 # Automated database backups
 backups/
+
+# Application logs
+logs/

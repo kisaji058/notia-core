@@ -8,6 +8,40 @@ const SQLiteStore =
     session
   );
 const path = require("path");
+
+const AppLogger =
+  require("./src/utils/AppLogger");
+
+process.on(
+  "uncaughtException",
+  (error) => {
+    AppLogger.error(
+      "process.uncaughtException",
+      error
+    );
+
+    process.exit(1);
+  }
+);
+
+process.on(
+  "unhandledRejection",
+  (reason) => {
+    const error =
+      reason instanceof Error
+        ? reason
+        : new Error(
+            String(reason)
+          );
+
+    AppLogger.error(
+      "process.unhandledRejection",
+      error
+    );
+
+    process.exit(1);
+  }
+);
 const multer = require("multer");
 const googleAuthRouter = require("./src/routes/googleAuth");
 const authRouter =
@@ -870,6 +904,49 @@ function runNotificationCycle() {
     }
   }
 }
+
+app.use(
+  (error, req, res, next) => {
+    if (res.headersSent) {
+      return next(error);
+    }
+
+    const statusCode =
+      Number.isInteger(
+        error?.status
+      )
+        ? error.status
+        : Number.isInteger(
+            error?.statusCode
+          )
+          ? error.statusCode
+          : 500;
+
+    AppLogger.error(
+      "express.unhandled",
+      error,
+      {
+        method:
+          req.method,
+        path:
+          req.originalUrl ||
+          req.url,
+        userId:
+          req.session?.userId ??
+          null,
+        statusCode,
+      }
+    );
+
+    res.status(statusCode).json({
+      error:
+        statusCode >= 500
+          ? "サーバー内部でエラーが発生しました。"
+          : error.message ||
+            "リクエストの処理に失敗しました。",
+    });
+  }
+);
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(
