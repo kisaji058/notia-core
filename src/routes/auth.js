@@ -12,6 +12,7 @@ const authService =
   require("../services/AuthService");
 
 const {
+  createAuthCode,
   exchangeAuthCode,
 } = require(
   "../services/NativeAuthService"
@@ -24,12 +25,35 @@ router.get("/google", (req, res) => {
   req.session.googleLoginState =
     state;
 
+  delete req.session.googleLoginMode;
+
   res.redirect(
     googleLoginProvider.getAuthUrl(
       state
     )
   );
 });
+
+router.get(
+  "/native/google",
+  (req, res) => {
+    const state =
+      crypto.randomBytes(32)
+        .toString("hex");
+
+    req.session.googleLoginState =
+      state;
+
+    req.session.googleLoginMode =
+      "native";
+
+    res.redirect(
+      googleLoginProvider.getAuthUrl(
+        state
+      )
+    );
+  }
+);
 
 router.get(
   "/google/callback",
@@ -53,7 +77,12 @@ router.get(
           );
       }
 
+      const isNativeLogin =
+        req.session.googleLoginMode ===
+        "native";
+
       delete req.session.googleLoginState;
+      delete req.session.googleLoginMode;
 
       const identity =
         await googleLoginProvider.authenticate(
@@ -69,6 +98,21 @@ router.get(
           displayName:
             identity.displayName,
         });
+
+      if (isNativeLogin) {
+        const {
+          code: nativeCode,
+        } = createAuthCode(
+          user.id
+        );
+
+        return res.redirect(
+          "notia://auth/callback?code=" +
+          encodeURIComponent(
+            nativeCode
+          )
+        );
+      }
 
       req.session.userId = user.id;
 
