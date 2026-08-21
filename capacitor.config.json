@@ -1,5 +1,6 @@
 {
   "appId": "com.kisajistudio.notia",
   "appName": "Notia",
-  "webDir": "public"
+  "webDir": "public",
+  "loggingBehavior": "none"
 }
