@@ -2142,37 +2142,191 @@ function showNotification(
   });
 }
 
-function connectNotificationStream() {
-  console.log("connectNotificationStream called");
-  const eventSource = new EventSource(
-    "/api/notifications/stream"
+function handleNotificationStreamData(
+  rawData
+) {
+  try {
+    const data =
+      JSON.parse(rawData);
+
+    showNotification(
+      data.title,
+      data.body
+    );
+
+    addMessage(
+      "assistant",
+      `🔔 ${data.body}`,
+      new Date()
+    );
+  } catch (error) {
+    console.error(
+      "Notification stream parse error",
+      error
+    );
+  }
+}
+
+async function connectNativeNotificationStream() {
+  console.log(
+    "Connecting native notification stream"
   );
+
+  while (true) {
+    try {
+      const response =
+        await fetch(
+          "/api/notifications/stream",
+          {
+            headers: {
+              Accept:
+                "text/event-stream",
+            },
+          }
+        );
+
+      if (!response.ok) {
+        throw new Error(
+          `Notification stream HTTP ${response.status}`
+        );
+      }
+
+      if (!response.body) {
+        throw new Error(
+          "Notification stream body unavailable"
+        );
+      }
+
+      console.log(
+        "✅ Native Notification Stream Connected"
+      );
+
+      const reader =
+        response.body.getReader();
+
+      const decoder =
+        new TextDecoder();
+
+      let buffer = "";
+
+      while (true) {
+        const {
+          value,
+          done,
+        } = await reader.read();
+
+        if (done) {
+          break;
+        }
+
+        buffer +=
+          decoder.decode(
+            value,
+            {
+              stream: true,
+            }
+          );
+
+        const events =
+          buffer.split("\n\n");
+
+        buffer =
+          events.pop() || "";
+
+        for (
+          const eventBlock
+          of events
+        ) {
+          const lines =
+            eventBlock.split("\n");
+
+          for (
+            const line
+            of lines
+          ) {
+            if (
+              !line.startsWith(
+                "data:"
+              )
+            ) {
+              continue;
+            }
+
+            const rawData =
+              line
+                .slice(5)
+                .trim();
+
+            if (rawData) {
+              handleNotificationStreamData(
+                rawData
+              );
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error(
+        "Native Notification Stream Error",
+        error
+      );
+    }
+
+    await new Promise(
+      (resolve) => {
+        setTimeout(
+          resolve,
+          3000
+        );
+      }
+    );
+  }
+}
+
+function connectNotificationStream() {
+  console.log(
+    "connectNotificationStream called"
+  );
+
+  const isNative =
+    window.NotiaRuntime
+      ?.isNativeApp?.() === true;
+
+  if (isNative) {
+    connectNativeNotificationStream()
+      .catch((error) => {
+        console.error(
+          "Native notification stream fatal error",
+          error
+        );
+      });
+
+    return;
+  }
+
+  const eventSource =
+    new EventSource(
+      "/api/notifications/stream"
+    );
 
   eventSource.onopen = () => {
-  console.log(
-    "✅ Notification Stream Connected",
-    eventSource.readyState
-  );
-};
+    console.log(
+      "✅ Notification Stream Connected",
+      eventSource.readyState
+    );
+  };
 
-eventSource.onmessage = (event) => {
-  const data = JSON.parse(
-    event.data
-  );
+  eventSource.onmessage = (
+    event
+  ) => {
+    handleNotificationStreamData(
+      event.data
+    );
+  };
 
-  showNotification(
-    data.title,
-    data.body
-  );
-
-  addMessage(
-    "assistant",
-    `🔔 ${data.body}`,
-    new Date()
-  );
-};
-
-  eventSource.onerror = (error) => {
+  eventSource.onerror = (
+    error
+  ) => {
     console.error(
       "Notification Stream Error",
       error
