@@ -40,6 +40,93 @@
       : "/login";
   }
 
+  const AUTH_TOKEN_KEY =
+    "notia_auth_token";
+
+  function getSecureStorage() {
+    if (!isNativeApp()) {
+      return null;
+    }
+
+    return window.Capacitor
+      ?.Plugins
+      ?.SecureStorage || null;
+  }
+
+  async function saveAuthToken(
+    token
+  ) {
+    if (
+      typeof token !== "string" ||
+      !token
+    ) {
+      throw new Error(
+        "Auth token is required"
+      );
+    }
+
+    const storage =
+      getSecureStorage();
+
+    if (!storage) {
+      throw new Error(
+        "SecureStorage plugin not available"
+      );
+    }
+
+    await storage.internalSetItem({
+      prefixedKey:
+        AUTH_TOKEN_KEY,
+      data:
+        token,
+      sync:
+        false,
+      access:
+        1,
+    });
+  }
+
+  async function getAuthToken() {
+    const storage =
+      getSecureStorage();
+
+    if (!storage) {
+      return null;
+    }
+
+    const result =
+      await storage.internalGetItem({
+        prefixedKey:
+          AUTH_TOKEN_KEY,
+        sync:
+          false,
+      });
+
+    return typeof result?.data ===
+      "string"
+      ? result.data
+      : null;
+  }
+
+  async function removeAuthToken() {
+    const storage =
+      getSecureStorage();
+
+    if (!storage) {
+      return false;
+    }
+
+    const result =
+      await storage.internalRemoveItem({
+        prefixedKey:
+          AUTH_TOKEN_KEY,
+        sync:
+          false,
+      });
+
+    return result?.success === true;
+  }
+
   async function handleAppUrl(url) {
     if (
       !url ||
@@ -111,16 +198,34 @@
         );
       }
 
+      await saveAuthToken(
+        result.token
+      );
+
+      const savedToken =
+        await getAuthToken();
+
+      if (
+        savedToken !==
+        result.token
+      ) {
+        throw new Error(
+          "Saved auth token verification failed"
+        );
+      }
+
       console.log(
         "Native token exchange succeeded",
         {
           expiresAt:
             result.expiresAt,
+          secureStorage:
+            true,
         }
       );
 
-      alert(
-        "Googleログイン認証成功\nBearer Tokenの発行まで完了しました。"
+      window.location.replace(
+        "/"
       );
     } catch (error) {
       console.error(
@@ -175,6 +280,9 @@
     isNativeApp,
     apiUrl,
     loginUrl,
+    saveAuthToken,
+    getAuthToken,
+    removeAuthToken,
     handleAppUrl,
   };
 

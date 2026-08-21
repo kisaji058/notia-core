@@ -14,6 +14,7 @@ const authService =
 const {
   createAuthCode,
   exchangeAuthCode,
+  revokeToken,
 } = require(
   "../services/NativeAuthService"
 );
@@ -228,6 +229,40 @@ router.get("/me", (req, res) => {
     },
   });
 });
+
+router.post(
+  "/native/logout",
+  (req, res) => {
+    try {
+      const authorization =
+        req.get("authorization") || "";
+
+      const match =
+        authorization.match(
+          /^Bearer\s+(.+)$/i
+        );
+
+      if (match?.[1]) {
+        revokeToken(
+          match[1].trim()
+        );
+      }
+
+      return res.json({
+        success: true,
+      });
+    } catch (error) {
+      console.error(
+        "Native logout error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+      });
+    }
+  }
+);
 
 router.post("/logout", (req, res) => {
   req.session.destroy((error) => {

@@ -624,6 +624,68 @@ async function saveNotificationSettings(
       return;
     }
 
+    const isNative =
+      window.NotiaRuntime
+        ?.isNativeApp?.() === true;
+
+    if (isNative) {
+      try {
+        const token =
+          await window.NotiaRuntime
+            .getAuthToken();
+
+        if (token) {
+          try {
+            const response =
+              await fetch(
+                window.NotiaRuntime.apiUrl(
+                  "/login/native/logout"
+                ),
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization:
+                      `Bearer ${token}`,
+                  },
+                }
+              );
+
+            if (!response.ok) {
+              console.warn(
+                "Native token revoke failed:",
+                response.status
+              );
+            }
+          } catch (error) {
+            console.warn(
+              "Native logout request failed:",
+              error
+            );
+          }
+        }
+
+        await window.NotiaRuntime
+          .removeAuthToken();
+
+        window.location.replace(
+          "/login.html"
+        );
+
+        return;
+      } catch (error) {
+        console.error(
+          "Native logout error:",
+          error
+        );
+
+        alert(
+          "ログアウトに失敗しました。"
+        );
+
+        return;
+      }
+    }
+
     try {
       const response =
         await fetch(
