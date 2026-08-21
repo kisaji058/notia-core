@@ -127,6 +127,8 @@
     return result?.success === true;
   }
 
+  let lastHandledAuthUrl = null;
+
   async function handleAppUrl(url) {
     if (
       !url ||
@@ -136,6 +138,19 @@
     ) {
       return;
     }
+
+    if (
+      url ===
+      lastHandledAuthUrl
+    ) {
+      console.log(
+        "Duplicate auth URL ignored"
+      );
+      return;
+    }
+
+    lastHandledAuthUrl =
+      url;
 
     const parsedUrl =
       new URL(url);
@@ -265,11 +280,21 @@
       }
     );
 
+    const existingToken =
+      await getAuthToken();
+
+    if (existingToken) {
+      console.log(
+        "Launch auth URL skipped: token already exists"
+      );
+      return;
+    }
+
     const launch =
       await appPlugin.getLaunchUrl();
 
     if (launch?.url) {
-      handleAppUrl(
+      await handleAppUrl(
         launch.url
       );
     }

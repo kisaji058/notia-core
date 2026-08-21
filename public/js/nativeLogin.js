@@ -42,37 +42,8 @@
     });
   }
 
-  async function verifyStoredToken() {
-    if (!isNativeApp()) {
-      return;
-    }
-
-    const token =
-      await window.NotiaRuntime
-        ?.getAuthToken?.();
-
-    console.log(
-      "Native auth token restored:",
-      Boolean(token)
-    );
-
-    if (token) {
-      alert(
-        "KeychainからTokenを復元できました。"
-      );
-    }
-  }
 
   function initialize() {
-    verifyStoredToken().catch(
-      (error) => {
-        console.error(
-          "Stored token check failed:",
-          error
-        );
-      }
-    );
-
     const googleLink =
       document.querySelector(
         ".google-login-link"
