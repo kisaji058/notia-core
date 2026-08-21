@@ -11,6 +11,12 @@ const {
 const authService =
   require("../services/AuthService");
 
+const {
+  exchangeAuthCode,
+} = require(
+  "../services/NativeAuthService"
+);
+
 router.get("/google", (req, res) => {
   const state =
     crypto.randomBytes(32).toString("hex");
@@ -93,6 +99,59 @@ router.get(
         .send(
           "Googleログインに失敗しました。"
         );
+    }
+  }
+);
+
+router.post(
+  "/native/exchange",
+  express.json(),
+  (req, res) => {
+    try {
+      const code =
+        req.body?.code;
+
+      if (
+        typeof code !== "string" ||
+        !code
+      ) {
+        return res.status(400).json({
+          ok: false,
+          error:
+            "認証コードが必要です。",
+        });
+      }
+
+      const result =
+        exchangeAuthCode(code);
+
+      if (!result) {
+        return res.status(401).json({
+          ok: false,
+          error:
+            "認証コードが無効です。",
+        });
+      }
+
+      return res.json({
+        ok: true,
+        token:
+          result.token,
+        expiresAt:
+          result.expiresAt
+            .toISOString(),
+      });
+    } catch (error) {
+      console.error(
+        "Native auth exchange error:",
+        error
+      );
+
+      return res.status(500).json({
+        ok: false,
+        error:
+          "ログイン処理に失敗しました。",
+      });
     }
   }
 );
