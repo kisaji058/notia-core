@@ -40,7 +40,7 @@
       : "/login";
   }
 
-  function handleAppUrl(url) {
+  async function handleAppUrl(url) {
     if (
       !url ||
       !url.startsWith(
@@ -58,19 +58,80 @@
         "code"
       );
 
-    console.log(
-      "Notia app URL received:",
-      {
-        url,
-        code,
-      }
-    );
+    const browser =
+      window.Capacitor
+        ?.Plugins
+        ?.Browser;
 
-    alert(
-      `Deep Link受信成功\ncode: ${
-        code || "(なし)"
-      }`
-    );
+    if (browser) {
+      try {
+        await browser.close();
+      } catch (error) {
+        console.warn(
+          "Browser close failed:",
+          error
+        );
+      }
+    }
+
+    if (!code) {
+      console.error(
+        "Native auth code missing"
+      );
+      return;
+    }
+
+    try {
+      const response =
+        await fetch(
+          apiUrl(
+            "/login/native/exchange"
+          ),
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              code,
+            }),
+          }
+        );
+
+      const result =
+        await response.json();
+
+      if (
+        !response.ok ||
+        !result?.token
+      ) {
+        throw new Error(
+          "Token exchange failed"
+        );
+      }
+
+      console.log(
+        "Native token exchange succeeded",
+        {
+          expiresAt:
+            result.expiresAt,
+        }
+      );
+
+      alert(
+        "Googleログイン認証成功\nBearer Tokenの発行まで完了しました。"
+      );
+    } catch (error) {
+      console.error(
+        "Native token exchange error:",
+        error
+      );
+
+      alert(
+        "Googleログインの完了処理に失敗しました。"
+      );
+    }
   }
 
   async function registerAppUrlListener() {
