@@ -46,6 +46,8 @@ const multer = require("multer");
 const googleAuthRouter = require("./src/routes/googleAuth");
 const authRouter =
   require("./src/routes/auth");
+const requireApiAuth =
+  require("./src/middleware/requireApiAuth");
 const notificationSettingsRouter =
   require("./src/routes/notificationSettings");
 const onboardingRouter =
@@ -164,33 +166,10 @@ app.use(
 );
 app.use("/login", authRouter);
 
-function requireAuth(req, res, next) {
-  const userId =
-    req.session?.userId;
-
-  if (!userId) {
-    return res.status(401).json({
-      error: "ログインが必要です。",
-    });
-  }
-
-  const user =
-    getUserById(userId);
-
-  if (!user) {
-    req.session.destroy(() => {});
-
-    res.clearCookie("connect.sid");
-
-    return res.status(401).json({
-      error: "アカウントが存在しません。",
-    });
-  }
-
-  next();
-}
-
-app.use("/api", requireAuth);
+app.use(
+  "/api",
+  requireApiAuth
+);
 app.use(
   "/api",
   notificationSettingsRouter
@@ -274,7 +253,7 @@ app.get(
   "/api/notifications/stream",
   (req, res) => {
     const userId =
-      req.session.userId;
+      req.userId;
 
     console.log(
       "SSE client connected:",
@@ -342,7 +321,7 @@ app.get(
 app.get("/api/conversations", (req, res) => {
   const conversations =
   getRecentConversations(
-    req.session.userId,
+    req.userId,
     100
   );
   res.json(conversations);
@@ -352,7 +331,7 @@ app.get("/api/integrations", (req, res) => {
   try {
     const google =
   getGoogleIntegration(
-    req.session.userId
+    req.userId
   );
 
     if (!google) {
@@ -557,7 +536,7 @@ app.post("/api/chat", async (req, res) => {
     const result =
   await chatRuntime.handleChat(
     message,
-    req.session.userId
+    req.userId
   );
 
     return res.json(result);

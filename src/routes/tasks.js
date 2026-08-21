@@ -95,7 +95,7 @@ router.post("/tasks", (req, res) => {
     }
 
     const taskId = addTask(
-      req.session.userId,
+      req.userId,
   normalizedTitle,
   String(description || "").trim(),
   dueDate || null,
@@ -108,7 +108,7 @@ router.post("/tasks", (req, res) => {
 );
 
     const task = getTaskById(
-  req.session.userId,
+  req.userId,
   taskId
 );
 
@@ -133,7 +133,7 @@ router.get("/tasks", (req, res) => {
   try {
     const tasks = taskListManager.formatSortedTasksForApi(
   getActiveTasks(
-  req.session.userId
+  req.userId
 )
 );
 
@@ -151,7 +151,7 @@ router.get("/tasks/completed/recent", (req, res) => {
   try {
     const tasks = taskListManager.formatTasksForApi(
       getRecentlyCompletedTasks(
-  req.session.userId,
+  req.userId,
   50
 )
     );
@@ -169,7 +169,7 @@ router.get("/tasks/completed/recent", (req, res) => {
 router.get("/tasks/:id", (req, res) => {
   try {
     const task = getTaskById(
-  req.session.userId,
+  req.userId,
   req.params.id
 );
 
@@ -195,7 +195,7 @@ router.get("/tasks/:id", (req, res) => {
 router.patch("/tasks/:id", (req, res) => {
   try {
     const existingTask = getTaskById(
-  req.session.userId,
+  req.userId,
   req.params.id
 );
 
@@ -309,7 +309,7 @@ router.patch("/tasks/:id", (req, res) => {
     }
 
     const updated = updateTaskById(
-      req.session.userId,
+      req.userId,
       req.params.id,
       updates
     );
@@ -321,7 +321,7 @@ router.patch("/tasks/:id", (req, res) => {
     }
 
     const task = getTaskById(
-  req.session.userId,
+  req.userId,
   req.params.id
 );
 
@@ -344,7 +344,7 @@ router.patch("/tasks/:id", (req, res) => {
 router.post("/tasks/:id/complete", (req, res) => {
   try {
     const task = getTaskById(
-  req.session.userId,
+  req.userId,
   req.params.id
 );
 
@@ -355,7 +355,7 @@ router.post("/tasks/:id/complete", (req, res) => {
     }
 
     const completed = completeTask(
-  req.session.userId,
+  req.userId,
   req.params.id
 );
 
@@ -377,7 +377,7 @@ router.post(
     try {
       const task =
         getTaskById(
-  req.session.userId,
+  req.userId,
   req.params.id
 );
 
@@ -447,7 +447,7 @@ router.post(
 
       const result =
   convertTaskToEvent(
-    req.session.userId,
+    req.userId,
     req.params.id,
     {
       title:
@@ -505,7 +505,7 @@ router.post(
 router.post("/tasks/:id/restore", (req, res) => {
   try {
     const task = getTaskById(
-  req.session.userId,
+  req.userId,
   req.params.id
 );
 
@@ -522,7 +522,7 @@ router.post("/tasks/:id/restore", (req, res) => {
     }
 
     const restored = restoreTaskById(
-  req.session.userId,
+  req.userId,
   req.params.id
 );
 
@@ -541,7 +541,7 @@ router.post("/tasks/:id/restore", (req, res) => {
 router.delete("/tasks/:id", (req, res) => {
   try {
     const task = getTaskById(
-  req.session.userId,
+  req.userId,
   req.params.id
 );
 
@@ -552,7 +552,7 @@ router.delete("/tasks/:id", (req, res) => {
     }
 
     const deleted = deleteTaskById(
-  req.session.userId,
+  req.userId,
   req.params.id
 );
 

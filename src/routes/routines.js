@@ -80,7 +80,7 @@ router.delete(
 
       const routine =
   getRoutineById(
-    req.session.userId,
+    req.userId,
     id
   );
 
@@ -98,7 +98,7 @@ router.delete(
         try {
           await googleProvider
   .deleteRecurringEvent(
-    req.session.userId,
+    req.userId,
     routine.google_event_id
   );
         } catch (error) {
@@ -111,7 +111,7 @@ router.delete(
 
       const result =
         deleteRoutineById(
-  req.session.userId,
+  req.userId,
   id
 );
 
@@ -148,7 +148,7 @@ router.get(
     try {
       const routines =
         getActiveRoutines(
-          req.session.userId
+          req.userId
         );
 
       return res.json(routines);
@@ -228,7 +228,7 @@ router.post(
 
       const routine =
   createRoutine(
-    req.session.userId,
+    req.userId,
     {
           title:
             title.trim(),
@@ -345,7 +345,7 @@ router.put(
 
       const result =
   updateRoutineById(
-    req.session.userId,
+    req.userId,
     id,
     {
       title: title.trim(),
@@ -380,7 +380,7 @@ router.put(
 
       const routine =
   getRoutineById(
-    req.session.userId,
+    req.userId,
     id
   );
 
@@ -392,7 +392,7 @@ if (
   try {
     await googleProvider
   .updateRecurringEventFromRoutine(
-    req.session.userId,
+    req.userId,
     routine
   );
   } catch (error) {

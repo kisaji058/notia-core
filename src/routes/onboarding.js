@@ -12,7 +12,7 @@ router.get(
   (req, res) => {
     try {
       const user = getUserById(
-        req.session.userId
+        req.userId
       );
 
       if (!user) {
@@ -46,7 +46,7 @@ router.post(
     try {
       const result =
         markOnboardingCompleted(
-          req.session.userId
+          req.userId
         );
 
       if (result.changes === 0) {

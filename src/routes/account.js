@@ -10,7 +10,7 @@ router.delete(
   "/account",
   (req, res) => {
     const userId =
-      req.session.userId;
+      req.userId;
 
     try {
       const deleted =

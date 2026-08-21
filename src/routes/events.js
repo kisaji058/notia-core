@@ -46,7 +46,7 @@ router.get(
     try {
       const events =
         getActiveEvents(
-          req.session.userId
+          req.userId
         );
 
       return res.json(events);
@@ -75,7 +75,7 @@ router.get("/events/:id", (req, res) => {
     }
 
     const event = getEventById(
-  req.session.userId,
+  req.userId,
   id
 );
 
@@ -175,7 +175,7 @@ if (!VALID_NOTIFICATIONS.includes(notification)) {
 }
 
     const eventId = addEvent(
-      req.session.userId,
+      req.userId,
   title.trim(),
   typeof description === "string"
     ? description.trim()
@@ -192,7 +192,7 @@ if (!VALID_NOTIFICATIONS.includes(notification)) {
 );
 
     const event = getEventById(
-  req.session.userId,
+  req.userId,
   Number(eventId)
 );
 
@@ -220,7 +220,7 @@ router.put("/events/:id", (req, res) => {
     }
 
     if (!getEventById(
-  req.session.userId,
+  req.userId,
   id
 )) {
       return res.status(404).json({
@@ -306,7 +306,7 @@ if (!VALID_NOTIFICATIONS.includes(notification)) {
 }
 
     const updated = updateEventById(
-  req.session.userId,
+  req.userId,
   id,
   {
   title: title.trim(),
@@ -345,7 +345,7 @@ if (!VALID_NOTIFICATIONS.includes(notification)) {
     return res.json({
       success: true,
       event: getEventById(
-  req.session.userId,
+  req.userId,
   id
 ),
     });
@@ -369,7 +369,7 @@ router.delete("/events/:id", (req, res) => {
     }
 
     if (!getEventById(
-  req.session.userId,
+  req.userId,
   id
 )) {
       return res.status(404).json({
@@ -378,7 +378,7 @@ router.delete("/events/:id", (req, res) => {
     }
 
     deleteEventById(
-  req.session.userId,
+  req.userId,
   id
 );
 
@@ -401,7 +401,7 @@ router.post(
     try {
       const event =
   getEventById(
-    req.session.userId,
+    req.userId,
     req.params.id
   );
 
@@ -468,7 +468,7 @@ router.post(
 
       const result =
         convertEventToTask(
-          req.session.userId,
+          req.userId,
           req.params.id,
           {
             title:

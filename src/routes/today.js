@@ -27,11 +27,11 @@ router.get("/today", (req, res) => {
     const tasks =
   taskListManager.formatTasksForApi([
     ...getTasksByDate(
-  req.session.userId,
+  req.userId,
   date
 ),
     ...getCompletedTasksByDate(
-  req.session.userId,
+  req.userId,
   date
 ),
   ]);
@@ -40,7 +40,7 @@ router.get("/today", (req, res) => {
   taskListManager
     .formatTasksForApi(
       getActiveTasks(
-  req.session.userId
+  req.userId
 )
     )
     .filter(
@@ -76,20 +76,20 @@ router.get("/today", (req, res) => {
 
     const events =
       getEventsByDate(
-  req.session.userId,
+  req.userId,
   date
 );
 
     const externalEvents =
   getExternalCalendarEventsByDate(
-    req.session.userId,
+    req.userId,
     "google",
     date
   );
 
     const routines =
   getTodayRoutines(
-    req.session.userId
+    req.userId
   );
   
     const schedule = [

@@ -114,7 +114,7 @@ router.post("/calendar/sync", async (req, res) => {
   try {
     const result =
   await syncGoogleCalendar(
-    req.session.userId
+    req.userId
   );
 
     res.json({
@@ -153,21 +153,21 @@ router.get("/calendar", (req, res) => {
       const tasks =
   taskListManager.formatTasksForApi(
     getTasksByDate(
-  req.session.userId,
+  req.userId,
   date
 )
   );
 
       const events =
         getEventsByDate(
-  req.session.userId,
+  req.userId,
   date
 );
 
       const routines =
         expandRoutinesByDate(
           getActiveRoutines(
-  req.session.userId
+  req.userId
 ),
           date,
           date
@@ -175,7 +175,7 @@ router.get("/calendar", (req, res) => {
 
       const externalEvents =
         getExternalCalendarEventsByDate(
-  req.session.userId,
+  req.userId,
   "google",
   date
 );
@@ -206,7 +206,7 @@ router.get("/calendar", (req, res) => {
     const tasks =
   taskListManager.formatTasksForApi(
     getTasksByDateRange(
-      req.session.userId,
+      req.userId,
       startDate,
       endDate
     )
@@ -214,7 +214,7 @@ router.get("/calendar", (req, res) => {
 
     const events =
       getEventsByDateRange(
-  req.session.userId,
+  req.userId,
   startDate,
   endDate
 );
@@ -222,7 +222,7 @@ router.get("/calendar", (req, res) => {
     const routines =
       expandRoutinesByDate(
         getActiveRoutines(
-  req.session.userId
+  req.userId
 ),
         startDate,
         endDate
@@ -230,7 +230,7 @@ router.get("/calendar", (req, res) => {
 
     const externalEvents =
       getExternalCalendarEventsByDateRange(
-  req.session.userId,
+  req.userId,
   "google",
   startDate,
   endDate

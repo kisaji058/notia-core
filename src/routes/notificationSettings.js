@@ -16,7 +16,7 @@ router.get(
     try {
       return res.json(
         getNotificationSettings(
-          req.session.userId
+          req.userId
         )
       );
     } catch (error) {
@@ -71,7 +71,7 @@ router.put(
       }
 
       updateNotificationSettings(
-        req.session.userId,
+        req.userId,
         {
           morningEnabled,
           morningTime,
@@ -84,7 +84,7 @@ router.put(
         success: true,
         settings:
           getNotificationSettings(
-            req.session.userId
+            req.userId
           ),
       });
     } catch (error) {
