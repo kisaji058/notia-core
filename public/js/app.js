@@ -2594,51 +2594,6 @@ loadChatOnboarding();
 
 requestNotificationPermission();
 
-function setupNativeKeyboard() {
-  if (!NotiaRuntime?.isNativeApp?.()) {
-    return;
-  }
-
-  const keyboard =
-    window.Capacitor
-      ?.Plugins
-      ?.Keyboard;
-
-  if (!keyboard) {
-    return;
-  }
-
-  keyboard.addListener(
-    "keyboardWillShow",
-    (info) => {
-      document.documentElement.style.setProperty(
-        "--keyboard-height",
-        `${info.keyboardHeight}px`
-      );
-
-      document.body.classList.add(
-        "keyboard-open"
-      );
-    }
-  );
-
-  keyboard.addListener(
-    "keyboardWillHide",
-    () => {
-      document.documentElement.style.setProperty(
-        "--keyboard-height",
-        "0px"
-      );
-
-      document.body.classList.remove(
-        "keyboard-open"
-      );
-    }
-  );
-}
-
-setupNativeKeyboard();
-
 connectNotificationStream();
 
 loadConversationHistory();
