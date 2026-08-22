@@ -8,6 +8,38 @@
     return;
   }
 
+  window.addEventListener(
+    "notia:google-calendar-callback",
+    async (event) => {
+      const expandedButton =
+        Array.from(
+          accountButtons
+        ).find(
+          (button) =>
+            button.getAttribute(
+              "aria-expanded"
+            ) === "true"
+        );
+
+      if (!event.detail?.success) {
+        alert(
+          "Google予定との連携に失敗しました。"
+        );
+        return;
+      }
+
+      alert(
+        "Google予定との連携が完了しました。"
+      );
+
+      closeAccountMenu();
+
+      if (expandedButton) {
+        expandedButton.click();
+      }
+    }
+  );
+
   function closeAccountMenu() {
     document
       .querySelectorAll(
@@ -115,6 +147,67 @@ async function saveNotificationSettings(
   return result.settings;
 }
 
+  async function startNativeGoogleCalendarConnect(
+    button
+  ) {
+    try {
+      button.disabled = true;
+      button.textContent =
+        "接続中...";
+
+      const response =
+        await fetch(
+          "/api/calendar/google/native/start",
+          {
+            method: "POST",
+          }
+        );
+
+      const result =
+        await response.json();
+
+      if (
+        !response.ok ||
+        !result.success ||
+        !result.authUrl
+      ) {
+        throw new Error(
+          result.error ||
+          "Google連携を開始できませんでした。"
+        );
+      }
+
+      const browser =
+        window.Capacitor
+          ?.Plugins
+          ?.Browser;
+
+      if (!browser) {
+        throw new Error(
+          "Capacitor Browser is not available"
+        );
+      }
+
+      await browser.open({
+        url:
+          result.authUrl,
+      });
+    } catch (error) {
+      console.error(
+        "Native Google Calendar connect error:",
+        error
+      );
+
+      alert(
+        "Google予定との連携を開始できませんでした。"
+      );
+
+      button.disabled = false;
+      button.textContent =
+        "Googleと連携";
+    }
+  }
+
   async function syncGoogleCalendar(
     button
   ) {
@@ -188,9 +281,15 @@ async function saveNotificationSettings(
       button.textContent =
         "解除中...";
 
+      const disconnectUrl =
+        window.NotiaRuntime
+          ?.isNativeApp?.()
+          ? "/api/calendar/google/disconnect"
+          : "/auth/google/logout";
+
       const response =
         await fetch(
-          "/auth/google/logout",
+          disconnectUrl,
           {
             method: "POST",
           }
@@ -830,14 +929,41 @@ async function saveNotificationSettings(
       googleArea.textContent =
         "接続状態を取得できませんでした。";
     } else if (!google.connected) {
-      googleArea.innerHTML = `
-        <a
-          class="account-menu-primary"
-          href="/auth/google"
-        >
-          Googleと連携
-        </a>
-      `;
+      if (
+        window.NotiaRuntime
+          ?.isNativeApp?.()
+      ) {
+        googleArea.innerHTML = `
+          <button
+            class="account-menu-primary account-google-connect"
+            type="button"
+          >
+            Googleと連携
+          </button>
+        `;
+
+        const connectButton =
+          googleArea.querySelector(
+            ".account-google-connect"
+          );
+
+        connectButton.addEventListener(
+          "click",
+          () =>
+            startNativeGoogleCalendarConnect(
+              connectButton
+            )
+        );
+      } else {
+        googleArea.innerHTML = `
+          <a
+            class="account-menu-primary"
+            href="/auth/google"
+          >
+            Googleと連携
+          </a>
+        `;
+      }
     } else {
       googleArea.innerHTML = `
         <p class="account-menu-email">

@@ -289,10 +289,70 @@
   }
 
   let lastHandledAuthUrl = null;
+  let lastHandledGoogleCalendarUrl = null;
 
   async function handleAppUrl(url) {
+    if (!url) {
+      return;
+    }
+
     if (
-      !url ||
+      url.startsWith(
+        "notia://calendar/google/callback"
+      )
+    ) {
+      if (
+        url ===
+        lastHandledGoogleCalendarUrl
+      ) {
+        console.log(
+          "Duplicate Google Calendar URL ignored"
+        );
+        return;
+      }
+
+      lastHandledGoogleCalendarUrl =
+        url;
+
+      const parsedUrl =
+        new URL(url);
+
+      const success =
+        parsedUrl.searchParams.get(
+          "success"
+        ) === "1";
+
+      const browser =
+        window.Capacitor
+          ?.Plugins
+          ?.Browser;
+
+      if (browser) {
+        try {
+          await browser.close();
+        } catch (error) {
+          console.warn(
+            "Browser close failed:",
+            error
+          );
+        }
+      }
+
+      window.dispatchEvent(
+        new CustomEvent(
+          "notia:google-calendar-callback",
+          {
+            detail: {
+              success,
+            },
+          }
+        )
+      );
+
+      return;
+    }
+
+    if (
       !url.startsWith(
         "notia://auth/callback"
       )
@@ -441,24 +501,32 @@
       }
     );
 
-    const existingToken =
-      await getAuthToken();
-
-    if (existingToken) {
-      console.log(
-        "Launch auth URL skipped: token already exists"
-      );
-      return;
-    }
-
     const launch =
       await appPlugin.getLaunchUrl();
 
-    if (launch?.url) {
-      await handleAppUrl(
-        launch.url
-      );
+    if (!launch?.url) {
+      return;
     }
+
+    if (
+      launch.url.startsWith(
+        "notia://auth/callback"
+      )
+    ) {
+      const existingToken =
+        await getAuthToken();
+
+      if (existingToken) {
+        console.log(
+          "Launch auth URL skipped: token already exists"
+        );
+        return;
+      }
+    }
+
+    await handleAppUrl(
+      launch.url
+    );
   }
 
   window.NotiaRuntime = {

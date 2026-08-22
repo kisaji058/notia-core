@@ -17,6 +17,13 @@ const {
   syncGoogleCalendar,
 } = require("../managers/CalendarSyncManager");
 
+const googleProvider =
+  require("../calendar/providers/GoogleCalendarProvider");
+
+const {
+  createState,
+} = require("../services/NativeGoogleCalendarOAuthService");
+
 const router = express.Router();
 
 function normalizeRoutineDays(
@@ -109,6 +116,69 @@ function expandRoutinesByDate(
 
   return expanded;
 }
+
+router.post(
+  "/calendar/google/native/start",
+  (req, res) => {
+    try {
+      const {
+        state,
+        expiresAt,
+      } = createState(
+        req.userId
+      );
+
+      const authUrl =
+        googleProvider.getAuthUrl(
+          state
+        );
+
+      return res.json({
+        success: true,
+        authUrl,
+        expiresAt:
+          expiresAt.toISOString(),
+      });
+    } catch (error) {
+      console.error(
+        "Native Google Calendar OAuth start error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        error:
+          "Google予定との連携を開始できませんでした。",
+      });
+    }
+  }
+);
+
+router.post(
+  "/calendar/google/disconnect",
+  (req, res) => {
+    try {
+      googleProvider.disconnect(
+        req.userId
+      );
+
+      return res.json({
+        success: true,
+      });
+    } catch (error) {
+      console.error(
+        "Google Calendar disconnect error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        error:
+          "Google予定との連携解除に失敗しました。",
+      });
+    }
+  }
+);
 
 router.post("/calendar/sync", async (req, res) => {
   try {

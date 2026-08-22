@@ -2332,6 +2332,9 @@ deleteUserAccount,
 markOnboardingCompleted,
 getUserByAuthIdentity,
 createUserWithAuthIdentity,
+  createNativeGoogleCalendarStateRecord,
+  getNativeGoogleCalendarStateByHash,
+  markNativeGoogleCalendarStateUsed,
   createNativeAuthCodeRecord,
   getNativeAuthCodeByHash,
   markNativeAuthCodeUsed,
@@ -2341,6 +2344,53 @@ createUserWithAuthIdentity,
   revokeNativeAuthTokenByHash,
 
 };
+
+
+function createNativeGoogleCalendarStateRecord(
+  userId,
+  stateHash,
+  expiresAt
+) {
+  return db.prepare(`
+    INSERT INTO native_google_calendar_states (
+      user_id,
+      state_hash,
+      expires_at
+    )
+    VALUES (?, ?, ?)
+  `).run(
+    userId,
+    stateHash,
+    expiresAt
+  );
+}
+
+function getNativeGoogleCalendarStateByHash(
+  stateHash
+) {
+  return db.prepare(`
+    SELECT
+      id,
+      user_id,
+      expires_at,
+      used_at
+    FROM native_google_calendar_states
+    WHERE state_hash = ?
+    LIMIT 1
+  `).get(stateHash);
+}
+
+function markNativeGoogleCalendarStateUsed(
+  id
+) {
+  return db.prepare(`
+    UPDATE native_google_calendar_states
+    SET used_at =
+      CURRENT_TIMESTAMP
+    WHERE id = ?
+      AND used_at IS NULL
+  `).run(id);
+}
 
 function createNativeAuthCodeRecord(
   userId,
