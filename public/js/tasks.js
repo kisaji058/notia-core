@@ -4115,6 +4115,80 @@ function bindCreateTypeTabs() {
     });
 }
 
+function enhanceNativeDateTimeInputs(
+  root = document
+) {
+  if (
+    !window.NotiaRuntime
+      ?.isNativeApp?.()
+  ) {
+    return;
+  }
+
+  const inputs =
+    root.querySelectorAll(
+      '.task-create-input[type="date"], ' +
+      '.task-create-input[type="time"]'
+    );
+
+  inputs.forEach((input) => {
+    if (
+      input.closest(
+        ".native-datetime-field"
+      )
+    ) {
+      return;
+    }
+
+    const wrapper =
+      document.createElement("div");
+
+    wrapper.className =
+      "native-datetime-field";
+
+    const display =
+      document.createElement("span");
+
+    display.className =
+      "native-datetime-display";
+
+    input.parentNode.insertBefore(
+      wrapper,
+      input
+    );
+
+    wrapper.appendChild(display);
+    wrapper.appendChild(input);
+
+    const syncDisplay = () => {
+      let value =
+        input.value || "";
+
+      if (
+        input.type === "date" &&
+        value
+      ) {
+        value =
+          value.replaceAll("-", "/");
+      }
+
+      display.textContent = value;
+    };
+
+    input.addEventListener(
+      "input",
+      syncDisplay
+    );
+
+    input.addEventListener(
+      "change",
+      syncDisplay
+    );
+
+    syncDisplay();
+  });
+}
+
 function renderPlanCreateSheet() {
   let formHtml = "";
 
@@ -4147,6 +4221,12 @@ function renderPlanCreateSheet() {
   );
 
   bindCreateTypeTabs();
+
+  enhanceNativeDateTimeInputs(
+    document.querySelector(
+      ".plan-create-content"
+    )
+  );
 
   if (currentCreateType === "task") {
     bindTaskCreateForm();
