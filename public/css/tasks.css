@@ -2388,3 +2388,52 @@ body.plan-page
 
   cursor: pointer;
 }
+
+/* ==========================================
+   Plan independent scroll
+   ========================================== */
+
+html {
+  height: 100%;
+}
+
+body.tasks-page.plan-page {
+  position: fixed;
+  inset: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+
+  padding-bottom: 0;
+
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body.tasks-page.plan-page
+> .chat-header {
+  position: relative;
+  top: auto;
+
+  flex: 0 0 auto;
+
+  width: 100%;
+  z-index: 30;
+}
+
+body.tasks-page.plan-page
+> .plan-app {
+  flex: 1 1 auto;
+  min-height: 0;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}

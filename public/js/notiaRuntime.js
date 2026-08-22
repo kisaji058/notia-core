@@ -501,6 +501,22 @@
       }
     );
 
+    const launchHandledKey =
+      "notia_launch_url_checked";
+
+    if (
+      sessionStorage.getItem(
+        launchHandledKey
+      ) === "1"
+    ) {
+      return;
+    }
+
+    sessionStorage.setItem(
+      launchHandledKey,
+      "1"
+    );
+
     const launch =
       await appPlugin.getLaunchUrl();
 
