@@ -617,12 +617,16 @@ heading.textContent =
   }
 
   detailLink.href =
-    `/calendar?${params.toString()}`;
+    NotiaRuntime.pageUrl(
+      `/calendar?${params.toString()}`
+    );
 } else {
   detailLink.href =
-    `/tasks/${encodeURIComponent(
-      task.id
-    )}`;
+    NotiaRuntime.pageUrl(
+      `/tasks/${encodeURIComponent(
+        task.id
+      )}`
+    );
 }
 
   detailLink.textContent =

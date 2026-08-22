@@ -474,10 +474,11 @@ function attachCalendarItemAction(
 
   if (taskId !== null) {
     activate = () => {
-      window.location.href =
+      NotiaRuntime.navigate(
         `/tasks/${encodeURIComponent(
           taskId
-        )}`;
+        )}`
+      );
     };
   } else if (eventItem?.id !== undefined) {
     activate = () => {
@@ -2815,7 +2816,7 @@ const response =
     closeEventSheet();
 
 if (isConvertingToTask) {
-  location.href = "/tasks";
+  NotiaRuntime.navigate("/tasks");
   return;
 }
 

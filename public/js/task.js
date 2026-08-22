@@ -125,9 +125,19 @@ async function loadTask() {
 }
 
 function getTaskId() {
-  const pathParts = location.pathname
-    .split("/")
-    .filter(Boolean);
+  const queryTaskId =
+    new URLSearchParams(
+      window.location.search
+    ).get("id");
+
+  if (queryTaskId) {
+    return queryTaskId;
+  }
+
+  const pathParts =
+    location.pathname
+      .split("/")
+      .filter(Boolean);
 
   if (
     pathParts.length !== 2 ||
@@ -419,7 +429,7 @@ completeTaskButton.addEventListener("click", async () => {
       );
     }
 
-    location.href = "/tasks";
+    NotiaRuntime.navigate("/tasks");
   } catch (error) {
     console.error(error);
 
@@ -462,7 +472,7 @@ deleteTaskButton.addEventListener("click", async () => {
     }
 
     isSaving = true;
-    location.href = "/tasks";
+    NotiaRuntime.navigate("/tasks");
   } catch (error) {
     console.error(error);
 
@@ -489,7 +499,7 @@ saveTaskButton.addEventListener("click", async () => {
   }
 
   if (isConvertingToEvent) {
-    location.href = "/calendar";
+    NotiaRuntime.navigate("/calendar");
     return;
   }
 
@@ -509,9 +519,11 @@ backLink.addEventListener("click", async (event) => {
   const saved = await saveTask();
 
   if (saved) {
-    location.href = taskTypeEvent.checked
-      ? "/calendar"
-      : destination;
+    NotiaRuntime.navigate(
+      taskTypeEvent.checked
+        ? "/calendar"
+        : destination
+    );
   }
 });
 

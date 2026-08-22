@@ -1516,8 +1516,9 @@ showChevron,
   taskInfo.addEventListener(
     "click",
     () => {
-      location.href =
-        `/tasks/${task.id}`;
+      NotiaRuntime.navigate(
+        `/tasks/${task.id}`
+      );
     }
   );
 
@@ -1530,8 +1531,9 @@ showChevron,
       ) {
         event.preventDefault();
 
-        location.href =
-          `/tasks/${task.id}`;
+        NotiaRuntime.navigate(
+          `/tasks/${task.id}`
+        );
       }
     }
   );

@@ -40,6 +40,124 @@
       : "/login";
   }
 
+  function pageUrl(path) {
+    if (
+      typeof path !== "string" ||
+      !isNativeApp()
+    ) {
+      return path;
+    }
+
+    const hashIndex =
+      path.indexOf("#");
+
+    const hash =
+      hashIndex >= 0
+        ? path.slice(hashIndex)
+        : "";
+
+    const withoutHash =
+      hashIndex >= 0
+        ? path.slice(0, hashIndex)
+        : path;
+
+    const queryIndex =
+      withoutHash.indexOf("?");
+
+    const query =
+      queryIndex >= 0
+        ? withoutHash.slice(queryIndex)
+        : "";
+
+    const pathname =
+      queryIndex >= 0
+        ? withoutHash.slice(0, queryIndex)
+        : withoutHash;
+
+    const routes = {
+      "/": "/index.html",
+      "/today": "/today.html",
+      "/tasks": "/tasks.html",
+      "/calendar": "/calendar.html",
+      "/routines": "/routines.html",
+    };
+
+    if (routes[pathname]) {
+      return (
+        routes[pathname] +
+        query +
+        hash
+      );
+    }
+
+    const taskMatch =
+      pathname.match(
+        /^\/tasks\/([^/]+)$/
+      );
+
+    if (taskMatch) {
+      const taskId =
+        encodeURIComponent(
+          decodeURIComponent(
+            taskMatch[1]
+          )
+        );
+
+      return (
+        `/task.html?id=${taskId}` +
+        hash
+      );
+    }
+
+    return path;
+  }
+
+  function navigate(path, {
+    replace = false,
+  } = {}) {
+    const destination =
+      pageUrl(path);
+
+    if (replace) {
+      window.location.replace(
+        destination
+      );
+      return;
+    }
+
+    window.location.href =
+      destination;
+  }
+
+  function rewriteNativeLinks() {
+    if (!isNativeApp()) {
+      return;
+    }
+
+    document
+      .querySelectorAll(
+        'a[href]'
+      )
+      .forEach((link) => {
+        const href =
+          link.getAttribute(
+            "href"
+          );
+
+        if (
+          !href ||
+          !href.startsWith("/")
+        ) {
+          return;
+        }
+
+        link.setAttribute(
+          "href",
+          pageUrl(href)
+        );
+      });
+  }
+
   const AUTH_TOKEN_KEY =
     "notia_auth_token";
 
@@ -305,11 +423,25 @@
     isNativeApp,
     apiUrl,
     loginUrl,
+    pageUrl,
+    navigate,
     saveAuthToken,
     getAuthToken,
     removeAuthToken,
     handleAppUrl,
   };
+
+  if (
+    document.readyState ===
+    "loading"
+  ) {
+    document.addEventListener(
+      "DOMContentLoaded",
+      rewriteNativeLinks
+    );
+  } else {
+    rewriteNativeLinks();
+  }
 
   registerAppUrlListener()
     .catch((error) => {

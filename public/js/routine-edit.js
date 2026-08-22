@@ -217,7 +217,7 @@ async function saveRoutine(event) {
       );
     }
 
-    window.location.href = "/routines";
+    NotiaRuntime.navigate("/routines");
   } catch (error) {
     console.error("ルーティーン保存エラー:", error);
     alert(error.message);
@@ -252,7 +252,7 @@ async function deleteRoutine() {
       throw new Error(result.error || "削除に失敗しました。");
     }
 
-    window.location.href = "/calendar";
+    NotiaRuntime.navigate("/calendar");
   } catch (error) {
     console.error("ルーティーン削除エラー:", error);
     alert(error.message);
