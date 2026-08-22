@@ -2,5 +2,10 @@
   "appId": "com.kisajistudio.notia",
   "appName": "Notia",
   "webDir": "public",
-  "loggingBehavior": "none"
+  "loggingBehavior": "none",
+  "plugins": {
+    "Keyboard": {
+      "resize": "none"
+    }
+  }
 }
