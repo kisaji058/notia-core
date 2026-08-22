@@ -931,7 +931,10 @@ body > main.app {
 
   z-index: 100;
 
-  padding: 6px 20px 10px;
+  padding:
+    max(6px, env(safe-area-inset-top, 0px))
+    20px
+    10px;
 }
 
 /* 編集内容だけスクロール */
