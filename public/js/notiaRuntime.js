@@ -536,6 +536,67 @@
     }
   }
 
+  async function unregisterNativePushToken() {
+    if (!isNativeApp()) {
+      return;
+    }
+
+    const push =
+      window.Capacitor
+        ?.Plugins
+        ?.NotiaPush;
+
+    if (!push) {
+      return;
+    }
+
+    const authToken =
+      await getAuthToken();
+
+    if (!authToken) {
+      return;
+    }
+
+    const result =
+      await push.getDeviceToken();
+
+    const deviceToken =
+      result?.deviceToken;
+
+    if (
+      typeof deviceToken !==
+        "string" ||
+      !deviceToken
+    ) {
+      return;
+    }
+
+    const response =
+      await fetch(
+        apiUrl(
+          "/api/native/push/unregister"
+        ),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+            Authorization:
+              `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            deviceToken,
+          }),
+        }
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        "Native push token unregister failed"
+      );
+    }
+  }
+
   async function registerAppUrlListener() {
     if (!isNativeApp()) {
       return;
@@ -616,6 +677,7 @@
     saveAuthToken,
     getAuthToken,
     removeAuthToken,
+    unregisterNativePushToken,
     handleAppUrl,
   };
 

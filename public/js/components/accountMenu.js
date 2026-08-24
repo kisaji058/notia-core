@@ -735,6 +735,16 @@ async function saveNotificationSettings(
 
         if (token) {
           try {
+            await window.NotiaRuntime
+              .unregisterNativePushToken();
+          } catch (error) {
+            console.warn(
+              "Native push unregister failed:",
+              error
+            );
+          }
+
+          try {
             const response =
               await fetch(
                 window.NotiaRuntime.apiUrl(
