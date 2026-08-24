@@ -475,6 +475,67 @@
     }
   }
 
+  async function registerNativePushToken() {
+    if (!isNativeApp()) {
+      return;
+    }
+
+    const push =
+      window.Capacitor
+        ?.Plugins
+        ?.NotiaPush;
+
+    if (!push) {
+      return;
+    }
+
+    const authToken =
+      await getAuthToken();
+
+    if (!authToken) {
+      return;
+    }
+
+    const result =
+      await push.getDeviceToken();
+
+    const deviceToken =
+      result?.deviceToken;
+
+    if (
+      typeof deviceToken !==
+        "string" ||
+      !deviceToken
+    ) {
+      return;
+    }
+
+    const response =
+      await fetch(
+        apiUrl(
+          "/api/native/push/register"
+        ),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+            Authorization:
+              `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            deviceToken,
+          }),
+        }
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        "Native push token registration failed"
+      );
+    }
+  }
+
   async function registerAppUrlListener() {
     if (!isNativeApp()) {
       return;
@@ -571,6 +632,14 @@
   } else {
     rewriteNativeLinks();
   }
+
+  registerNativePushToken()
+    .catch((error) => {
+      console.error(
+        "Native push registration error:",
+        error
+      );
+    });
 
   registerAppUrlListener()
     .catch((error) => {

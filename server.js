@@ -50,6 +50,9 @@ const requireApiAuth =
   require("./src/middleware/requireApiAuth");
 const notificationSettingsRouter =
   require("./src/routes/notificationSettings");
+
+const nativePushRouter =
+  require("./src/routes/nativePush");
 const onboardingRouter =
   require("./src/routes/onboarding");
 const accountRouter =
@@ -173,6 +176,11 @@ app.use(
 app.use(
   "/api",
   notificationSettingsRouter
+);
+
+app.use(
+  "/api",
+  nativePushRouter
 );
 
 app.use(

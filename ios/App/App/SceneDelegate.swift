@@ -8,6 +8,10 @@ class NotiaBridgeViewController:
         bridge?.registerPluginInstance(
             NotiaAppleAuthPlugin()
         )
+
+        bridge?.registerPluginInstance(
+            NotiaPushPlugin()
+        )
     }
 }
 

@@ -2345,6 +2345,9 @@ createUserWithAuthIdentity,
   getNativeAuthTokenByHash,
   markNativeAuthTokenUsed,
   revokeNativeAuthTokenByHash,
+  upsertNativePushToken,
+  deleteNativePushToken,
+  getNativePushTokensByUserId,
 
 };
 
@@ -2538,4 +2541,59 @@ function revokeNativeAuthTokenByHash(
     WHERE token_hash = ?
       AND revoked_at IS NULL
   `).run(tokenHash);
+}
+
+function upsertNativePushToken({
+  userId,
+  deviceToken,
+  platform = "ios",
+}) {
+  return db.prepare(`
+    INSERT INTO native_push_tokens (
+      user_id,
+      device_token,
+      platform
+    )
+    VALUES (?, ?, ?)
+
+    ON CONFLICT(device_token)
+    DO UPDATE SET
+      user_id = excluded.user_id,
+      platform = excluded.platform,
+      updated_at = CURRENT_TIMESTAMP
+  `).run(
+    userId,
+    deviceToken,
+    platform
+  );
+}
+
+function deleteNativePushToken(
+  userId,
+  deviceToken
+) {
+  return db.prepare(`
+    DELETE FROM native_push_tokens
+    WHERE user_id = ?
+      AND device_token = ?
+  `).run(
+    userId,
+    deviceToken
+  );
+}
+
+function getNativePushTokensByUserId(
+  userId
+) {
+  return db.prepare(`
+    SELECT
+      id,
+      device_token,
+      platform,
+      created_at,
+      updated_at
+    FROM native_push_tokens
+    WHERE user_id = ?
+    ORDER BY id ASC
+  `).all(userId);
 }
