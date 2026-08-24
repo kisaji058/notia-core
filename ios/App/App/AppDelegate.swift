@@ -83,41 +83,6 @@ class AppDelegate:
             error.localizedDescription
         )
 
-        DispatchQueue.main.async {
-            let alert =
-                UIAlertController(
-                    title: "Push登録失敗",
-                    message:
-                        error.localizedDescription,
-                    preferredStyle: .alert
-                )
-
-            alert.addAction(
-                UIAlertAction(
-                    title: "OK",
-                    style: .default
-                )
-            )
-
-            let root =
-                UIApplication.shared
-                    .connectedScenes
-                    .compactMap {
-                        $0 as? UIWindowScene
-                    }
-                    .flatMap {
-                        $0.windows
-                    }
-                    .first {
-                        $0.isKeyWindow
-                    }?
-                    .rootViewController
-
-            root?.present(
-                alert,
-                animated: true
-            )
-        }
     }
 
     func applicationWillResignActive(
