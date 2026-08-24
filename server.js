@@ -81,9 +81,14 @@ const {
   hasDailyNotificationBeenSent,
   markDailyNotificationSent,
   getNotificationSettings,
+  getNativePushTokensByUserId,
 } = require("./database");
 
 const notificationManager = require("./src/managers/NotificationManager");
+
+const {
+  sendPush,
+} = require("./src/services/APNsService");
 
 const {
   extractDocumentSchedule,
@@ -588,6 +593,88 @@ function broadcastNotification(
   }
 }
 
+async function sendNativePushNotification(
+  userId,
+  title,
+  body
+) {
+  const tokens =
+    getNativePushTokensByUserId(
+      userId
+    );
+
+  if (tokens.length === 0) {
+    return;
+  }
+
+  const results =
+    await Promise.allSettled(
+      tokens.map(
+        (token) =>
+          sendPush({
+            deviceToken:
+              token.device_token,
+            title,
+            body,
+          })
+      )
+    );
+
+  for (
+    let index = 0;
+    index < results.length;
+    index += 1
+  ) {
+    const result =
+      results[index];
+
+    if (
+      result.status ===
+        "rejected"
+    ) {
+      console.error(
+        "Native push send error:",
+        {
+          userId,
+          pushTokenId:
+            tokens[index].id,
+          error:
+            result.reason
+              ?.message ||
+            "Unknown APNs error",
+        }
+      );
+    }
+  }
+}
+
+function sendNotificationToUser(
+  userId,
+  title,
+  body
+) {
+  broadcastNotification(
+    userId,
+    title,
+    body
+  );
+
+  sendNativePushNotification(
+    userId,
+    title,
+    body
+  ).catch((error) => {
+    console.error(
+      "Native push dispatch error:",
+      {
+        userId,
+        error:
+          error.message,
+      }
+    );
+  });
+}
+
 function runNotificationCheck(
   userId
 ) {
@@ -630,7 +717,7 @@ function runNotificationCheck(
     }[item.notification] ||
       `「${item.title}」のお知らせです。`;
 
-    broadcastNotification(
+    sendNotificationToUser(
       userId,
       "Notia",
       body
@@ -787,7 +874,7 @@ const body =
     ? `おはようございます。今日は${summary}があります。`
     : `おはようございます。今日は${summary}があります。無理のない順番で進めていきましょう。`;
 
-  broadcastNotification(
+  sendNotificationToUser(
     userId,
     "Notia",
     body
@@ -884,7 +971,7 @@ function runEveningTaskCheck(
       ? `今日のタスクがあと1件、${summary}残っています。今日中に済ませるか、一度確認しておきませんか？`
       : `今日のタスクがあと${tasks.length}件残っています。${summary}です。今日中に済ませるものだけ、もう一度確認しておきませんか？`;
 
-  broadcastNotification(
+  sendNotificationToUser(
     userId,
     "Notia",
     body
