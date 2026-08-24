@@ -683,6 +683,38 @@
     navigate(route);
   }
 
+  async function registerPushResumeListener() {
+    if (!isNativeApp()) {
+      return;
+    }
+
+    const appPlugin =
+      window.Capacitor
+        ?.Plugins
+        ?.App;
+
+    if (!appPlugin) {
+      return;
+    }
+
+    await appPlugin.addListener(
+      "appStateChange",
+      (state) => {
+        if (!state?.isActive) {
+          return;
+        }
+
+        handlePendingPushRoute()
+          .catch((error) => {
+            console.error(
+              "Push resume route error:",
+              error
+            );
+          });
+      }
+    );
+  }
+
   async function registerAppUrlListener() {
     if (!isNativeApp()) {
       return;
@@ -797,6 +829,14 @@
     .catch((error) => {
       console.error(
         "Pending push route error:",
+        error
+      );
+    });
+
+  registerPushResumeListener()
+    .catch((error) => {
+      console.error(
+        "Push resume listener error:",
         error
       );
     });
