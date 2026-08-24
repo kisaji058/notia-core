@@ -1,6 +1,16 @@
 import UIKit
 import Capacitor
 
+class NotiaBridgeViewController:
+    CAPBridgeViewController
+{
+    override open func capacitorDidLoad() {
+        bridge?.registerPluginInstance(
+            NotiaAppleAuthPlugin()
+        )
+    }
+}
+
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
@@ -18,7 +28,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         }
 
         let bridgeViewController =
-            CAPBridgeViewController()
+            NotiaBridgeViewController()
 
         bridgeViewController
             .view

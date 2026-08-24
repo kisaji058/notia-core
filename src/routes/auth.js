@@ -4,6 +4,16 @@ const crypto = require("crypto");
 const googleLoginProvider =
   require("../auth/GoogleLoginProvider");
 
+const appleLoginProvider =
+  require("../auth/AppleLoginProvider");
+
+const {
+  createNonce,
+  consumeNonce,
+} = require(
+  "../services/NativeAppleAuthService"
+);
+
 const {
   getUserById,
 } = require("../../database");
@@ -144,6 +154,125 @@ router.get(
         .send(
           "Googleログインに失敗しました。"
         );
+    }
+  }
+);
+
+router.post(
+  "/native/apple/start",
+  express.json(),
+  (req, res) => {
+    try {
+      const {
+        nonce,
+        expiresAt,
+      } = createNonce();
+
+      return res.json({
+        ok: true,
+        nonce,
+        expiresAt:
+          expiresAt.toISOString(),
+      });
+    } catch (error) {
+      console.error(
+        "Native Apple nonce error:",
+        error
+      );
+
+      return res.status(500).json({
+        ok: false,
+        error:
+          "Appleログインを開始できませんでした。",
+      });
+    }
+  }
+);
+
+router.post(
+  "/native/apple",
+  express.json(),
+  async (req, res) => {
+    try {
+      const identityToken =
+        req.body?.identityToken;
+
+      const nonce =
+        req.body?.nonce;
+
+      const displayName =
+        typeof req.body?.displayName ===
+          "string"
+          ? req.body.displayName.trim()
+          : null;
+
+      if (
+        typeof identityToken !==
+          "string" ||
+        !identityToken ||
+        typeof nonce !==
+          "string" ||
+        !nonce
+      ) {
+        return res.status(400).json({
+          ok: false,
+          error:
+            "Apple認証情報が不足しています。",
+        });
+      }
+
+      const identity =
+        await appleLoginProvider.authenticate(
+          identityToken,
+          nonce
+        );
+
+      const nonceValid =
+        consumeNonce(nonce);
+
+      if (!nonceValid) {
+        return res.status(401).json({
+          ok: false,
+          error:
+            "Apple認証状態が無効です。",
+        });
+      }
+
+      const user =
+        authService.findOrCreateUser({
+          provider: "apple",
+          providerUserId:
+            identity.appleSub,
+          email:
+            identity.email,
+          displayName:
+            displayName || null,
+        });
+
+      const {
+        code,
+        expiresAt,
+      } = createAuthCode(
+        user.id
+      );
+
+      return res.json({
+        ok: true,
+        code,
+        expiresAt:
+          expiresAt.toISOString(),
+      });
+    } catch (error) {
+      console.error(
+        "Native Apple login error:",
+        error
+      );
+
+      return res.status(500).json({
+        ok: false,
+        error:
+          "Appleログインに失敗しました。",
+      });
     }
   }
 );

@@ -2335,6 +2335,9 @@ createUserWithAuthIdentity,
   createNativeGoogleCalendarStateRecord,
   getNativeGoogleCalendarStateByHash,
   markNativeGoogleCalendarStateUsed,
+  createNativeAppleAuthNonceRecord,
+  getNativeAppleAuthNonceByHash,
+  markNativeAppleAuthNonceUsed,
   createNativeAuthCodeRecord,
   getNativeAuthCodeByHash,
   markNativeAuthCodeUsed,
@@ -2385,6 +2388,48 @@ function markNativeGoogleCalendarStateUsed(
 ) {
   return db.prepare(`
     UPDATE native_google_calendar_states
+    SET used_at =
+      CURRENT_TIMESTAMP
+    WHERE id = ?
+      AND used_at IS NULL
+  `).run(id);
+}
+
+function createNativeAppleAuthNonceRecord(
+  nonceHash,
+  expiresAt
+) {
+  return db.prepare(`
+    INSERT INTO native_apple_auth_nonces (
+      nonce_hash,
+      expires_at
+    )
+    VALUES (?, ?)
+  `).run(
+    nonceHash,
+    expiresAt
+  );
+}
+
+function getNativeAppleAuthNonceByHash(
+  nonceHash
+) {
+  return db.prepare(`
+    SELECT
+      id,
+      expires_at,
+      used_at
+    FROM native_apple_auth_nonces
+    WHERE nonce_hash = ?
+    LIMIT 1
+  `).get(nonceHash);
+}
+
+function markNativeAppleAuthNonceUsed(
+  id
+) {
+  return db.prepare(`
+    UPDATE native_apple_auth_nonces
     SET used_at =
       CURRENT_TIMESTAMP
     WHERE id = ?
