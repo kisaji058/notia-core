@@ -621,6 +621,38 @@
     }
   }
 
+  async function registerNativePushRouteListener() {
+    if (!isNativeApp()) {
+      return;
+    }
+
+    const push =
+      window.Capacitor
+        ?.Plugins
+        ?.NotiaPush;
+
+    if (!push) {
+      return;
+    }
+
+    await push.addListener(
+      "pushRouteReceived",
+      (event) => {
+        const route =
+          event?.route;
+
+        if (
+          typeof route !== "string" ||
+          !route.startsWith("/")
+        ) {
+          return;
+        }
+
+        navigate(route);
+      }
+    );
+  }
+
   async function handlePendingPushRoute() {
     if (!isNativeApp()) {
       return;
@@ -758,7 +790,10 @@
       );
     });
 
-  handlePendingPushRoute()
+  registerNativePushRouteListener()
+    .then(() =>
+      handlePendingPushRoute()
+    )
     .catch((error) => {
       console.error(
         "Pending push route error:",

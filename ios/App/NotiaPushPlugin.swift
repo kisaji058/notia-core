@@ -12,6 +12,40 @@ public class NotiaPushPlugin:
     public let jsName =
         "NotiaPush"
 
+    public override func load() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector:
+                #selector(
+                    handlePushRouteNotification(_:)
+                ),
+            name:
+                Notification.Name(
+                    "NotiaPushRouteReceived"
+                ),
+            object: nil
+        )
+    }
+
+    @objc private func handlePushRouteNotification(
+        _ notification: Notification
+    ) {
+        guard
+            let route =
+                notification.object
+                    as? String
+        else {
+            return
+        }
+
+        notifyListeners(
+            "pushRouteReceived",
+            data: [
+                "route": route
+            ]
+        )
+    }
+
     public let pluginMethods:
         [CAPPluginMethod] = [
             CAPPluginMethod(
