@@ -127,14 +127,28 @@ class AppDelegate:
                 "notia_pending_push_route"
         )
 
-        NotificationCenter.default.post(
-            name:
-                Notification.Name(
-                    "NotiaPushRouteReceived"
-                ),
-            object:
-                route
-        )
+        DispatchQueue.main.asyncAfter(
+            deadline: .now() + 0.5
+        ) {
+            let pendingRoute =
+                UserDefaults.standard.string(
+                    forKey:
+                        "notia_pending_push_route"
+                )
+
+            guard pendingRoute != nil else {
+                return
+            }
+
+            NotificationCenter.default.post(
+                name:
+                    Notification.Name(
+                        "NotiaPushRouteReceived"
+                    ),
+                object:
+                    route
+            )
+        }
 
         completionHandler()
     }

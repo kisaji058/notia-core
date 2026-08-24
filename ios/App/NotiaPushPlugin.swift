@@ -38,6 +38,11 @@ public class NotiaPushPlugin:
             return
         }
 
+        UserDefaults.standard.removeObject(
+            forKey:
+                "notia_pending_push_route"
+        )
+
         notifyListeners(
             "pushRouteReceived",
             data: [
