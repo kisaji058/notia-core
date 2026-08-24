@@ -36,9 +36,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                     .userInfo
 
             let route =
-                userInfo["route"]
-                    as? String
-                    ?? "/today"
+                "/today"
 
             UserDefaults.standard.set(
                 route,

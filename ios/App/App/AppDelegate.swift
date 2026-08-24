@@ -118,8 +118,7 @@ class AppDelegate:
                 .content.userInfo
 
         let route =
-            userInfo["route"] as? String
-                ?? "/today"
+            "/today"
 
         UserDefaults.standard.set(
             route,
