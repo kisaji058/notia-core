@@ -114,6 +114,7 @@ async function sendPush({
   body,
   badge = null,
   sound = "default",
+  route = "/today",
 }) {
   if (
     typeof deviceToken !==
@@ -146,6 +147,7 @@ async function sendPush({
       },
       sound,
     },
+    route,
   };
 
   if (

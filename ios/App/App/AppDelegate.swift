@@ -105,6 +105,40 @@ class AppDelegate:
         _ application: UIApplication
     ) {}
 
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response:
+            UNNotificationResponse,
+        withCompletionHandler
+            completionHandler:
+                @escaping () -> Void
+    ) {
+        let userInfo =
+            response.notification.request
+                .content.userInfo
+
+        let route =
+            userInfo["route"] as? String
+                ?? "/today"
+
+        UserDefaults.standard.set(
+            route,
+            forKey:
+                "notia_pending_push_route"
+        )
+
+        NotificationCenter.default.post(
+            name:
+                Notification.Name(
+                    "NotiaPushRouteReceived"
+                ),
+            object:
+                route
+        )
+
+        completionHandler()
+    }
+
     func application(
         _ application: UIApplication,
         configurationForConnecting

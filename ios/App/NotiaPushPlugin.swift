@@ -18,6 +18,11 @@ public class NotiaPushPlugin:
                 name: "getDeviceToken",
                 returnType:
                     CAPPluginReturnPromise
+            ),
+            CAPPluginMethod(
+                name: "getPendingRoute",
+                returnType:
+                    CAPPluginReturnPromise
             )
         ]
 
@@ -33,6 +38,27 @@ public class NotiaPushPlugin:
         call.resolve([
             "deviceToken":
                 token as Any
+        ])
+    }
+
+    @objc func getPendingRoute(
+        _ call: CAPPluginCall
+    ) {
+        let key =
+            "notia_pending_push_route"
+
+        let route =
+            UserDefaults.standard.string(
+                forKey: key
+            )
+
+        UserDefaults.standard.removeObject(
+            forKey: key
+        )
+
+        call.resolve([
+            "route":
+                route as Any
         ])
     }
 }
