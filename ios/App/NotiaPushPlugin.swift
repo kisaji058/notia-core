@@ -74,9 +74,23 @@ public class NotiaPushPlugin:
                     "notia_apns_device_token"
             )
 
+        let environment =
+            Bundle.main.object(
+                forInfoDictionaryKey:
+                    "NotiaAPNSEnvironment"
+            ) as? String
+            ?? "development"
+
+        let apnsEnvironment =
+            environment == "production"
+                ? "production"
+                : "sandbox"
+
         call.resolve([
             "deviceToken":
-                token as Any
+                token as Any,
+            "environment":
+                apnsEnvironment
         ])
     }
 

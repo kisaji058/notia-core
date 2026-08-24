@@ -17,6 +17,9 @@ router.post(
       const deviceToken =
         req.body?.deviceToken;
 
+      const environment =
+        req.body?.environment;
+
       if (
         typeof deviceToken !==
           "string" ||
@@ -29,6 +32,11 @@ router.post(
         });
       }
 
+      const apnsEnvironment =
+        environment === "production"
+          ? "production"
+          : "sandbox";
+
       upsertNativePushToken({
         userId:
           req.userId,
@@ -36,6 +44,7 @@ router.post(
           deviceToken.trim(),
         platform:
           "ios",
+        apnsEnvironment,
       });
 
       return res.json({

@@ -16,10 +16,14 @@ async function getJose() {
   return josePromise;
 }
 
-function getConfig() {
+function getConfig(
+  requestedEnvironment
+) {
   const environment =
-    process.env.APNS_ENVIRONMENT ||
-    "sandbox";
+    requestedEnvironment ===
+      "production"
+      ? "production"
+      : "sandbox";
 
   const isProduction =
     environment === "production";
@@ -62,7 +66,9 @@ function getConfig() {
   };
 }
 
-async function createProviderToken() {
+async function createProviderToken(
+  environment
+) {
   const {
     SignJWT,
     importPKCS8,
@@ -72,8 +78,7 @@ async function createProviderToken() {
     keyId,
     teamId,
     keyPath,
-    environment,
-  } = getConfig();
+  } = getConfig(environment);
 
   const cacheKey =
     `${environment}:${keyId}`;
@@ -136,6 +141,7 @@ async function sendPush({
   badge = null,
   sound = "default",
   route = "/today",
+  environment = "sandbox",
 }) {
   if (
     typeof deviceToken !==
@@ -149,14 +155,18 @@ async function sendPush({
 
   const {
     bundleId,
-    environment,
-  } = getConfig();
+    environment:
+      resolvedEnvironment,
+  } = getConfig(environment);
 
   const providerToken =
-    await createProviderToken();
+    await createProviderToken(
+      resolvedEnvironment
+    );
 
   const origin =
-    environment === "production"
+    resolvedEnvironment ===
+      "production"
       ? "https://api.push.apple.com"
       : "https://api.sandbox.push.apple.com";
 

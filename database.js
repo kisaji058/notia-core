@@ -2547,24 +2547,29 @@ function upsertNativePushToken({
   userId,
   deviceToken,
   platform = "ios",
+  apnsEnvironment = "sandbox",
 }) {
   return db.prepare(`
     INSERT INTO native_push_tokens (
       user_id,
       device_token,
-      platform
+      platform,
+      apns_environment
     )
-    VALUES (?, ?, ?)
+    VALUES (?, ?, ?, ?)
 
     ON CONFLICT(device_token)
     DO UPDATE SET
       user_id = excluded.user_id,
       platform = excluded.platform,
+      apns_environment =
+        excluded.apns_environment,
       updated_at = CURRENT_TIMESTAMP
   `).run(
     userId,
     deviceToken,
-    platform
+    platform,
+    apnsEnvironment
   );
 }
 
@@ -2590,6 +2595,7 @@ function getNativePushTokensByUserId(
       id,
       device_token,
       platform,
+      apns_environment,
       created_at,
       updated_at
     FROM native_push_tokens

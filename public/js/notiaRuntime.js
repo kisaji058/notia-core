@@ -502,6 +502,12 @@
     const deviceToken =
       result?.deviceToken;
 
+    const environment =
+      result?.environment ===
+        "production"
+        ? "production"
+        : "sandbox";
+
     if (
       typeof deviceToken !==
         "string" ||
@@ -525,6 +531,7 @@
           },
           body: JSON.stringify({
             deviceToken,
+            environment,
           }),
         }
       );
