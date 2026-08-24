@@ -60,15 +60,15 @@ a {
 
 
 .login-hero-image {
-  width: 110%;
-  height: 110%;
+  width: 108%;
+  height: 108%;
 
   display: block;
 
   object-fit: contain;
   object-position: center center;
 
-  transform: translate(0%, -2%);
+  transform: translate(0%, 2%);
 }
 
 /* =====================
