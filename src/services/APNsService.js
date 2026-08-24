@@ -18,21 +18,30 @@ async function getJose() {
 }
 
 function getConfig() {
+  const environment =
+    process.env.APNS_ENVIRONMENT ||
+    "sandbox";
+
+  const isProduction =
+    environment === "production";
+
   const keyId =
-    process.env.APNS_KEY_ID;
+    isProduction
+      ? process.env
+          .APNS_PRODUCTION_KEY_ID
+      : process.env.APNS_KEY_ID;
+
+  const keyPath =
+    isProduction
+      ? process.env
+          .APNS_PRODUCTION_KEY_PATH
+      : process.env.APNS_KEY_PATH;
 
   const teamId =
     process.env.APNS_TEAM_ID;
 
   const bundleId =
     process.env.APNS_BUNDLE_ID;
-
-  const keyPath =
-    process.env.APNS_KEY_PATH;
-
-  const environment =
-    process.env.APNS_ENVIRONMENT ||
-    "sandbox";
 
   if (
     !keyId ||
@@ -55,15 +64,6 @@ function getConfig() {
 }
 
 async function createProviderToken() {
-  if (
-    cachedJwt &&
-    Date.now() -
-      cachedJwtCreatedAt <
-      JWT_MAX_AGE_MS
-  ) {
-    return cachedJwt;
-  }
-
   const {
     SignJWT,
     importPKCS8,
@@ -73,7 +73,23 @@ async function createProviderToken() {
     keyId,
     teamId,
     keyPath,
+    environment,
   } = getConfig();
+
+  const cacheKey =
+    `${environment}:${keyId}`;
+
+  const cached =
+    jwtCache.get(cacheKey);
+
+  if (
+    cached &&
+    Date.now() -
+      cached.createdAt <
+      JWT_MAX_AGE_MS
+  ) {
+    return cached.token;
+  }
 
   const privateKeyPem =
     fs.readFileSync(
@@ -92,7 +108,7 @@ async function createProviderToken() {
       Date.now() / 1000
     );
 
-  cachedJwt =
+  const token =
     await new SignJWT({})
       .setProtectedHeader({
         alg: "ES256",
@@ -102,10 +118,16 @@ async function createProviderToken() {
       .setIssuedAt(now)
       .sign(privateKey);
 
-  cachedJwtCreatedAt =
-    Date.now();
+  jwtCache.set(
+    cacheKey,
+    {
+      token,
+      createdAt:
+        Date.now(),
+    }
+  );
 
-  return cachedJwt;
+  return token;
 }
 
 async function sendPush({
