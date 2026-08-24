@@ -2,8 +2,7 @@ const fs = require("fs");
 const http2 = require("http2");
 
 let josePromise = null;
-let cachedJwt = null;
-let cachedJwtCreatedAt = 0;
+const jwtCache = new Map();
 
 const JWT_MAX_AGE_MS =
   50 * 60 * 1000;
