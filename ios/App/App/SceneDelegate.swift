@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import UserNotifications
 
 class NotiaBridgeViewController:
     CAPBridgeViewController
@@ -15,7 +16,11 @@ class NotiaBridgeViewController:
     }
 }
 
-class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+class SceneDelegate:
+    UIResponder,
+    UIWindowSceneDelegate,
+    UNUserNotificationCenterDelegate
+{
 
     var window: UIWindow?
 
@@ -81,6 +86,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             willConnectTo: session,
             options: connectionOptions
         )
+
+        UNUserNotificationCenter
+            .current()
+            .delegate = self
     }
 
     private func showNotiaSplash(
@@ -175,4 +184,39 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                 userActivity
         )
     }
+    func userNotificationCenter(
+        _ center:
+            UNUserNotificationCenter,
+        didReceive response:
+            UNNotificationResponse,
+        withCompletionHandler
+            completionHandler:
+                @escaping () -> Void
+    ) {
+        let route =
+            "/today"
+
+        UserDefaults.standard.set(
+            route,
+            forKey:
+                "notia_pending_push_route"
+        )
+
+        DispatchQueue.main.asyncAfter(
+            deadline:
+                .now() + 0.5
+        ) {
+            NotificationCenter.default.post(
+                name:
+                    Notification.Name(
+                        "NotiaPushRouteReceived"
+                    ),
+                object:
+                    route
+            )
+        }
+
+        completionHandler()
+    }
+
 }
