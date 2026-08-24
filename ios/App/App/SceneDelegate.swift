@@ -24,6 +24,29 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         willConnectTo session: UISceneSession,
         options connectionOptions: UIScene.ConnectionOptions
     ) {
+        if
+            let response =
+                connectionOptions
+                    .notificationResponse
+        {
+            let userInfo =
+                response.notification
+                    .request
+                    .content
+                    .userInfo
+
+            let route =
+                userInfo["route"]
+                    as? String
+                    ?? "/today"
+
+            UserDefaults.standard.set(
+                route,
+                forKey:
+                    "notia_pending_push_route"
+            )
+        }
+
         guard
             let windowScene =
                 scene as? UIWindowScene
