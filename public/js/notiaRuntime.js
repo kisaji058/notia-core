@@ -536,6 +536,30 @@
     }
   }
 
+  async function getNativePushDeviceToken() {
+    if (!isNativeApp()) {
+      return null;
+    }
+
+    const push =
+      window.Capacitor
+        ?.Plugins
+        ?.NotiaPush;
+
+    if (!push) {
+      return null;
+    }
+
+    const result =
+      await push.getDeviceToken();
+
+    return typeof result?.deviceToken ===
+      "string" &&
+      result.deviceToken
+      ? result.deviceToken
+      : null;
+  }
+
   async function unregisterNativePushToken() {
     if (!isNativeApp()) {
       return;
@@ -677,6 +701,7 @@
     saveAuthToken,
     getAuthToken,
     removeAuthToken,
+    getNativePushDeviceToken,
     unregisterNativePushToken,
     handleAppUrl,
   };

@@ -735,16 +735,10 @@ async function saveNotificationSettings(
 
         if (token) {
           try {
-            await window.NotiaRuntime
-              .unregisterNativePushToken();
-          } catch (error) {
-            console.warn(
-              "Native push unregister failed:",
-              error
-            );
-          }
+            const deviceToken =
+              await window.NotiaRuntime
+                .getNativePushDeviceToken();
 
-          try {
             const response =
               await fetch(
                 window.NotiaRuntime.apiUrl(
@@ -753,9 +747,14 @@ async function saveNotificationSettings(
                 {
                   method: "POST",
                   headers: {
+                    "Content-Type":
+                      "application/json",
                     Authorization:
                       `Bearer ${token}`,
                   },
+                  body: JSON.stringify({
+                    deviceToken,
+                  }),
                 }
               );
 

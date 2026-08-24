@@ -16,6 +16,7 @@ const {
 
 const {
   getUserById,
+  deleteNativePushToken,
 } = require("../../database");
 
 const authService =
@@ -24,6 +25,7 @@ const authService =
 const {
   createAuthCode,
   exchangeAuthCode,
+  authenticateToken,
   revokeToken,
 } = require(
   "../services/NativeAuthService"
@@ -361,6 +363,7 @@ router.get("/me", (req, res) => {
 
 router.post(
   "/native/logout",
+  express.json(),
   (req, res) => {
     try {
       const authorization =
@@ -371,11 +374,39 @@ router.post(
           /^Bearer\s+(.+)$/i
         );
 
-      if (match?.[1]) {
-        revokeToken(
-          match[1].trim()
+      const token =
+        match?.[1]?.trim();
+
+      if (!token) {
+        return res.status(401).json({
+          success: false,
+        });
+      }
+
+      const auth =
+        authenticateToken(token);
+
+      if (!auth) {
+        return res.status(401).json({
+          success: false,
+        });
+      }
+
+      const deviceToken =
+        req.body?.deviceToken;
+
+      if (
+        typeof deviceToken ===
+          "string" &&
+        deviceToken.trim()
+      ) {
+        deleteNativePushToken(
+          auth.userId,
+          deviceToken.trim()
         );
       }
+
+      revokeToken(token);
 
       return res.json({
         success: true,
