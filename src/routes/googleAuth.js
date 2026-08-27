@@ -9,6 +9,10 @@ const {
   consumeState,
 } = require("../services/NativeGoogleCalendarOAuthService");
 
+const {
+  canUseGoogleCalendar,
+} = require("../services/EntitlementService");
+
 function requireAuth(req, res, next) {
   if (!req.session?.userId) {
     return res.status(401).json({
@@ -51,6 +55,20 @@ router.get(
   "/google",
   requireAuth,
   (req, res) => {
+  if (
+    !canUseGoogleCalendar(
+      req.session.userId
+    )
+  ) {
+    return res.status(403).json({
+      success: false,
+      code: "SUBSCRIPTION_REQUIRED",
+      requiredPlan: "standard",
+      error:
+        "Googleカレンダー連携はStandard以上で利用できます。",
+    });
+  }
+
   const state =
     crypto.randomBytes(32).toString("hex");
 
@@ -123,6 +141,26 @@ router.get(
         isNativeFlow = true;
         userId =
           nativeState.userId;
+      }
+
+      if (
+        !canUseGoogleCalendar(
+          userId
+        )
+      ) {
+        if (isNativeFlow) {
+          return res.redirect(
+            "notia://calendar/google/callback?success=0&reason=subscription_required"
+          );
+        }
+
+        return res.status(403).json({
+          success: false,
+          code: "SUBSCRIPTION_REQUIRED",
+          requiredPlan: "standard",
+          error:
+            "Googleカレンダー連携はStandard以上で利用できます。",
+        });
       }
 
       const account =

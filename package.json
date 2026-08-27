@@ -12,6 +12,7 @@
   "type": "commonjs",
   "dependencies": {
     "@aparajita/capacitor-secure-storage": "^8.0.0",
+    "@apple/app-store-server-library": "^3.1.0",
     "@capacitor/app": "^8.1.1",
     "@capacitor/browser": "^8.0.4",
     "@capacitor/core": "^8.5.0",
@@ -25,7 +26,8 @@
     "googleapis": "^173.0.0",
     "jose": "^6.2.10",
     "multer": "^2.2.0",
-    "openai": "^6.45.0"
+    "openai": "^6.45.0",
+    "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.0"

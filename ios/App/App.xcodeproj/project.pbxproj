@@ -17,6 +17,9 @@
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		883A048D3039E9670033670F /* NotiaAppleAuthPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 883A048C3039E9670033670F /* NotiaAppleAuthPlugin.swift */; };
 		8856EB54303C3A2F00F2C3D8 /* NotiaPushPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8856EB53303C3A2F00F2C3D8 /* NotiaPushPlugin.swift */; };
+		8856EB5730404DC200F2C3D8 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8856EB5630404DC200F2C3D8 /* StoreKit.framework */; };
+		8856EB593040653500F2C3D8 /* Notia.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 8856EB583040653500F2C3D8 /* Notia.storekit */; };
+		88A10002303D000000000002 /* NotiaStoreKitPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88A10001303D000000000001 /* NotiaStoreKitPlugin.swift */; };
 		9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9582B6822FE993A50072D4E8 /* SceneDelegate.swift */; };
 /* End PBXBuildFile section */
 
@@ -33,6 +36,9 @@
 		883A048B3039E8320033670F /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		883A048C3039E9670033670F /* NotiaAppleAuthPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotiaAppleAuthPlugin.swift; sourceTree = "<group>"; };
 		8856EB53303C3A2F00F2C3D8 /* NotiaPushPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotiaPushPlugin.swift; sourceTree = "<group>"; };
+		8856EB5630404DC200F2C3D8 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
+		8856EB583040653500F2C3D8 /* Notia.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Notia.storekit; sourceTree = "<group>"; };
+		88A10001303D000000000001 /* NotiaStoreKitPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotiaStoreKitPlugin.swift; sourceTree = "<group>"; };
 		9582B6822FE993A50072D4E8 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
@@ -43,6 +49,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4D22ABE92AF431CB00220026 /* CapApp-SPM in Frameworks */,
+				8856EB5730404DC200F2C3D8 /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -52,10 +59,13 @@
 		504EC2FB1FED79650016851F = {
 			isa = PBXGroup;
 			children = (
+				8856EB583040653500F2C3D8 /* Notia.storekit */,
 				8856EB53303C3A2F00F2C3D8 /* NotiaPushPlugin.swift */,
+				88A10001303D000000000001 /* NotiaStoreKitPlugin.swift */,
 				883A048C3039E9670033670F /* NotiaAppleAuthPlugin.swift */,
 				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
 				504EC3061FED79650016851F /* App */,
+				8856EB5530404DC200F2C3D8 /* Frameworks */,
 				504EC3051FED79650016851F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -83,6 +93,14 @@
 				50B271D01FEDC1A000F3C39B /* public */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		8856EB5530404DC200F2C3D8 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				8856EB5630404DC200F2C3D8 /* StoreKit.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -151,6 +169,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8856EB593040653500F2C3D8 /* Notia.storekit in Resources */,
 				504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */,
 				50B271D11FEDC1A000F3C39B /* public in Resources */,
 				504EC30F1FED79650016851F /* Assets.xcassets in Resources */,
@@ -170,6 +189,7 @@
 				883A048D3039E9670033670F /* NotiaAppleAuthPlugin.swift in Sources */,
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				8856EB54303C3A2F00F2C3D8 /* NotiaPushPlugin.swift in Sources */,
+				88A10002303D000000000002 /* NotiaStoreKitPlugin.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

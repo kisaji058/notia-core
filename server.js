@@ -57,6 +57,9 @@ const onboardingRouter =
   require("./src/routes/onboarding");
 const accountRouter =
   require("./src/routes/account");
+
+const subscriptionRouter =
+  require("./src/routes/subscription");
 const pagesRouter =
   require("./src/routes/pages");
 const eventsRouter =
@@ -93,6 +96,16 @@ const {
 const {
   extractDocumentSchedule,
 } = require("./openai");
+
+const {
+  countDocumentPages,
+} = require("./src/services/DocumentPageCounterService");
+
+const {
+  reserveDocumentUsage,
+  commitDocumentUsage,
+  releaseDocumentUsage,
+} = require("./src/services/UsageService");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -174,6 +187,8 @@ app.use(
 );
 app.use("/login", authRouter);
 
+app.use(express.json());
+
 app.use(
   "/api",
   requireApiAuth
@@ -196,6 +211,11 @@ app.use(
 app.use(
   "/api",
   accountRouter
+);
+
+app.use(
+  "/api",
+  subscriptionRouter
 );
 const documentUpload = multer({
   storage: multer.memoryStorage(),
@@ -377,7 +397,7 @@ app.get("/api/integrations", (req, res) => {
 
 app.use("/auth", googleAuthRouter);
 
-app.use(express.json());
+
 
 app.use("/", pagesRouter);
 
@@ -441,11 +461,13 @@ function normalizeUploadFilename(
 
 app.post(
   "/api/document/extract",
-
   documentUpload.single("file"),
-
   async (req, res) => {
+
+    let reservation = null;
+
     try {
+
       if (!req.file) {
         return res
           .status(400)
@@ -457,69 +479,159 @@ app.post(
       }
 
       const originalName =
-  normalizeUploadFilename(
-    req.file.originalname
-  );
+        normalizeUploadFilename(
+          req.file.originalname
+        );
 
-console.log(
-  "Document received:",
-  {
-    originalName,
-    mimeType:
-      req.file.mimetype,
-    size:
-      req.file.size,
-  }
-);
+      const pageCount =
+        await countDocumentPages({
+          buffer:
+            req.file.buffer,
+          mimeType:
+            req.file.mimetype,
+        });
 
-     const result =
-  await extractDocumentSchedule({
-    buffer:
-      req.file.buffer,
+      if (
+        !Number.isInteger(pageCount) ||
+        pageCount < 1
+      ) {
+        return res.status(400).json({
+          success: false,
+          error:
+            "資料のページ数を確認できませんでした。",
+        });
+      }
 
-    mimeType:
-      req.file.mimetype,
+      const usage =
+        reserveDocumentUsage({
+          userId:
+            req.userId,
+          pageCount,
+        });
 
-    fileName:
-      originalName,
+      if (!usage.success) {
+        return res.status(429).json({
+          success: false,
+          code:
+            "DOCUMENT_PAGE_LIMIT_REACHED",
+          error:
+            "今月の資料読み取り上限を超えています。",
+          usage: {
+            requestedPages:
+              pageCount,
+            usedPages:
+              usage.usedCount,
+            reservedPages:
+              usage.reservedCount,
+            limit:
+              usage.limit,
+          },
+        });
+      }
 
-    userMessage:
-      String(
-        req.body.message || ""
-      ).trim(),
-  });
+      reservation =
+        usage.reservation;
 
-  console.log(
-  "Document extraction result:",
-  JSON.stringify(
-    result,
-    null,
-    2
-  )
-);
+      console.log(
+        "Document received:",
+        {
+          originalName,
+          mimeType:
+            req.file.mimetype,
+          size:
+            req.file.size,
+          pageCount,
+        }
+      );
 
-return res.json({
-  success: true,
+      const result =
+        await extractDocumentSchedule({
+          buffer:
+            req.file.buffer,
+          mimeType:
+            req.file.mimetype,
+          fileName:
+            originalName,
+          userMessage:
+            String(
+              req.body.message || ""
+            ).trim(),
+        });
 
-  file: {
-    name: originalName,
-    type:
-      req.file.mimetype,
-    size:
-      req.file.size,
-  },
+      if (reservation) {
+        const committed =
+          commitDocumentUsage({
+            userId:
+              req.userId,
+            reservation,
+          });
 
-  items:
-    Array.isArray(result.items)
-      ? result.items
-      : [],
+        if (
+          !committed ||
+          committed.changes !== 1
+        ) {
+          throw new Error(
+            "Document usage commit failed."
+          );
+        }
 
-  warnings:
-    Array.isArray(result.warnings)
-      ? result.warnings
-      : [],
-}); 
+        reservation = null;
+      }
+
+      console.log(
+        "Document extraction result:",
+        JSON.stringify(
+          result,
+          null,
+          2
+        )
+      );
+
+      return res.json({
+        success: true,
+
+        file: {
+          name:
+            originalName,
+          type:
+            req.file.mimetype,
+          size:
+            req.file.size,
+          pageCount,
+        },
+
+        items:
+          Array.isArray(result.items)
+            ? result.items
+            : [],
+
+        warnings:
+          Array.isArray(
+            result.warnings
+          )
+            ? result.warnings
+            : [],
+      });
+
     } catch (error) {
+
+      if (reservation) {
+        try {
+          releaseDocumentUsage({
+            userId:
+              req.userId,
+            reservation,
+          });
+        } catch (
+          releaseError
+        ) {
+          console.error(
+            "Document usage release error:",
+            releaseError
+          );
+        }
+      }
+
       console.error(
         "Document upload error:",
         error

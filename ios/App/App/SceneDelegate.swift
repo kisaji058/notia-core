@@ -13,6 +13,26 @@ class NotiaBridgeViewController:
         bridge?.registerPluginInstance(
             NotiaPushPlugin()
         )
+
+        bridge?.registerPluginInstance(
+            NotiaStoreKitPlugin()
+        )
+
+#if DEBUG
+        if #available(iOS 16.4, *) {
+            if let webView = bridge?.webView {
+                webView.isInspectable = true
+                print(
+                    "NOTIA_WEBVIEW_INSPECTABLE:",
+                    webView.isInspectable
+                )
+            } else {
+                print(
+                    "NOTIA_WEBVIEW_INSPECTABLE: webView nil"
+                )
+            }
+        }
+#endif
     }
 }
 

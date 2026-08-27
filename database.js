@@ -2270,7 +2270,264 @@ function getActiveEvents(
   );
 }
 
+
+// =====================
+// subscriptions
+// =====================
+
+function getUserSubscription(
+  userId
+) {
+  return db.prepare(`
+    SELECT
+      id,
+      user_id,
+      platform,
+      plan,
+      product_id,
+      original_transaction_id,
+      status,
+      expires_at,
+      auto_renew_status,
+      last_verified_at,
+      created_at,
+      updated_at
+    FROM user_subscriptions
+    WHERE user_id = ?
+    LIMIT 1
+  `).get(userId);
+}
+
+function upsertUserSubscription({
+  userId,
+  platform = "apple",
+  plan,
+  productId = null,
+  originalTransactionId = null,
+  status,
+  expiresAt = null,
+  autoRenewStatus = null,
+  lastVerifiedAt = null,
+}) {
+  return db.prepare(`
+    INSERT INTO user_subscriptions (
+      user_id,
+      platform,
+      plan,
+      product_id,
+      original_transaction_id,
+      status,
+      expires_at,
+      auto_renew_status,
+      last_verified_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+
+    ON CONFLICT(user_id)
+    DO UPDATE SET
+      platform = excluded.platform,
+      plan = excluded.plan,
+      product_id = excluded.product_id,
+      original_transaction_id =
+        excluded.original_transaction_id,
+      status = excluded.status,
+      expires_at = excluded.expires_at,
+      auto_renew_status =
+        excluded.auto_renew_status,
+      last_verified_at =
+        excluded.last_verified_at,
+      updated_at = CURRENT_TIMESTAMP
+  `).run(
+    userId,
+    platform,
+    plan,
+    productId,
+    originalTransactionId,
+    status,
+    expiresAt,
+    autoRenewStatus,
+    lastVerifiedAt
+  );
+}
+
+
+// =====================
+// usage counters
+// =====================
+
+function reserveDocumentPages({
+  userId,
+  periodStart,
+  periodEnd,
+  requestedPages,
+  pageLimit,
+}) {
+  const transaction = db.transaction(() => {
+
+    db.prepare(`
+      INSERT INTO usage_counters (
+        user_id,
+        usage_type,
+        period_start,
+        period_end,
+        used_count,
+        reserved_count
+      )
+      VALUES (?, 'document_pages', ?, ?, 0, 0)
+
+      ON CONFLICT(
+        user_id,
+        usage_type,
+        period_start,
+        period_end
+      )
+      DO NOTHING
+    `).run(
+      userId,
+      periodStart,
+      periodEnd
+    );
+
+    const current =
+      db.prepare(`
+        SELECT
+          used_count,
+          reserved_count
+        FROM usage_counters
+        WHERE user_id = ?
+          AND usage_type = 'document_pages'
+          AND period_start = ?
+          AND period_end = ?
+        LIMIT 1
+      `).get(
+        userId,
+        periodStart,
+        periodEnd
+      );
+
+    if (!current) {
+      throw new Error(
+        "Usage counter could not be created."
+      );
+    }
+
+    if (
+      pageLimit !== null &&
+      current.used_count +
+        current.reserved_count +
+        requestedPages >
+        pageLimit
+    ) {
+      return {
+        success: false,
+        usedCount:
+          current.used_count,
+        reservedCount:
+          current.reserved_count,
+        limit:
+          pageLimit,
+      };
+    }
+
+    db.prepare(`
+      UPDATE usage_counters
+      SET
+        reserved_count =
+          reserved_count + ?,
+        updated_at =
+          CURRENT_TIMESTAMP
+      WHERE user_id = ?
+        AND usage_type =
+          'document_pages'
+        AND period_start = ?
+        AND period_end = ?
+    `).run(
+      requestedPages,
+      userId,
+      periodStart,
+      periodEnd
+    );
+
+    return {
+      success: true,
+      usedCount:
+        current.used_count,
+      reservedCount:
+        current.reserved_count +
+        requestedPages,
+      limit:
+        pageLimit,
+    };
+  });
+
+  return transaction();
+}
+
+function commitDocumentPages({
+  userId,
+  periodStart,
+  periodEnd,
+  pageCount,
+}) {
+  return db.prepare(`
+    UPDATE usage_counters
+    SET
+      reserved_count =
+        reserved_count - ?,
+      used_count =
+        used_count + ?,
+      updated_at =
+        CURRENT_TIMESTAMP
+    WHERE user_id = ?
+      AND usage_type =
+        'document_pages'
+      AND period_start = ?
+      AND period_end = ?
+      AND reserved_count >= ?
+  `).run(
+    pageCount,
+    pageCount,
+    userId,
+    periodStart,
+    periodEnd,
+    pageCount
+  );
+}
+
+function releaseDocumentPages({
+  userId,
+  periodStart,
+  periodEnd,
+  pageCount,
+}) {
+  return db.prepare(`
+    UPDATE usage_counters
+    SET
+      reserved_count =
+        reserved_count - ?,
+      updated_at =
+        CURRENT_TIMESTAMP
+    WHERE user_id = ?
+      AND usage_type =
+        'document_pages'
+      AND period_start = ?
+      AND period_end = ?
+      AND reserved_count >= ?
+  `).run(
+    pageCount,
+    userId,
+    periodStart,
+    periodEnd,
+    pageCount
+  );
+}
+
 module.exports = {
+  reserveDocumentPages,
+  commitDocumentPages,
+  releaseDocumentPages,
+  getUserSubscription,
+  upsertUserSubscription,
   getAllUsers,
   getUserById,
   saveConversation,

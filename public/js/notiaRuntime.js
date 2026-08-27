@@ -792,6 +792,286 @@
     );
   }
 
+
+  function getStoreKit() {
+    if (!isNativeApp()) {
+      return null;
+    }
+
+    return window.Capacitor
+      ?.Plugins
+      ?.NotiaStoreKit ||
+      null;
+  }
+
+  async function getCurrentSubscription() {
+    const storeKit =
+      getStoreKit();
+
+    if (!storeKit) {
+      return {
+        activeProductId: null,
+        entitlements: [],
+      };
+    }
+
+    return storeKit
+      .getCurrentEntitlements();
+  }
+
+  async function syncDevSubscription(
+    entitlement
+  ) {
+    if (
+      !entitlement ||
+      typeof entitlement.productId !==
+        "string" ||
+      !entitlement.productId
+    ) {
+      throw new Error(
+        "Subscription entitlement is required"
+      );
+    }
+
+    const authToken =
+      isNativeApp()
+        ? await getAuthToken()
+        : null;
+
+    if (
+      isNativeApp() &&
+      !authToken
+    ) {
+      throw new Error(
+        "Auth token is required"
+      );
+    }
+
+    const headers = {
+      "Content-Type":
+        "application/json",
+    };
+
+    if (authToken) {
+      headers.Authorization =
+        `Bearer ${authToken}`;
+    }
+
+    const response =
+      await fetch(
+        apiUrl(
+          "/api/subscription/dev-sync"
+        ),
+        {
+          method: "POST",
+          headers,
+          credentials:
+            isNativeApp()
+              ? "omit"
+              : "same-origin",
+          body: JSON.stringify({
+            productId:
+              entitlement.productId,
+            originalTransactionId:
+              entitlement
+                .originalTransactionId ||
+              null,
+            expirationDate:
+              entitlement
+                .expirationDate ||
+              null,
+          }),
+        }
+      );
+
+    const result =
+      await response
+        .json()
+        .catch(
+          () => ({})
+        );
+
+    if (!response.ok) {
+      throw new Error(
+        result.error ||
+        `Subscription sync failed: ${response.status}`
+      );
+    }
+
+    return result;
+  }
+
+  async function syncAppleSubscription(
+    entitlement
+  ) {
+    if (
+      !entitlement ||
+      typeof entitlement.signedTransaction !==
+        "string" ||
+      !entitlement.signedTransaction
+    ) {
+      throw new Error(
+        "Signed transaction is required"
+      );
+    }
+
+    const authToken =
+      isNativeApp()
+        ? await getAuthToken()
+        : null;
+
+    if (
+      isNativeApp() &&
+      !authToken
+    ) {
+      throw new Error(
+        "Auth token is required"
+      );
+    }
+
+    const headers = {
+      "Content-Type":
+        "application/json",
+    };
+
+    if (authToken) {
+      headers.Authorization =
+        `Bearer ${authToken}`;
+    }
+
+    const response =
+      await fetch(
+        apiUrl(
+          "/api/subscription/sync"
+        ),
+        {
+          method: "POST",
+          headers,
+          credentials:
+            isNativeApp()
+              ? "omit"
+              : "same-origin",
+          body: JSON.stringify({
+            signedTransaction:
+              entitlement
+                .signedTransaction,
+          }),
+        }
+      );
+
+    const result =
+      await response
+        .json()
+        .catch(
+          () => ({})
+        );
+
+    if (!response.ok) {
+      throw new Error(
+        result.error ||
+        `Subscription sync failed: ${response.status}`
+      );
+    }
+
+    return result;
+  }
+
+  async function purchaseSubscription(
+    productId
+  ) {
+    const storeKit =
+      getStoreKit();
+
+    if (!storeKit) {
+      throw new Error(
+        "StoreKit plugin not available"
+      );
+    }
+
+    const purchase =
+      await storeKit.purchase({
+        productId,
+      });
+
+    if (
+      purchase?.cancelled ||
+      purchase?.pending ||
+      purchase?.success !== true
+    ) {
+      return purchase;
+    }
+
+    const entitlements =
+      await storeKit
+        .getCurrentEntitlements();
+
+    const activeProductId =
+      entitlements
+        ?.activeProductId;
+
+    const activeEntitlement =
+      Array.isArray(
+        entitlements?.entitlements
+      )
+        ? entitlements.entitlements.find(
+            (item) =>
+              item?.productId ===
+              activeProductId
+          )
+        : null;
+
+    if (activeEntitlement) {
+      await syncAppleSubscription(
+        activeEntitlement
+      );
+    }
+
+    return {
+      ...purchase,
+      activeProductId,
+      entitlements:
+        entitlements?.entitlements ||
+        [],
+    };
+  }
+
+  async function restoreSubscription() {
+    const storeKit =
+      getStoreKit();
+
+    if (!storeKit) {
+      throw new Error(
+        "StoreKit plugin not available"
+      );
+    }
+
+    const restored =
+      await storeKit
+        .restorePurchases();
+
+    const activeProductId =
+      restored?.activeProductId;
+
+    const activeEntitlement =
+      Array.isArray(
+        restored?.entitlements
+      )
+        ? restored.entitlements.find(
+            (item) =>
+              item?.productId ===
+              activeProductId
+          )
+        : null;
+
+    if (activeEntitlement) {
+      await syncAppleSubscription(
+        activeEntitlement
+      );
+    }
+
+    return restored;
+  }
+
   window.NotiaRuntime = {
     API_ORIGIN,
     isNativeApp,
@@ -805,6 +1085,12 @@
     getNativePushDeviceToken,
     unregisterNativePushToken,
     handleAppUrl,
+    getStoreKit,
+    getCurrentSubscription,
+    syncDevSubscription,
+    syncAppleSubscription,
+    purchaseSubscription,
+    restoreSubscription,
   };
 
   setupNativeKeyboard();

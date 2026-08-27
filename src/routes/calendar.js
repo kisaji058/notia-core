@@ -24,6 +24,10 @@ const {
   createState,
 } = require("../services/NativeGoogleCalendarOAuthService");
 
+const {
+  canUseGoogleCalendar,
+} = require("../services/EntitlementService");
+
 const router = express.Router();
 
 function normalizeRoutineDays(
@@ -121,6 +125,20 @@ router.post(
   "/calendar/google/native/start",
   (req, res) => {
     try {
+      if (
+        !canUseGoogleCalendar(
+          req.userId
+        )
+      ) {
+        return res.status(403).json({
+          success: false,
+          code: "SUBSCRIPTION_REQUIRED",
+          requiredPlan: "standard",
+          error:
+            "Googleカレンダー連携はStandard以上で利用できます。",
+        });
+      }
+
       const {
         state,
         expiresAt,
@@ -182,6 +200,20 @@ router.post(
 
 router.post("/calendar/sync", async (req, res) => {
   try {
+    if (
+      !canUseGoogleCalendar(
+        req.userId
+      )
+    ) {
+      return res.status(403).json({
+        success: false,
+        code: "SUBSCRIPTION_REQUIRED",
+        requiredPlan: "standard",
+        error:
+          "Googleカレンダー同期はStandard以上で利用できます。",
+      });
+    }
+
     const result =
   await syncGoogleCalendar(
     req.userId
