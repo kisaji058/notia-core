@@ -890,6 +890,32 @@
 
   let adMobBannerListenersReady = false;
   let adMobInitializationPromise = null;
+  let adMobConsentPromise = null;
+
+  async function ensureAdMobConsent(
+    adMob
+  ) {
+    if (!adMobConsentPromise) {
+      adMobConsentPromise = (async () => {
+        let consentInfo =
+          await adMob.requestConsentInfo();
+
+        if (
+          consentInfo?.canRequestAds !== true &&
+          consentInfo?.isConsentFormAvailable
+        ) {
+          consentInfo =
+            await adMob.showConsentForm();
+        }
+
+        return (
+          consentInfo?.canRequestAds === true
+        );
+      })();
+    }
+
+    return adMobConsentPromise;
+  }
 
   async function initializeAdMob(
     adMob
@@ -1006,6 +1032,25 @@
     await initializeAdMob(
       adMob
     );
+
+    const canRequestAds =
+      await ensureAdMobConsent(
+        adMob
+      );
+
+    if (!canRequestAds) {
+      document.documentElement
+        .style
+        .setProperty(
+          "--ad-banner-height",
+          "0px"
+        );
+
+      await adMob.removeBanner()
+        .catch(() => {});
+
+      return;
+    }
 
     await adMob.removeBanner()
       .catch(() => {});
