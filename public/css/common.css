@@ -324,6 +324,10 @@ button {
   color: #6d7d79;
 }
 
+.account-menu-item[hidden] {
+  display: none !important;
+}
+
 .account-menu-item {
   justify-content: flex-start;
 

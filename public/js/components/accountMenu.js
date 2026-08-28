@@ -889,6 +889,14 @@ async function saveNotificationSettings(
       </a>
 
       <button
+        class="account-menu-item account-menu-ad-privacy"
+        type="button"
+        hidden
+      >
+        広告のプライバシー設定
+      </button>
+
+      <button
         class="account-menu-item account-menu-logout"
         type="button"
       >
@@ -932,6 +940,60 @@ async function saveNotificationSettings(
 
     if (!document.body.contains(menu)) {
       return;
+    }
+
+    const adPrivacyButton =
+      menu.querySelector(
+        ".account-menu-ad-privacy"
+      );
+
+    if (
+      adPrivacyButton &&
+      window.NotiaRuntime
+        ?.isNativeApp?.()
+    ) {
+      const adMob =
+        window.Capacitor
+          ?.Plugins
+          ?.AdMob;
+
+      if (adMob) {
+        try {
+          const consentInfo =
+            await adMob
+              .requestConsentInfo();
+
+          if (
+            consentInfo
+              ?.privacyOptionsRequirementStatus ===
+            "REQUIRED"
+          ) {
+            adPrivacyButton.hidden =
+              false;
+
+            adPrivacyButton
+              .addEventListener(
+                "click",
+                async () => {
+                  try {
+                    await adMob
+                      .showPrivacyOptionsForm();
+                  } catch (error) {
+                    console.error(
+                      "Ad privacy options error:",
+                      error
+                    );
+                  }
+                }
+              );
+          }
+        } catch (error) {
+          console.error(
+            "Ad privacy status error:",
+            error
+          );
+        }
+      }
     }
 
     if (!google) {
