@@ -1,4 +1,6 @@
 import UIKit
+
+import WebKit
 import Capacitor
 import UserNotifications
 
@@ -17,6 +19,34 @@ class NotiaBridgeViewController:
         bridge?.registerPluginInstance(
             NotiaStoreKitPlugin()
         )
+
+        // Native AdMob build switch
+        if let webView = bridge?.webView {
+#if DEBUG
+            let useTestAds = true
+#else
+            let useTestAds = false
+#endif
+
+            let source =
+                "window.NOTIA_USE_TEST_ADS = \(useTestAds);"
+
+            let script =
+                WKUserScript(
+                    source: source,
+                    injectionTime: .atDocumentStart,
+                    forMainFrameOnly: true
+                )
+
+            webView
+                .configuration
+                .userContentController
+                .addUserScript(script)
+
+            webView.evaluateJavaScript(
+                source
+            )
+        }
 
 #if DEBUG
         if #available(iOS 16.4, *) {

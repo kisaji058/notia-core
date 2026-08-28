@@ -869,7 +869,8 @@
     return result.subscription;
   }
 
-  const ADMOB_USE_TEST_ADS = true;
+  const ADMOB_USE_TEST_ADS =
+    window.NOTIA_USE_TEST_ADS !== false;
 
   const ADMOB_TEST_BANNER_ID =
     "ca-app-pub-3940256099942544/2934735716";
