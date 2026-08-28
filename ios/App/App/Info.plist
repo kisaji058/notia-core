@@ -68,6 +68,9 @@
 	<true/>
 	<key>NotiaAPNSEnvironment</key>
 	<string>$(APS_ENVIRONMENT)</string>
+
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-4900678819792582~6859595342</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

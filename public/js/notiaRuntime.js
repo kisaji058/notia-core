@@ -804,6 +804,227 @@
       null;
   }
 
+  function getAdMob() {
+    if (!isNativeApp()) {
+      return null;
+    }
+
+    return window.Capacitor
+      ?.Plugins
+      ?.AdMob ||
+      null;
+  }
+
+  async function getSubscriptionStatus() {
+    const authToken =
+      isNativeApp()
+        ? await getAuthToken()
+        : null;
+
+    if (
+      isNativeApp() &&
+      !authToken
+    ) {
+      throw new Error(
+        "Auth token is required"
+      );
+    }
+
+    const headers = {};
+
+    if (authToken) {
+      headers.Authorization =
+        `Bearer ${authToken}`;
+    }
+
+    const response =
+      await fetch(
+        apiUrl(
+          "/api/subscription/status"
+        ),
+        {
+          method: "GET",
+          headers,
+          credentials:
+            isNativeApp()
+              ? "omit"
+              : "same-origin",
+        }
+      );
+
+    const result =
+      await response
+        .json()
+        .catch(
+          () => ({})
+        );
+
+    if (!response.ok) {
+      throw new Error(
+        result.error ||
+        `Subscription status failed: ${response.status}`
+      );
+    }
+
+    return result.subscription;
+  }
+
+  const ADMOB_USE_TEST_ADS = true;
+
+  const ADMOB_TEST_BANNER_ID =
+    "ca-app-pub-3940256099942544/2934735716";
+
+  const ADMOB_PRODUCTION_BANNER_ID =
+    "ca-app-pub-4900678819792582/1200959035";
+
+  function getAdMobBannerConfig() {
+    return {
+      adId:
+        ADMOB_USE_TEST_ADS
+          ? ADMOB_TEST_BANNER_ID
+          : ADMOB_PRODUCTION_BANNER_ID,
+      isTesting:
+        ADMOB_USE_TEST_ADS,
+    };
+  }
+
+  let adMobBannerListenersReady = false;
+  let adMobInitializationPromise = null;
+
+  async function initializeAdMob(
+    adMob
+  ) {
+    if (!adMobInitializationPromise) {
+      adMobInitializationPromise =
+        adMob.initialize({
+          initializeForTesting: ADMOB_USE_TEST_ADS,
+        });
+    }
+
+    return adMobInitializationPromise;
+  }
+
+  async function ensureAdMobBannerListeners(
+    adMob
+  ) {
+    if (
+      !adMob ||
+      adMobBannerListenersReady
+    ) {
+      return;
+    }
+
+    await adMob.addListener(
+      "bannerAdLoaded",
+      () => {
+        document.documentElement
+          .style
+          .setProperty(
+            "--ad-banner-height",
+            "50px"
+          );
+      }
+    );
+
+    await adMob.addListener(
+      "bannerAdFailedToLoad",
+      () => {
+        document.documentElement
+          .style
+          .setProperty(
+            "--ad-banner-height",
+            "0px"
+          );
+      }
+    );
+
+    adMobBannerListenersReady = true;
+  }
+
+  async function updateAdBanner() {
+    if (!isNativeApp()) {
+      return;
+    }
+
+    const adMob = getAdMob();
+
+    if (!adMob) {
+      console.warn(
+        "AdMob plugin not available"
+      );
+      return;
+    }
+
+    const bottomNav =
+      document.querySelector(
+        ".bottom-nav"
+      );
+
+    if (!bottomNav) {
+      document.documentElement
+        .style
+        .setProperty(
+          "--ad-banner-height",
+          "0px"
+        );
+
+      await adMob.removeBanner()
+        .catch(() => {});
+
+      return;
+    }
+
+    const subscription =
+      await getSubscriptionStatus();
+
+    if (
+      subscription?.ads !== true
+    ) {
+      document.documentElement
+        .style
+        .setProperty(
+          "--ad-banner-height",
+          "0px"
+        );
+
+      await adMob.removeBanner()
+        .catch(() => {});
+      return;
+    }
+
+    document.documentElement
+      .style
+      .setProperty(
+        "--ad-banner-height",
+        "0px"
+      );
+
+    await ensureAdMobBannerListeners(
+      adMob
+    );
+
+    await initializeAdMob(
+      adMob
+    );
+
+    await adMob.removeBanner()
+      .catch(() => {});
+
+    await adMob.showBanner({
+      adId:
+        getAdMobBannerConfig().adId,
+      adSize:
+        "BANNER",
+      position:
+        "BOTTOM_CENTER",
+      margin:
+        64,
+      isTesting:
+        getAdMobBannerConfig().isTesting,
+      npa: true,
+    });
+  }
+
   async function getCurrentSubscription() {
     const storeKit =
       getStoreKit();
@@ -1024,6 +1245,8 @@
       await syncAppleSubscription(
         activeEntitlement
       );
+
+      await updateAdBanner();
     }
 
     return {
@@ -1067,6 +1290,8 @@
       await syncAppleSubscription(
         activeEntitlement
       );
+
+      await updateAdBanner();
     }
 
     return restored;
@@ -1091,9 +1316,20 @@
     syncAppleSubscription,
     purchaseSubscription,
     restoreSubscription,
+    updateAdBanner,
   };
 
   setupNativeKeyboard();
+
+  const startAdBanner = () => {
+    updateAdBanner()
+      .catch((error) => {
+        console.error(
+          "AdMob banner startup error:",
+          error
+        );
+      });
+  };
 
   if (
     document.readyState ===
@@ -1101,10 +1337,14 @@
   ) {
     document.addEventListener(
       "DOMContentLoaded",
-      rewriteNativeLinks
+      () => {
+        rewriteNativeLinks();
+        startAdBanner();
+      }
     );
   } else {
     rewriteNativeLinks();
+    startAdBanner();
   }
 
   registerNativePushToken()

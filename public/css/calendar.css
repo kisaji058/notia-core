@@ -1244,6 +1244,7 @@ body.calendar-page {
     calc(
       var(--bottom-nav-height) +
       var(--safe-area-bottom) +
+      var(--ad-banner-height) +
       16px
     );
 
@@ -1251,6 +1252,7 @@ body.calendar-page {
     calc(
       var(--bottom-nav-height) +
       var(--safe-area-bottom) +
+      var(--ad-banner-height) +
       16px
     );
 

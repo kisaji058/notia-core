@@ -34,6 +34,7 @@
   --bottom-nav-height: 64px;
   --safe-area-bottom:
     env(safe-area-inset-bottom, 0px);
+  --ad-banner-height: 0px;
 }
 /* ===== Reset ===== */
 
@@ -47,6 +48,7 @@ body {
     calc(
       var(--bottom-nav-height) +
       var(--safe-area-bottom) +
+      var(--ad-banner-height) +
       32px
     );
 
