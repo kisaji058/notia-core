@@ -264,32 +264,57 @@ const scheduledItems =
 function renderUnscheduled(timeline) {
 
   if (!unscheduledList) {
+
     return;
+
   }
 
-  const unscheduledTasks =
+  const unscheduledItems =
+
   timeline.filter(
+
     (item) =>
-      item.type === "task" &&
+
+      (
+
+        item.type === "task" ||
+
+        item.type === "event"
+
+      ) &&
+
       !item.startTime
+
   );
 
-  if (unscheduledTasks.length === 0) {
+  if (unscheduledItems.length === 0) {
+
     unscheduledList.innerHTML = `
+
       <p class="unscheduled-empty">
-        時間未設定のタスクはありません。
+
+        時間未設定のタスク・予定はありません。
+
       </p>
+
     `;
 
     return;
+
   }
 
   unscheduledList.innerHTML =
-  unscheduledTasks
+
+  unscheduledItems
+
     .map((item) =>
+
       window.createUnscheduledCard(item)
+
     )
+
     .join("");
+
 }
 
 function renderOverdueNotice(

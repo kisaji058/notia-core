@@ -499,42 +499,84 @@ ${isCompletedTask
 }
 
 function createUnscheduledCard(item) {
+
+  const typeConfig = {
+
+    task: {
+      label: "タスク",
+      iconSrc:
+        "/images/nav/task-selected.png",
+    },
+
+    event: {
+      label: "予定",
+      iconSrc:
+        "/images/nav/point-selected.png",
+    },
+
+  };
+
+  const config =
+    typeConfig[item.type] ||
+    typeConfig.task;
+
   const isImportantTask =
+
     item.type === "task" &&
+
     (
       item.priority === "high" ||
+      item.priority === "important" ||
       item.subtitle === "重要タスク"
     );
-  
+
   const isCompletedTask =
-  item.type === "task" &&
-  item.status === "completed";
+
+    item.type === "task" &&
+
+    item.status === "completed";
 
   return `
+
     <article
-  class="
-    unscheduled-item
-    ${isCompletedTask
-      ? "unscheduled-item--completed"
-      : ""}
-  "
->
+
+      class="
+        unscheduled-item
+        ${
+          isCompletedTask
+            ? "unscheduled-item--completed"
+            : ""
+        }
+      "
+
+    >
+
       <div class="unscheduled-item-icon">
+
         <img
-          src="/images/nav/task-selected.png"
+
+          src="${config.iconSrc}"
+
           alt=""
+
         >
+
       </div>
 
       <div class="unscheduled-item-main">
+
         <h3>
+
           ${escapeCardHtml(
             item.title
           )}
+
         </h3>
+
       </div>
 
       <div class="timeline-item-right">
+
         ${
           isImportantTask
             ? `
@@ -547,11 +589,19 @@ function createUnscheduledCard(item) {
         }
 
         <span class="timeline-tag">
-          タスク
+
+          ${escapeCardHtml(
+            config.label
+          )}
+
         </span>
+
       </div>
+
     </article>
+
   `;
+
 }
 
 window.createTaskCard =
