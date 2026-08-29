@@ -205,13 +205,51 @@ if (
 
   processMemory(analysis);
 
-  if (
+  const normalizedMessage =
+    String(message || "")
+      .replace(/\s+/g, "");
+
+  const explicitlyRequestsUnscheduledTask =
+    analysis.intent === "task_create" &&
+    (
+      normalizedMessage.includes(
+        "時間未設定タスク"
+      ) ||
+      normalizedMessage.includes(
+        "時間未定タスク"
+      ) ||
+      normalizedMessage.includes(
+        "時間指定なしタスク"
+      )
+    );
+
+  if (explicitlyRequestsUnscheduledTask) {
+
+    analysis.dueTime = null;
+    analysis.needsDateConfirmation = false;
+    analysis.dateExpression = null;
+
+    if (Array.isArray(analysis.tasks)) {
+
+      analysis.tasks =
+        analysis.tasks.map((task) => ({
+          ...task,
+          dueTime: null,
+          needsDateConfirmation: false,
+          dateExpression: null,
+        }));
+
+    }
+
+  } else if (
     analysis.intent === "task_create" &&
     !analysis.dueDate &&
     !analysis.needsDateConfirmation
   ) {
+
     analysis.needsDateConfirmation = true;
     analysis.dateExpression = "期限未指定";
+
   }
 
 // =====================
