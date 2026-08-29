@@ -868,6 +868,13 @@ async function saveNotificationSettings(
       </button>
 
       <button
+        class="account-menu-item account-menu-plan"
+        type="button"
+      >
+        プラン
+      </button>
+
+      <button
         class="account-menu-item account-menu-about"
         type="button"
       >
@@ -1094,6 +1101,21 @@ async function saveNotificationSettings(
     "click",
     openNotificationSettings
   );
+
+    menu
+      .querySelector(
+        ".account-menu-plan"
+      )
+      .addEventListener(
+        "click",
+        () => {
+          closeAccountMenu();
+
+          window.NotiaPaywall?.open({
+            reason: "plan",
+          });
+        }
+      );
 
     menu
       .querySelector(
