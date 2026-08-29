@@ -4,6 +4,7 @@ const path = require("path");
 const {
   Environment,
   SignedDataVerifier,
+  VerificationStatus,
 } = require(
   "@apple/app-store-server-library"
 );
@@ -86,7 +87,9 @@ function getAppAppleId() {
   return parsed;
 }
 
-function createVerifier() {
+function createVerifier(
+  environment
+) {
   const rootCertificate =
     fs.readFileSync(
       ROOT_CERT_PATH
@@ -95,7 +98,7 @@ function createVerifier() {
   return new SignedDataVerifier(
     [rootCertificate],
     true,
-    getAppleEnvironment(),
+    environment,
     BUNDLE_ID,
     getAppAppleId()
   );
@@ -119,12 +122,41 @@ async function verifySignedTransaction(
     throw error;
   }
 
-  const verifier =
-    createVerifier();
+  const primaryEnvironment =
+    getAppleEnvironment();
 
-  return verifier.verifyAndDecodeTransaction(
-    signedTransaction
-  );
+  const primaryVerifier =
+    createVerifier(
+      primaryEnvironment
+    );
+
+  try {
+    return await primaryVerifier
+      .verifyAndDecodeTransaction(
+        signedTransaction
+      );
+  } catch (error) {
+    const shouldFallback =
+      primaryEnvironment ===
+        Environment.PRODUCTION &&
+      error?.status ===
+        VerificationStatus
+          .INVALID_ENVIRONMENT;
+
+    if (!shouldFallback) {
+      throw error;
+    }
+
+    const sandboxVerifier =
+      createVerifier(
+        Environment.SANDBOX
+      );
+
+    return sandboxVerifier
+      .verifyAndDecodeTransaction(
+        signedTransaction
+      );
+  }
 }
 
 module.exports = {
