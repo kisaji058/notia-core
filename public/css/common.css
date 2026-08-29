@@ -1142,6 +1142,31 @@ button {
   text-align: center;
 }
 
+.notia-paywall-legal {
+  margin-top: 4px;
+}
+
+.notia-paywall-legal-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+
+  margin-top: 8px;
+
+  font-size: 10px;
+}
+
+.notia-paywall-legal-links a {
+  color: var(--color-primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.notia-paywall-legal-links span {
+  color: var(--color-muted);
+}
+
 @media (
   max-height: 720px
 ) {

@@ -415,10 +415,33 @@
           購入を復元
         </button>
 
-        <p class="notia-paywall-note">
-          サブスクリプションは自動更新されます。
-          Apple IDの設定からいつでも解約できます。
-        </p>
+        <div class="notia-paywall-legal">
+          <p class="notia-paywall-note">
+            各プランは月額の自動更新サブスクリプションです。
+            購入確定時にApple Accountへ請求され、
+            更新日の24時間前までに解約されない限り
+            自動的に更新されます。
+          </p>
+
+          <p class="notia-paywall-note">
+            サブスクリプションの管理・解約は
+            Apple Accountの設定から行えます。
+          </p>
+
+          <div class="notia-paywall-legal-links">
+            <a href="/terms">
+              利用規約
+            </a>
+
+            <span aria-hidden="true">
+              ・
+            </span>
+
+            <a href="/privacy">
+              プライバシーポリシー
+            </a>
+          </div>
+        </div>
       </div>
     `;
 
