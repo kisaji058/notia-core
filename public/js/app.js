@@ -1999,6 +1999,34 @@ chatForm.addEventListener(
           await res.json();
 
         if (!res.ok) {
+          if (
+            data?.code ===
+            "DOCUMENT_PAGE_LIMIT_REACHED"
+          ) {
+            loading.remove();
+
+            const limit =
+              data?.usage?.limit;
+
+            if (limit === 3) {
+              window.NotiaPaywall?.open({
+                reason:
+                  "document-free-limit",
+              });
+
+              return;
+            }
+
+            if (limit === 30) {
+              window.NotiaPaywall?.open({
+                reason:
+                  "document-standard-limit",
+              });
+
+              return;
+            }
+          }
+
           throw new Error(
             data.error ||
               "資料の送信に失敗しました。"
