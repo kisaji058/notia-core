@@ -509,6 +509,28 @@
         subscription?.activeProductId ||
         null;
 
+      let renewalInfo = null;
+
+      try {
+        const storeKit =
+          window.NotiaRuntime
+            ?.getStoreKit?.();
+
+        if (
+          storeKit
+            ?.getSubscriptionRenewalInfo
+        ) {
+          renewalInfo =
+            await storeKit
+              .getSubscriptionRenewalInfo();
+        }
+      } catch (error) {
+        console.warn(
+          "Paywall renewal info error:",
+          error
+        );
+      }
+
       const standard =
         findProduct(
           products,
@@ -587,6 +609,29 @@
 
         standardButton.textContent =
           "Standardに変更";
+
+        if (
+          renewalInfo
+            ?.willAutoRenew === true &&
+          renewalInfo
+            ?.autoRenewPreference ===
+            STANDARD_PRODUCT_ID
+        ) {
+          const notice =
+            document.createElement(
+              "p"
+            );
+
+          notice.className =
+            "notia-paywall-change-notice";
+
+          notice.textContent =
+            "次回更新日からStandardに変更予定";
+
+          unlimitedPlan.appendChild(
+            notice
+          );
+        }
       }
 
       loading.hidden = true;

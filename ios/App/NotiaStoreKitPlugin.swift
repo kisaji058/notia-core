@@ -21,6 +21,11 @@ public class NotiaStoreKitPlugin:
                     CAPPluginReturnPromise
             ),
             CAPPluginMethod(
+                name: "getSubscriptionRenewalInfo",
+                returnType:
+                    CAPPluginReturnPromise
+            ),
+            CAPPluginMethod(
                 name: "purchase",
                 returnType:
                     CAPPluginReturnPromise
@@ -346,6 +351,159 @@ public class NotiaStoreKitPlugin:
                 call.resolve(
                     response
                 )
+            }
+        }
+    }
+
+
+    @objc func getSubscriptionRenewalInfo(
+        _ call: CAPPluginCall
+    ) {
+        Task {
+            do {
+                var activeTransaction:
+                    Transaction?
+
+                for await result
+                    in Transaction.currentEntitlements
+                {
+                    guard
+                        case .verified(
+                            let transaction
+                        ) = result,
+                        productIds.contains(
+                            transaction.productID
+                        )
+                    else {
+                        continue
+                    }
+
+                    if (
+                        activeTransaction == nil ||
+                        transaction.productID ==
+                            "com.kisajistudio.notia.unlimited.monthly"
+                    ) {
+                        activeTransaction =
+                            transaction
+                    }
+                }
+
+                guard
+                    let transaction =
+                        activeTransaction
+                else {
+                    await MainActor.run {
+                        call.resolve([
+                            "activeProductId":
+                                NSNull(),
+                            "willAutoRenew":
+                                false,
+                            "autoRenewPreference":
+                                NSNull(),
+                            "expirationDate":
+                                NSNull()
+                        ])
+                    }
+
+                    return
+                }
+
+                let products =
+                    try await Product.products(
+                        for: [
+                            transaction.productID
+                        ]
+                    )
+
+                guard
+                    let product =
+                        products.first,
+                    let subscription =
+                        product.subscription
+                else {
+                    throw NSError(
+                        domain:
+                            "NotiaStoreKit",
+                        code: 1,
+                        userInfo: [
+                            NSLocalizedDescriptionKey:
+                                "Subscription information is unavailable."
+                        ]
+                    )
+                }
+
+                let statuses =
+                    try await subscription.status
+
+                let matchingStatus =
+                    statuses.first {
+                        status in
+
+                        guard
+                            case .verified(
+                                let statusTransaction
+                            ) = status.transaction
+                        else {
+                            return false
+                        }
+
+                        return (
+                            statusTransaction.productID ==
+                            transaction.productID
+                        )
+                    }
+
+                var willAutoRenew =
+                    false
+
+                var autoRenewPreference:
+                    String? = nil
+
+                if let status =
+                    matchingStatus
+                {
+                    if case .verified(
+                        let renewalInfo
+                    ) = status.renewalInfo
+                    {
+                        willAutoRenew =
+                            renewalInfo
+                                .willAutoRenew
+
+                        autoRenewPreference =
+                            renewalInfo
+                                .autoRenewPreference
+                    }
+                }
+
+                let response:
+                    [String: Any] = [
+                        "activeProductId":
+                            transaction
+                                .productID,
+                        "willAutoRenew":
+                            willAutoRenew,
+                        "autoRenewPreference":
+                            autoRenewPreference
+                            as Any,
+                        "expirationDate":
+                            transaction
+                                .expirationDate?
+                                .ISO8601Format()
+                            as Any
+                    ]
+
+                await MainActor.run {
+                    call.resolve(
+                        response
+                    )
+                }
+            } catch {
+                await MainActor.run {
+                    call.reject(
+                        "RENEWAL_INFO_FAILED: \(error.localizedDescription)"
+                    )
+                }
             }
         }
     }
