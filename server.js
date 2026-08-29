@@ -8,6 +8,7 @@ const SQLiteStore =
     session
   );
 const path = require("path");
+const crypto = require("crypto");
 
 const AppLogger =
   require("./src/utils/AppLogger");
@@ -85,6 +86,9 @@ const {
   markDailyNotificationSent,
   getNotificationSettings,
   getNativePushTokensByUserId,
+  registerDocumentForRecheck,
+  reserveDocumentRecheck,
+  releaseDocumentRecheck,
 } = require("./database");
 
 const notificationManager = require("./src/managers/NotificationManager");
@@ -483,6 +487,11 @@ app.post(
           req.file.originalname
         );
 
+      const fileHash =
+        crypto.createHash("sha256")
+          .update(req.file.buffer)
+          .digest("hex");
+
       const pageCount =
         await countDocumentPages({
           buffer:
@@ -578,6 +587,21 @@ app.post(
         reservation = null;
       }
 
+      try {
+        registerDocumentForRecheck({
+          userId:
+            req.userId,
+          fileHash,
+        });
+      } catch (
+        registrationError
+      ) {
+        console.error(
+          "Document recheck registration error:",
+          registrationError
+        );
+      }
+
       console.log(
         "Document extraction result:",
         JSON.stringify(
@@ -643,6 +667,185 @@ app.post(
           success: false,
           error:
             "資料の受信に失敗しました。",
+        });
+    }
+  }
+);
+
+app.post(
+  "/api/document/recheck",
+  documentUpload.single("file"),
+  async (req, res) => {
+    let recheckReserved = false;
+    let fileHash = null;
+
+    try {
+      if (!req.file) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            error:
+              "ファイルがありません。",
+          });
+      }
+
+      const originalName =
+        normalizeUploadFilename(
+          req.file.originalname
+        );
+
+      fileHash =
+        crypto.createHash("sha256")
+          .update(req.file.buffer)
+          .digest("hex");
+
+      const pageCount =
+        await countDocumentPages({
+          buffer:
+            req.file.buffer,
+          mimeType:
+            req.file.mimetype,
+        });
+
+      if (
+        !Number.isInteger(pageCount) ||
+        pageCount < 1
+      ) {
+        return res.status(400).json({
+          success: false,
+          error:
+            "資料のページ数を確認できませんでした。",
+        });
+      }
+
+      const recheckUsage =
+        reserveDocumentRecheck({
+          userId:
+            req.userId,
+          fileHash,
+          limit: 2,
+        });
+
+      if (!recheckUsage.success) {
+        const status =
+          recheckUsage.code ===
+            "DOCUMENT_RECHECK_LIMIT_REACHED"
+            ? 429
+            : 403;
+
+        return res.status(status).json({
+          success: false,
+          code:
+            recheckUsage.code,
+          error:
+            recheckUsage.code ===
+              "DOCUMENT_RECHECK_LIMIT_REACHED"
+              ? "このファイルは再調査上限に達しています。"
+              : "このファイルは再調査対象として登録されていません。",
+          recheck: {
+            count:
+              recheckUsage.count,
+            limit:
+              recheckUsage.limit,
+          },
+        });
+      }
+
+      recheckReserved = true;
+
+      console.log(
+        "Document recheck received:",
+        {
+          originalName,
+          mimeType:
+            req.file.mimetype,
+          size:
+            req.file.size,
+          pageCount,
+        }
+      );
+
+      const result =
+        await extractDocumentSchedule({
+          buffer:
+            req.file.buffer,
+          mimeType:
+            req.file.mimetype,
+          fileName:
+            originalName,
+          userMessage:
+            String(
+              req.body.message || ""
+            ).trim(),
+          mode: "recheck",
+        });
+
+      console.log(
+        "Document recheck result:",
+        JSON.stringify(
+          result,
+          null,
+          2
+        )
+      );
+
+      recheckReserved = false;
+
+      return res.json({
+        success: true,
+
+        file: {
+          name:
+            originalName,
+          type:
+            req.file.mimetype,
+          size:
+            req.file.size,
+          pageCount,
+        },
+
+        items:
+          Array.isArray(result.items)
+            ? result.items
+            : [],
+
+        warnings:
+          Array.isArray(
+            result.warnings
+          )
+            ? result.warnings
+            : [],
+      });
+    } catch (error) {
+      if (recheckReserved) {
+        try {
+          releaseDocumentRecheck({
+            userId:
+              req.userId,
+            fileHash,
+          });
+        } catch (
+          releaseError
+        ) {
+          console.error(
+            "Document recheck release error:",
+            releaseError
+          );
+        }
+      }
+
+      console.error(
+        "Document recheck error:",
+        error
+      );
+
+      return res
+        .status(500)
+        .json({
+          success: false,
+          error:
+            "資料の再調査に失敗しました。",
         });
     }
   }

@@ -1409,20 +1409,24 @@ notification:
 
 function addDocumentCandidateCards(
   items,
-  warnings = []
+  warnings = [],
+  sourceAttachment = null,
+  sourceMessage = ""
 ) {
-  if (
-    !Array.isArray(items) ||
-    items.length === 0
-  ) {
+  const normalizedItems =
+    Array.isArray(items)
+      ? items
+      : [];
+
+  if (normalizedItems.length === 0) {
     addMessage(
       "assistant",
       "資料から登録できそうな予定やタスクは見つかりませんでした。",
       new Date()
     );
-
-    return;
   }
+
+  items = normalizedItems;
 
   const wrapper =
     document.createElement("div");
@@ -1443,7 +1447,9 @@ function addDocumentCandidateCards(
     "document-candidates-heading";
 
   heading.textContent =
-    `資料から${items.length}件見つかりました`;
+    items.length === 0
+      ? "登録できそうな項目は見つかりませんでした"
+      : `資料から${items.length}件見つかりました`;
 
   const subtext =
     document.createElement("p");
@@ -1452,7 +1458,9 @@ function addDocumentCandidateCards(
     "document-candidates-subtext";
 
   subtext.textContent =
-    "内容を確認してから追加できます。";
+    items.length === 0
+      ? "必要なら、このファイルを再調査できます。"
+      : "内容を確認してから追加できます。";
 
   const list =
     document.createElement("div");
@@ -1633,6 +1641,18 @@ cancelButton.className =
 cancelButton.textContent =
   "キャンセル";
 
+const recheckButton =
+  document.createElement("button");
+
+recheckButton.type =
+  "button";
+
+recheckButton.className =
+  "document-candidates-secondary";
+
+recheckButton.textContent =
+  "このファイルを再調査";
+
 addAllButton.addEventListener(
   "click",
   async () => {
@@ -1749,6 +1769,124 @@ addAllButton.addEventListener(
   }
 );
 
+recheckButton.addEventListener(
+  "click",
+  async () => {
+    if (!sourceAttachment) {
+      addMessage(
+        "assistant",
+        "再調査する元ファイルが見つかりませんでした。もう一度資料を送ってください。",
+        new Date()
+      );
+      return;
+    }
+
+    const alreadyRegistered =
+      Boolean(
+        list.querySelector(
+          '.document-candidate-item[data-registered="true"]'
+        )
+      );
+
+    if (alreadyRegistered) {
+      addMessage(
+        "assistant",
+        "すでに追加済みの項目があるため、この候補では再調査できません。必要なら資料をもう一度送ってください。",
+        new Date()
+      );
+      return;
+    }
+
+    recheckButton.disabled = true;
+    recheckButton.textContent =
+      "再調査中…";
+
+    try {
+      const formData =
+        new FormData();
+
+      formData.append(
+        "file",
+        sourceAttachment
+      );
+
+      if (sourceMessage) {
+        formData.append(
+          "message",
+          sourceMessage
+        );
+      }
+
+      const res =
+        await fetch(
+          "/api/document/recheck",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+      const data =
+        await res.json();
+
+      if (!res.ok) {
+        if (
+          data?.code ===
+          "DOCUMENT_RECHECK_LIMIT_REACHED"
+        ) {
+          recheckButton.disabled = true;
+          recheckButton.textContent =
+            "再調査上限に達しました";
+
+          addMessage(
+            "assistant",
+            data.error ||
+              "このファイルは再調査上限に達しています。",
+            new Date()
+          );
+          return;
+        }
+
+        throw new Error(
+          data.error ||
+            "資料の再調査に失敗しました。"
+        );
+      }
+
+      wrapper.remove();
+
+      addMessage(
+        "assistant",
+        `${data.file.name}を再調査しました。`,
+        new Date()
+      );
+
+      addDocumentCandidateCards(
+        data.items,
+        data.warnings,
+        sourceAttachment,
+        sourceMessage
+      );
+    } catch (error) {
+      console.error(
+        "Document recheck error:",
+        error
+      );
+
+      recheckButton.disabled = false;
+      recheckButton.textContent =
+        "このファイルを再調査";
+
+      addMessage(
+        "assistant",
+        error.message ||
+          "資料の再調査に失敗しました。",
+        new Date()
+      );
+    }
+  }
+);
+
 cancelButton.addEventListener(
   "click",
   () => {
@@ -1768,6 +1906,10 @@ actions.appendChild(
 
 actions.appendChild(
   cancelButton
+);
+
+actions.appendChild(
+  recheckButton
 );
 
   card.appendChild(heading);
@@ -2064,7 +2206,9 @@ chatForm.addEventListener(
 
 addDocumentCandidateCards(
   data.items,
-  data.warnings
+  data.warnings,
+  attachment,
+  message
 );
 
 clearAttachmentPreview();

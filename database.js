@@ -2522,7 +2522,121 @@ function releaseDocumentPages({
   );
 }
 
+function registerDocumentForRecheck({
+  userId,
+  fileHash,
+}) {
+  return db.prepare(`
+    INSERT INTO document_rechecks (
+      user_id,
+      file_hash,
+      recheck_count
+    )
+    VALUES (?, ?, 0)
+
+    ON CONFLICT(
+      user_id,
+      file_hash
+    )
+    DO NOTHING
+  `).run(
+    userId,
+    fileHash
+  );
+}
+
+function reserveDocumentRecheck({
+  userId,
+  fileHash,
+  limit = 2,
+}) {
+  const transaction = db.transaction(() => {
+    const current =
+      db.prepare(`
+        SELECT
+          recheck_count
+        FROM document_rechecks
+        WHERE user_id = ?
+          AND file_hash = ?
+        LIMIT 1
+      `).get(
+        userId,
+        fileHash
+      );
+
+    if (!current) {
+      return {
+        success: false,
+        code:
+          "DOCUMENT_RECHECK_NOT_REGISTERED",
+        count: 0,
+        limit,
+      };
+    }
+
+    const currentCount =
+      Number(current.recheck_count) || 0;
+
+    if (currentCount >= limit) {
+      return {
+        success: false,
+        code:
+          "DOCUMENT_RECHECK_LIMIT_REACHED",
+        count: currentCount,
+        limit,
+      };
+    }
+
+    const nextCount =
+      currentCount + 1;
+
+    db.prepare(`
+      UPDATE document_rechecks
+      SET
+        recheck_count = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = ?
+        AND file_hash = ?
+    `).run(
+      nextCount,
+      userId,
+      fileHash
+    );
+
+    return {
+      success: true,
+      count: nextCount,
+      limit,
+    };
+  });
+
+  return transaction();
+}
+
+function releaseDocumentRecheck({
+  userId,
+  fileHash,
+}) {
+  return db.prepare(`
+    UPDATE document_rechecks
+    SET
+      recheck_count =
+        recheck_count - 1,
+      updated_at =
+        CURRENT_TIMESTAMP
+    WHERE user_id = ?
+      AND file_hash = ?
+      AND recheck_count > 0
+  `).run(
+    userId,
+    fileHash
+  );
+}
+
 module.exports = {
+  registerDocumentForRecheck,
+  reserveDocumentRecheck,
+  releaseDocumentRecheck,
   reserveDocumentPages,
   commitDocumentPages,
   releaseDocumentPages,
