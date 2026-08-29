@@ -3023,9 +3023,27 @@ async function syncCalendar() {
 
     const result = await res.json();
 
+    if (
+      res.status === 403 &&
+      result?.code ===
+        "SUBSCRIPTION_REQUIRED"
+    ) {
+      if (syncStatus) {
+        syncStatus.textContent = "";
+      }
+
+      window.NotiaPaywall?.open({
+        reason: "google-sync",
+      });
+
+      return;
+    }
+
     if (!res.ok || !result.success) {
       throw new Error(
-        result.message || "Google予定との同期に失敗しました。"
+        result.error ||
+        result.message ||
+        "Google予定との同期に失敗しました。"
       );
     }
 

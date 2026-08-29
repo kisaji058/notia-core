@@ -227,6 +227,20 @@ async function saveNotificationSettings(
         await response.json();
 
       if (
+        response.status === 403 &&
+        result?.code ===
+          "SUBSCRIPTION_REQUIRED"
+      ) {
+        closeAccountMenu();
+
+        window.NotiaPaywall?.open({
+          reason: "google-sync",
+        });
+
+        return;
+      }
+
+      if (
         !response.ok ||
         !result.success
       ) {
