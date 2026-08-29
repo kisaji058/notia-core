@@ -1367,14 +1367,54 @@
 
   setupNativeKeyboard();
 
-  const startAdBanner = () => {
-    updateAdBanner()
-      .catch((error) => {
-        console.error(
-          "AdMob banner startup error:",
-          error
+  async function refreshAppleSubscriptionState() {
+    if (!isNativeApp()) {
+      return;
+    }
+
+    const storeKit =
+      getStoreKit();
+
+    if (!storeKit) {
+      return;
+    }
+
+    try {
+      const current =
+        await storeKit
+          .getCurrentEntitlements();
+
+      const activeProductId =
+        current?.activeProductId;
+
+      const activeEntitlement =
+        Array.isArray(
+          current?.entitlements
+        )
+          ? current.entitlements.find(
+              (item) =>
+                item?.productId ===
+                activeProductId
+            )
+          : null;
+
+      if (activeEntitlement) {
+        await syncAppleSubscription(
+          activeEntitlement
         );
-      });
+      }
+    } catch (error) {
+      console.warn(
+        "Apple subscription refresh error:",
+        error
+      );
+    }
+  }
+
+  const startAdBanner = async () => {
+    await refreshAppleSubscriptionState();
+
+    await updateAdBanner();
   };
 
   if (

@@ -478,6 +478,14 @@
       const products =
         await getProducts();
 
+      const subscription =
+        await window.NotiaRuntime
+          ?.getCurrentSubscription?.();
+
+      const activeProductId =
+        subscription?.activeProductId ||
+        null;
+
       const standard =
         findProduct(
           products,
@@ -508,6 +516,56 @@
         unlimited?.displayPrice ||
         "—";
 
+      const standardButton =
+        sheet.querySelector(
+          `[data-product-id="${STANDARD_PRODUCT_ID}"]`
+        );
+
+      const unlimitedButton =
+        sheet.querySelector(
+          `[data-product-id="${UNLIMITED_PRODUCT_ID}"]`
+        );
+
+      const standardPlan =
+        sheet.querySelector(
+          '[data-plan="standard"]'
+        );
+
+      const unlimitedPlan =
+        sheet.querySelector(
+          '[data-plan="unlimited"]'
+        );
+
+      if (
+        activeProductId ===
+        STANDARD_PRODUCT_ID
+      ) {
+        standardButton.disabled = true;
+        standardButton.textContent =
+          "現在のプラン";
+
+        standardPlan.classList.add(
+          "notia-paywall-plan-current"
+        );
+
+        unlimitedButton.textContent =
+          "Unlimitedにアップグレード";
+      } else if (
+        activeProductId ===
+        UNLIMITED_PRODUCT_ID
+      ) {
+        unlimitedButton.disabled = true;
+        unlimitedButton.textContent =
+          "現在のプラン";
+
+        unlimitedPlan.classList.add(
+          "notia-paywall-plan-current"
+        );
+
+        standardButton.textContent =
+          "Standardに変更";
+      }
+
       loading.hidden = true;
       plans.hidden = false;
 
@@ -516,6 +574,10 @@
           ".notia-paywall-purchase"
         )
         .forEach((button) => {
+          if (button.disabled) {
+            return;
+          }
+
           button.addEventListener(
             "click",
             () => {
