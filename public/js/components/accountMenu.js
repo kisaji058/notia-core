@@ -909,19 +909,21 @@ async function saveNotificationSettings(
         Notiaについて
       </button>
 
-      <a
+      <button
         class="account-menu-item account-menu-link"
-        href="/terms"
+        type="button"
+        data-legal-url="https://notia.cecily-ai.top/terms"
       >
         利用規約
-      </a>
+      </button>
 
-      <a
+      <button
         class="account-menu-item account-menu-link"
-        href="/privacy"
+        type="button"
+        data-legal-url="https://notia.cecily-ai.top/privacy"
       >
         プライバシーポリシー
-      </a>
+      </button>
 
       <button
         class="account-menu-item account-menu-ad-privacy"
@@ -1142,6 +1144,47 @@ async function saveNotificationSettings(
           window.NotiaPaywall?.open({
             reason: "plan",
           });
+        }
+      );
+
+    menu
+      .querySelectorAll(
+        "[data-legal-url]"
+      )
+      .forEach(
+        (button) => {
+          button.addEventListener(
+            "click",
+            async () => {
+              const url =
+                button.dataset
+                  .legalUrl;
+
+              if (!url) return;
+
+              try {
+                const Browser =
+                  window.Capacitor
+                    ?.Plugins
+                    ?.Browser;
+
+                if (!Browser?.open) {
+                  throw new Error(
+                    "Browser plugin unavailable"
+                  );
+                }
+
+                await Browser.open({
+                  url
+                });
+              } catch (error) {
+                console.error(
+                  "Account legal link error:",
+                  error
+                );
+              }
+            }
+          );
         }
       );
 
