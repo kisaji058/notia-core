@@ -429,7 +429,7 @@
           </p>
 
           <div class="notia-paywall-legal-links">
-            <a href="/terms">
+            <a href="#" data-legal-url="https://notia.cecily-ai.top/terms">
               利用規約
             </a>
 
@@ -437,7 +437,7 @@
               ・
             </span>
 
-            <a href="/privacy">
+            <a href="#" data-legal-url="https://notia.cecily-ai.top/privacy">
               プライバシーポリシー
             </a>
           </div>
@@ -474,6 +474,12 @@
         ".notia-paywall-restore"
       );
 
+    const legalLinks =
+      sheet.querySelectorAll(
+        "[data-legal-url]"
+      );
+
+
     closeButton.addEventListener(
       "click",
       close
@@ -496,6 +502,46 @@
         );
       }
     );
+
+    legalLinks.forEach(
+      (link) => {
+        link.addEventListener(
+          "click",
+          async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const url =
+              link.dataset.legalUrl;
+
+            if (!url) return;
+
+            try {
+              const Browser =
+                window.Capacitor
+                  ?.Plugins
+                  ?.Browser;
+
+              if (!Browser?.open) {
+                throw new Error(
+                  "Browser plugin unavailable"
+                );
+              }
+
+              await Browser.open({
+                url
+              });
+            } catch (error) {
+              console.error(
+                "Paywall Browser.open failed:",
+                error
+              );
+            }
+          }
+        );
+      }
+    );
+
 
     try {
       const products =
