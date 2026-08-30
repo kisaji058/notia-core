@@ -541,6 +541,120 @@ app.post(
       reservation =
         usage.reservation;
 
+      let responseFinished = false;
+      let responseSucceeded = false;
+
+      res.once(
+        "finish",
+        () => {
+          responseFinished = true;
+
+          if (!responseSucceeded) {
+            return;
+          }
+
+          let usageSettled =
+            !reservation;
+
+          if (reservation) {
+            const reservationToSettle =
+              reservation;
+
+            try {
+              const committed =
+                commitDocumentUsage({
+                  userId:
+                    req.userId,
+                  reservation:
+                    reservationToSettle,
+                });
+
+              if (
+                committed &&
+                committed.changes === 1
+              ) {
+                usageSettled = true;
+              } else {
+                console.error(
+                  "Document usage commit failed after response finish."
+                );
+              }
+            } catch (commitError) {
+              console.error(
+                "Document usage commit error after response finish:",
+                commitError
+              );
+            }
+
+            if (!usageSettled) {
+              try {
+                releaseDocumentUsage({
+                  userId:
+                    req.userId,
+                  reservation:
+                    reservationToSettle,
+                });
+              } catch (releaseError) {
+                console.error(
+                  "Document usage release error after failed commit:",
+                  releaseError
+                );
+              }
+            }
+
+            reservation = null;
+          }
+
+          if (!usageSettled) {
+            return;
+          }
+
+          try {
+            registerDocumentForRecheck({
+              userId:
+                req.userId,
+              fileHash,
+            });
+          } catch (
+            registrationError
+          ) {
+            console.error(
+              "Document recheck registration error:",
+              registrationError
+            );
+          }
+        }
+      );
+
+      res.once(
+        "close",
+        () => {
+          if (
+            responseFinished ||
+            !reservation
+          ) {
+            return;
+          }
+
+          try {
+            releaseDocumentUsage({
+              userId:
+                req.userId,
+              reservation,
+            });
+          } catch (
+            releaseError
+          ) {
+            console.error(
+              "Document usage release error after response close:",
+              releaseError
+            );
+          }
+
+          reservation = null;
+        }
+      );
+
       console.log(
         "Document received:",
         {
@@ -567,40 +681,6 @@ app.post(
             ).trim(),
         });
 
-      if (reservation) {
-        const committed =
-          commitDocumentUsage({
-            userId:
-              req.userId,
-            reservation,
-          });
-
-        if (
-          !committed ||
-          committed.changes !== 1
-        ) {
-          throw new Error(
-            "Document usage commit failed."
-          );
-        }
-
-        reservation = null;
-      }
-
-      try {
-        registerDocumentForRecheck({
-          userId:
-            req.userId,
-          fileHash,
-        });
-      } catch (
-        registrationError
-      ) {
-        console.error(
-          "Document recheck registration error:",
-          registrationError
-        );
-      }
 
       console.log(
         "Document extraction result:",
@@ -610,6 +690,8 @@ app.post(
           2
         )
       );
+
+      responseSucceeded = true;
 
       return res.json({
         success: true,
@@ -654,6 +736,8 @@ app.post(
             releaseError
           );
         }
+
+        reservation = null;
       }
 
       console.error(

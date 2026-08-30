@@ -28,7 +28,8 @@
     "jose": "^6.2.10",
     "multer": "^2.2.0",
     "openai": "^6.45.0",
-    "pdf-lib": "^1.17.1"
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.3.289"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.0"
