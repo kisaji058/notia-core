@@ -1653,6 +1653,12 @@ recheckButton.className =
 recheckButton.textContent =
   "このファイルを再調査";
 
+if (!sourceAttachment) {
+  recheckButton.disabled = true;
+  recheckButton.textContent =
+    "再調査には元ファイルが必要";
+}
+
 addAllButton.addEventListener(
   "click",
   async () => {
@@ -1977,14 +1983,39 @@ conversations.forEach((conversation) => {
     lastDate = currentDate;
   }
 
-  addMessage(
-  conversation.role,
-  conversation.message,
-  conversation.created_at,
-  conversation.role === "user"
-    ? "completed"
-    : null
-);
+  if (
+    conversation.role === "document" &&
+    conversation.document
+  ) {
+    const restoredPageCount =
+      Number(
+        conversation.document.pageCount
+      ) || 0;
+
+    addMessage(
+      "assistant",
+      restoredPageCount > 0
+        ? `${conversation.document.fileName}を確認しました。${restoredPageCount}ページ使用した資料です。`
+        : `${conversation.document.fileName}を確認しました。`,
+      conversation.created_at
+    );
+
+    addDocumentCandidateCards(
+      conversation.document.items,
+      conversation.document.warnings,
+      null,
+      conversation.document.sourceMessage || ""
+    );
+  } else {
+    addMessage(
+      conversation.role,
+      conversation.message,
+      conversation.created_at,
+      conversation.role === "user"
+        ? "completed"
+        : null
+    );
+  }
 });
 
    scrollChatToBottom(); 
@@ -2198,11 +2229,18 @@ chatForm.addEventListener(
 
         loading.remove();
 
+        const documentUsageText =
+          data.usage?.unlimited
+            ? `${data.usage.pageCount}ページ使用しました｜上限なし`
+            : data.usage
+              ? `${data.usage.pageCount}ページ使用しました｜今月 ${data.usage.usedPages} / ${data.usage.limit}ページ`
+              : `${data.file.pageCount}ページ使用しました`;
+
         addMessage(
-  "assistant",
-  `${data.file.name}を確認しました。`,
-  new Date()
-);
+          "assistant",
+          `${data.file.name}を確認しました。${documentUsageText}`,
+          new Date()
+        );
 
 addDocumentCandidateCards(
   data.items,

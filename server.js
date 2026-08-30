@@ -77,6 +77,8 @@ const todayRouter =
 const {
   saveConversation,
   getRecentConversations,
+  saveDocumentChatHistory,
+  getRecentDocumentChatHistory,
   getEventsByDate,
   getTasksByDate,
   getGoogleIntegration,
@@ -357,11 +359,57 @@ app.get(
 
 app.get("/api/conversations", (req, res) => {
   const conversations =
-  getRecentConversations(
-    req.userId,
-    100
-  );
-  res.json(conversations);
+    getRecentConversations(
+      req.userId,
+      100
+    );
+
+  const documents =
+    getRecentDocumentChatHistory(
+      req.userId,
+      100
+    ).map(
+      (document) => ({
+        role: "document",
+        message: "",
+        created_at:
+          document.created_at,
+        document: {
+          id:
+            document.id,
+          fileName:
+            document.file_name,
+          pageCount:
+            document.page_count,
+          items:
+            JSON.parse(
+              document.items_json ||
+                "[]"
+            ),
+          warnings:
+            JSON.parse(
+              document.warnings_json ||
+                "[]"
+            ),
+          sourceMessage:
+            document.source_message ||
+            "",
+        },
+      })
+    );
+
+  const history = [
+    ...conversations,
+    ...documents,
+  ]
+    .sort(
+      (a, b) =>
+        new Date(a.created_at) -
+        new Date(b.created_at)
+    )
+    .slice(-100);
+
+  res.json(history);
 });
 
 app.get("/api/integrations", (req, res) => {
@@ -543,6 +591,7 @@ app.post(
 
       let responseFinished = false;
       let responseSucceeded = false;
+      let documentHistoryPayload = null;
 
       res.once(
         "finish",
@@ -623,6 +672,23 @@ app.post(
               registrationError
             );
           }
+
+          if (
+            documentHistoryPayload
+          ) {
+            try {
+              saveDocumentChatHistory(
+                documentHistoryPayload
+              );
+            } catch (
+              historyError
+            ) {
+              console.error(
+                "Document chat history save error:",
+                historyError
+              );
+            }
+          }
         }
       );
 
@@ -691,6 +757,31 @@ app.post(
         )
       );
 
+      documentHistoryPayload = {
+        userId:
+          req.userId,
+        fileName:
+          originalName,
+        pageCount,
+        items:
+          Array.isArray(
+            result.items
+          )
+            ? result.items
+            : [],
+        warnings:
+          Array.isArray(
+            result.warnings
+          )
+            ? result.warnings
+            : [],
+        sourceMessage:
+          String(
+            req.body.message ||
+            ""
+          ).trim(),
+      };
+
       responseSucceeded = true;
 
       return res.json({
@@ -717,6 +808,23 @@ app.post(
           )
             ? result.warnings
             : [],
+
+        usage: {
+          pageCount,
+          unlimited:
+            Boolean(
+              usage.unlimited
+            ),
+          usedPages:
+            usage.unlimited
+              ? null
+              : usage.usedCount +
+                pageCount,
+          limit:
+            usage.unlimited
+              ? null
+              : usage.limit,
+        },
       });
 
     } catch (error) {

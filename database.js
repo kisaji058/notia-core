@@ -404,6 +404,65 @@ function saveConversation(
   );
 }
 
+function saveDocumentChatHistory({
+  userId,
+  fileName,
+  pageCount,
+  items = [],
+  warnings = [],
+  sourceMessage = "",
+}) {
+  return db.prepare(`
+    INSERT INTO document_chat_history (
+      user_id,
+      file_name,
+      page_count,
+      items_json,
+      warnings_json,
+      source_message
+    )
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(
+    userId,
+    fileName,
+    pageCount,
+    JSON.stringify(
+      Array.isArray(items)
+        ? items
+        : []
+    ),
+    JSON.stringify(
+      Array.isArray(warnings)
+        ? warnings
+        : []
+    ),
+    sourceMessage || null
+  );
+}
+
+function getRecentDocumentChatHistory(
+  userId,
+  limit = 100
+) {
+  return db.prepare(`
+    SELECT
+      id,
+      file_name,
+      page_count,
+      items_json,
+      warnings_json,
+      source_message,
+      created_at
+    FROM document_chat_history
+    WHERE user_id = ?
+    ORDER BY id DESC
+    LIMIT ?
+  `).all(
+    userId,
+    limit
+  ).reverse();
+}
+
 function getRecentConversations(
   userId,
   limit = 10
@@ -2646,6 +2705,8 @@ module.exports = {
   getUserById,
   saveConversation,
   getRecentConversations,
+  saveDocumentChatHistory,
+  getRecentDocumentChatHistory,
 
   addTask,
   getActiveTasks,
