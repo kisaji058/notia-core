@@ -599,7 +599,7 @@ ${chunkText}
   let rawResult;
 
   if (useStructuredPdf) {
-    const chunkSize = 20;
+    const chunkSize = 10;
 
     const chunks = [];
 
@@ -764,16 +764,19 @@ ${chunkText}
 
       const retryChunks = [];
 
+      const retryChunkSize = 5;
+
       for (
         let index = 0;
         index <
           missingBlockIds.length;
-        index += chunkSize
+        index += retryChunkSize
       ) {
         const blockIds =
           missingBlockIds.slice(
             index,
-            index + chunkSize
+            index +
+              retryChunkSize
           );
 
         retryChunks.push({
