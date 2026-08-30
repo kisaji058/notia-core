@@ -2357,6 +2357,39 @@ function getUserSubscription(
   `).get(userId);
 }
 
+function getSubscriptionByOriginalTransactionId(
+  originalTransactionId
+) {
+  if (
+    !originalTransactionId
+  ) {
+    return null;
+  }
+
+  return db.prepare(`
+    SELECT
+      id,
+      user_id,
+      platform,
+      plan,
+      product_id,
+      original_transaction_id,
+      status,
+      expires_at,
+      auto_renew_status,
+      last_verified_at,
+      created_at,
+      updated_at
+    FROM user_subscriptions
+    WHERE original_transaction_id = ?
+    LIMIT 1
+  `).get(
+    String(
+      originalTransactionId
+    )
+  );
+}
+
 function upsertUserSubscription({
   userId,
   platform = "apple",
@@ -2700,6 +2733,7 @@ module.exports = {
   commitDocumentPages,
   releaseDocumentPages,
   getUserSubscription,
+  getSubscriptionByOriginalTransactionId,
   upsertUserSubscription,
   getAllUsers,
   getUserById,

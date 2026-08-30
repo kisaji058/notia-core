@@ -1,6 +1,7 @@
 const {
   upsertUserSubscription,
   getUserSubscription,
+  getSubscriptionByOriginalTransactionId,
 } = require("../../database");
 
 const PRODUCT_PLANS = {
@@ -154,6 +155,29 @@ async function syncVerifiedAppleSubscription({
           transaction.expiresDate
         ).toISOString()
       : null;
+
+  if (originalTransactionId) {
+    const existing =
+      getSubscriptionByOriginalTransactionId(
+        originalTransactionId
+      );
+
+    if (
+      existing &&
+      Number(existing.user_id) !==
+        Number(userId)
+    ) {
+      const error =
+        new Error(
+          "This App Store subscription is already linked to another Notia account."
+        );
+
+      error.code =
+        "SUBSCRIPTION_ALREADY_LINKED";
+
+      throw error;
+    }
+  }
 
   let status =
     "active";

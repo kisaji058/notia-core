@@ -110,6 +110,21 @@ router.post(
 
       if (
         error.code ===
+          "SUBSCRIPTION_ALREADY_LINKED"
+      ) {
+        return res
+          .status(409)
+          .json({
+            success: false,
+            code:
+              error.code,
+            error:
+              "このApp Storeの購入は、別のNotiaアカウントに紐づいています。",
+          });
+      }
+
+      if (
+        error.code ===
           "SIGNED_TRANSACTION_REQUIRED" ||
         error.code ===
           "INVALID_PRODUCT_ID"
