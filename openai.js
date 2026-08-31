@@ -1,6 +1,7 @@
 require("dotenv").config();
 
 const OpenAI = require("openai");
+const sharp = require("sharp");
 
 const {
   extractPdfLayoutText,
@@ -57,8 +58,39 @@ async function extractDocumentSchedule({
   userMessage = "",
   mode = "normal",
 }) {
+  let normalizedBuffer =
+    buffer;
+
+  let normalizedMimeType =
+    mimeType;
+
+  if (
+    mimeType === "image/png" ||
+    mimeType === "image/jpeg"
+  ) {
+    normalizedBuffer =
+      await sharp(buffer)
+        .rotate()
+        .resize({
+          width: 2000,
+          height: 2000,
+          fit: "inside",
+          withoutEnlargement: true,
+        })
+        .jpeg({
+          quality: 82,
+          mozjpeg: true,
+        })
+        .toBuffer();
+
+    normalizedMimeType =
+      "image/jpeg";
+  }
+
   const base64 =
-    buffer.toString("base64");
+    normalizedBuffer.toString(
+      "base64"
+    );
 
   const today =
     new Date().toLocaleDateString(
@@ -238,7 +270,7 @@ dateEvidence:
       {
         type: "input_image",
         image_url:
-          `data:${mimeType};base64,${base64}`,
+          `data:${normalizedMimeType};base64,${base64}`,
       },
     ];
   } else if (

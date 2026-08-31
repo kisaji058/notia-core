@@ -2068,11 +2068,11 @@ attachmentInput?.addEventListener(
     }
 
     const maxSize =
-      10 * 1024 * 1024;
+      25 * 1024 * 1024;
 
     if (file.size > maxSize) {
       alert(
-        "ファイルサイズは10MB以下にしてください。"
+        "ファイルサイズは25MB以下にしてください。"
       );
 
       clearAttachmentPreview();
