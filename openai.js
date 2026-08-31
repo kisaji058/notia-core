@@ -1189,17 +1189,145 @@ ${chunkText}
     土: 6,
   };
 
+  const todayParts = today
+    .split("-")
+    .map(Number);
+
+  const currentYear =
+    todayParts[0];
+
+  const inferYearFromWeekday = ({
+    month,
+    day,
+    sourceWeekday,
+  }) => {
+    if (
+      !Number.isInteger(month) ||
+      month < 1 ||
+      month > 12 ||
+      !Number.isInteger(day) ||
+      day < 1 ||
+      day > 31 ||
+      !sourceWeekday ||
+      weekdayMap[sourceWeekday] === undefined
+    ) {
+      return null;
+    }
+
+    const candidateYears = [
+      currentYear - 1,
+      currentYear,
+      currentYear + 1,
+    ];
+
+    const matches =
+      candidateYears.filter(
+        (candidateYear) => {
+          const candidateDate =
+            new Date(
+              Date.UTC(
+                candidateYear,
+                month - 1,
+                day
+              )
+            );
+
+          const valid =
+            candidateDate.getUTCFullYear() ===
+              candidateYear &&
+            candidateDate.getUTCMonth() ===
+              month - 1 &&
+            candidateDate.getUTCDate() ===
+              day;
+
+          if (!valid) {
+            return false;
+          }
+
+          return (
+            candidateDate.getUTCDay() ===
+            weekdayMap[sourceWeekday]
+          );
+        }
+      );
+
+    return matches.length === 1
+      ? matches[0]
+      : null;
+  };
+
   let shouldRecheck = false;
 
   for (const item of result.items) {
     item.date = null;
 
-    const year =
-      Number(item.sourceYear);
+    console.log("Document raw date parts:", {
+      title: item.title,
+      sourceYear: item.sourceYear,
+      sourceMonth: item.sourceMonth,
+      sourceDay: item.sourceDay,
+      sourceWeekday: item.sourceWeekday,
+      dateConfidence: item.dateConfidence,
+      dateEvidence: item.dateEvidence,
+    });
+
+    let year =
+      item.sourceYear === null ||
+      item.sourceYear === undefined ||
+      item.sourceYear === ""
+        ? null
+        : Number(item.sourceYear);
+
     const month =
       Number(item.sourceMonth);
+
     const day =
       Number(item.sourceDay);
+
+    const sourceWeekday =
+      item.sourceWeekday
+        ? String(item.sourceWeekday)
+            .replace("曜日", "")
+            .trim()
+        : null;
+
+    if (
+      !Number.isInteger(year) &&
+      Number.isInteger(month) &&
+      Number.isInteger(day)
+    ) {
+      const inferredYear =
+        inferYearFromWeekday({
+          month,
+          day,
+          sourceWeekday,
+        });
+
+      if (Number.isInteger(inferredYear)) {
+        year = inferredYear;
+
+        item.dateConfidence =
+          Math.min(
+            Math.max(
+              Number(item.dateConfidence) || 0,
+              0.7
+            ),
+            0.8
+          );
+
+        item.dateEvidence =
+          [
+            item.dateEvidence,
+            `年の記載がないため、${month}月${day}日（${sourceWeekday}）と現在年付近の曜日を照合し、${year}年と推定`,
+          ]
+            .filter(Boolean)
+            .join(" / ");
+
+        result.warnings.push(
+          `${item.title || "予定"}の年は資料に明記されていないため、曜日との整合性から${year}年と推定しました。`
+        );
+      }
+    }
 
     const hasDateParts =
       Number.isInteger(year) &&
@@ -1251,13 +1379,6 @@ ${chunkText}
 
       continue;
     }
-
-    const sourceWeekday =
-      item.sourceWeekday
-        ? String(item.sourceWeekday)
-            .replace("曜日", "")
-            .trim()
-        : null;
 
     if (
       sourceWeekday &&

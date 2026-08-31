@@ -1787,22 +1787,6 @@ recheckButton.addEventListener(
       return;
     }
 
-    const alreadyRegistered =
-      Boolean(
-        list.querySelector(
-          '.document-candidate-item[data-registered="true"]'
-        )
-      );
-
-    if (alreadyRegistered) {
-      addMessage(
-        "assistant",
-        "すでに追加済みの項目があるため、この候補では再調査できません。必要なら資料をもう一度送ってください。",
-        new Date()
-      );
-      return;
-    }
-
     recheckButton.disabled = true;
     recheckButton.textContent =
       "再調査中…";
