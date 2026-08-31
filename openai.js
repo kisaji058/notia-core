@@ -1261,16 +1261,6 @@ ${chunkText}
   for (const item of result.items) {
     item.date = null;
 
-    console.log("Document raw date parts:", {
-      title: item.title,
-      sourceYear: item.sourceYear,
-      sourceMonth: item.sourceMonth,
-      sourceDay: item.sourceDay,
-      sourceWeekday: item.sourceWeekday,
-      dateConfidence: item.dateConfidence,
-      dateEvidence: item.dateEvidence,
-    });
-
     let year =
       item.sourceYear === null ||
       item.sourceYear === undefined ||
