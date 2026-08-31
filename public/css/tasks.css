@@ -2437,3 +2437,48 @@ body.tasks-page.plan-page
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
 }
+
+.plan-edit-type-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  padding: 4px;
+  margin-bottom: 18px;
+
+  background: #edf4f2;
+  border-radius: 14px;
+}
+
+.plan-edit-type-switch label {
+  position: relative;
+}
+
+.plan-edit-type-switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.plan-edit-type-switch span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 44px;
+
+  color: #60736f;
+
+  border-radius: 11px;
+
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.plan-edit-type-switch input:checked + span {
+  color: #ffffff;
+  background: #2fa99d;
+
+  box-shadow:
+    0 3px 8px
+    rgba(47, 169, 157, 0.18);
+}

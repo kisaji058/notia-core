@@ -147,6 +147,43 @@ async function saveNotificationSettings(
   return result.settings;
 }
 
+async function hideNotificationSettingsAdBanner() {
+  try {
+    const adMob =
+      window.Capacitor
+        ?.Plugins
+        ?.AdMob;
+
+    if (adMob?.removeBanner) {
+      await adMob.removeBanner();
+    }
+  } catch (error) {
+    console.warn(
+      "Notification settings banner hide error:",
+      error
+    );
+  }
+
+  document.documentElement
+    .style
+    .setProperty(
+      "--ad-banner-height",
+      "0px"
+    );
+}
+
+async function restoreNotificationSettingsAdBanner() {
+  try {
+    await window.NotiaRuntime
+      ?.updateAdBanner?.();
+  } catch (error) {
+    console.warn(
+      "Notification settings banner restore error:",
+      error
+    );
+  }
+}
+
   async function startNativeGoogleCalendarConnect(
     button
   ) {
@@ -363,10 +400,12 @@ async function saveNotificationSettings(
 
   closeAccountMenu();
 
-  document
-    .querySelectorAll(
-      ".notification-settings-sheet"
-    )
+await hideNotificationSettingsAdBanner();
+
+document
+  .querySelectorAll(
+    ".notification-settings-sheet"
+  )
     .forEach((sheet) => {
       sheet.remove();
     });
@@ -480,6 +519,11 @@ async function saveNotificationSettings(
     sheet
   );
 
+  function closeNotificationSettingsSheet() {
+  sheet.remove();
+  restoreNotificationSettingsAdBanner();
+}
+
   const closeButton =
     sheet.querySelector(
       ".notification-settings-close"
@@ -531,20 +575,20 @@ async function saveNotificationSettings(
   );
 
   closeButton.addEventListener(
-    "click",
-    () => {
-      sheet.remove();
-    }
-  );
+  "click",
+  () => {
+    closeNotificationSettingsSheet();
+  }
+);
 
   sheet.addEventListener(
-    "click",
-    (event) => {
-      if (event.target === sheet) {
-        sheet.remove();
-      }
+  "click",
+  (event) => {
+    if (event.target === sheet) {
+      closeNotificationSettingsSheet();
     }
-  );
+  }
+);
 
   saveButton.addEventListener(
     "click",
@@ -568,11 +612,11 @@ async function saveNotificationSettings(
             eveningTime.value,
         });
 
-        sheet.remove();
+        closeNotificationSettingsSheet();
 
-        alert(
-          "通知設定を保存しました。"
-        );
+alert(
+  "通知設定を保存しました。"
+);
       } catch (error) {
         console.error(
           "Notification settings save error:",

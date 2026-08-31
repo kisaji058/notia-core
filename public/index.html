@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta
   name="viewport"
-  content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
 />
 
   <title>Notia</title>
@@ -70,21 +70,37 @@
     class="today-summary-date"
   ></p>
 
+  <div class="today-summary-next">
+  <button
+    id="todaySummaryToggle"
+    class="today-summary-toggle"
+    type="button"
+    aria-expanded="true"
+    aria-controls="todaySummaryScheduleBody"
+  >
+    <span class="today-summary-label">
+      次の予定
+    </span>
+
+    <svg
+      class="today-summary-toggle-chevron"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  </button>
+
   <a
-    class="today-summary-next"
+    id="todaySummaryScheduleBody"
+    class="today-summary-schedule-link"
     href="/calendar"
   >
-    <span class="today-summary-content">
-      <span class="today-summary-label">
-        次の予定
-      </span>
-
-      <span
-        id="todayNextSchedule"
-        class="today-summary-schedule"
-      >
-        予定を確認しています...
-      </span>
+    <span
+      id="todayNextSchedule"
+      class="today-summary-schedule"
+    >
+      予定を確認しています...
     </span>
 
     <svg
@@ -95,6 +111,7 @@
       <path d="m9 5 7 7-7 7" />
     </svg>
   </a>
+</div>
 </section>
 
     <section

@@ -61,6 +61,20 @@ body {
   color: var(--color-text);
   background: var(--color-bg);
 }
+
+html,
+body {
+  touch-action: pan-x pan-y;
+}
+
+button,
+a,
+input,
+select,
+textarea,
+[role="button"] {
+  touch-action: manipulation;
+}
 /* ===== Buttons ===== */
 
 button {
@@ -1209,4 +1223,19 @@ button {
   line-height: 1.5;
 
   text-align: center;
+}
+
+/* Prevent accidental double-tap zoom on interactive app UI */
+html,
+body {
+  touch-action: pan-x pan-y;
+}
+
+button,
+a,
+input,
+select,
+textarea,
+[role="button"] {
+  touch-action: manipulation;
 }

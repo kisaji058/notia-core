@@ -16,10 +16,45 @@ const sendButton =
   chatForm.querySelector(
     'button[type="submit"]'
   );
+
 const todayNextSchedule =
   document.getElementById(
     "todayNextSchedule"
   );
+
+const todaySummaryToggle =
+  document.getElementById(
+    "todaySummaryToggle"
+  );
+
+const todaySummaryScheduleBody =
+  document.getElementById(
+    "todaySummaryScheduleBody"
+  );
+
+todaySummaryToggle?.addEventListener(
+  "click",
+  () => {
+    const isExpanded =
+      todaySummaryToggle.getAttribute(
+        "aria-expanded"
+      ) === "true";
+
+    const nextExpanded =
+      !isExpanded;
+
+    todaySummaryToggle.setAttribute(
+      "aria-expanded",
+      String(nextExpanded)
+    );
+
+    if (todaySummaryScheduleBody) {
+      todaySummaryScheduleBody.hidden =
+        !nextExpanded;
+    }
+  }
+);
+
 let isSending = false;
 
 function clearAttachmentPreview() {
@@ -29,19 +64,59 @@ function clearAttachmentPreview() {
     attachmentInput.value = "";
   }
 
-  document
-    .querySelector(
+  const preview =
+    document.querySelector(
       ".attachment-preview"
-    )
-    ?.remove();
+    );
+
+  const objectUrl =
+    preview?.dataset.objectUrl;
+
+  if (objectUrl) {
+    URL.revokeObjectURL(
+      objectUrl
+    );
+  }
+
+  preview?.remove();
+
+  chatForm.classList.remove(
+    "has-attachment-preview"
+  );
+
+  chat.classList.remove(
+  "has-attachment-preview"
+);
+}
+
+function formatAttachmentSize(bytes) {
+  if (
+    !Number.isFinite(bytes) ||
+    bytes <= 0
+  ) {
+    return "";
+  }
+
+  const mb =
+    bytes / (1024 * 1024);
+
+  if (mb >= 1) {
+    return `${mb.toFixed(1)} MB`;
+  }
+
+  const kb =
+    bytes / 1024;
+
+  return `${Math.max(
+    1,
+    Math.round(kb)
+  )} KB`;
 }
 
 function showAttachmentPreview(file) {
-  document
-    .querySelector(
-      ".attachment-preview"
-    )
-    ?.remove();
+  clearAttachmentPreview();
+
+  selectedAttachment = file;
 
   const preview =
     document.createElement("div");
@@ -49,14 +124,11 @@ function showAttachmentPreview(file) {
   preview.className =
     "attachment-preview";
 
-  const fileName =
-    document.createElement("span");
+  const card =
+    document.createElement("div");
 
-  fileName.className =
-    "attachment-preview-name";
-
-  fileName.textContent =
-    file.name;
+  card.className =
+    "attachment-preview-card";
 
   const removeButton =
     document.createElement("button");
@@ -72,27 +144,125 @@ function showAttachmentPreview(file) {
     "添付を解除"
   );
 
-  removeButton.textContent = "×";
+  removeButton.textContent =
+    "×";
 
   removeButton.addEventListener(
     "click",
-    () => {
-      clearAttachmentPreview();
-    }
+    clearAttachmentPreview
   );
 
-  preview.appendChild(
-    fileName
-  );
+  if (
+    file.type === "image/jpeg" ||
+    file.type === "image/png"
+  ) {
+    card.classList.add(
+      "attachment-preview-card-image"
+    );
 
-  preview.appendChild(
+    const image =
+      document.createElement("img");
+
+    image.className =
+      "attachment-preview-image";
+
+    const objectUrl =
+      URL.createObjectURL(file);
+
+    preview.dataset.objectUrl =
+      objectUrl;
+
+    image.src =
+      objectUrl;
+
+    image.alt =
+      file.name;
+
+    card.appendChild(
+      image
+    );
+  } else {
+    card.classList.add(
+      "attachment-preview-card-pdf"
+    );
+
+    const icon =
+      document.createElement("div");
+
+    icon.className =
+      "attachment-preview-pdf-icon";
+
+    icon.innerHTML = `
+      <span>PDF</span>
+      <div class="attachment-preview-pdf-lines">
+        <i></i>
+        <i></i>
+      </div>
+    `;
+
+    const info =
+      document.createElement("div");
+
+    info.className =
+      "attachment-preview-info";
+
+    const fileName =
+      document.createElement("p");
+
+    fileName.className =
+      "attachment-preview-name";
+
+    fileName.textContent =
+      file.name;
+
+    const fileSize =
+      document.createElement("p");
+
+    fileSize.className =
+      "attachment-preview-size";
+
+    fileSize.textContent =
+      formatAttachmentSize(
+        file.size
+      );
+
+    info.appendChild(
+      fileName
+    );
+
+    info.appendChild(
+      fileSize
+    );
+
+    card.appendChild(
+      icon
+    );
+
+    card.appendChild(
+      info
+    );
+  }
+
+  card.appendChild(
     removeButton
+  );
+
+  preview.appendChild(
+    card
   );
 
   chatForm.insertBefore(
     preview,
     messageInput
   );
+
+  chatForm.classList.add(
+    "has-attachment-preview"
+  );
+
+  chat.classList.add(
+  "has-attachment-preview"
+);
 }
 
 function getJapanDateString(date = new Date()) {
@@ -197,14 +367,71 @@ async function loadTodayNextSchedule() {
       }
 
       schedules.push({
-        minutes,
-        time: task.due_time.slice(0, 5),
-        title:
-          task.title ||
-          task.task_name ||
-          "名称未設定のタスク",
-      });
+  minutes,
+  time: task.due_time.slice(0, 5),
+  type: "task",
+  title:
+    task.title ||
+    task.task_name ||
+    "名称未設定のタスク",
+});
     }
+
+    for (
+  const event of
+  data.events ?? []
+) {
+  const time =
+    event.start_time
+      ? String(
+          event.start_time
+        ).slice(0, 5)
+      : null;
+
+  const minutes =
+    timeToMinutes(time);
+
+  if (minutes === null) {
+    continue;
+  }
+
+  schedules.push({
+    minutes,
+    time,
+    type: "event",
+    title:
+      event.title ||
+      "名称未設定の予定",
+  });
+}
+
+for (
+  const routine of
+  data.routines ?? []
+) {
+  const time =
+    routine.routine_time
+      ? String(
+          routine.routine_time
+        ).slice(0, 5)
+      : null;
+
+  const minutes =
+    timeToMinutes(time);
+
+  if (minutes === null) {
+    continue;
+  }
+
+  schedules.push({
+    minutes,
+    time,
+    type: "routine",
+    title:
+      routine.title ||
+      "名称未設定のルーティーン",
+  });
+}
 
     for (
       const event of
@@ -230,12 +457,13 @@ async function loadTodayNextSchedule() {
       }
 
       schedules.push({
-        minutes,
-        time,
-        title:
-          event.title ||
-          "名称未設定の予定",
-      });
+  minutes,
+  time,
+  type: "event",
+  title:
+    event.title ||
+    "名称未設定の予定",
+});
     }
 
     const currentMinutes =
@@ -258,8 +486,13 @@ async function loadTodayNextSchedule() {
       return;
     }
 
-    todayNextSchedule.textContent =
-      `${nextSchedule.time}から「${nextSchedule.title}」です。`;
+    const connector =
+  nextSchedule.type === "task"
+    ? "までに"
+    : "から";
+
+todayNextSchedule.textContent =
+  `${nextSchedule.time}${connector}「${nextSchedule.title}」です。`;
   } catch (error) {
     console.error(
       "Next schedule error:",
@@ -324,6 +557,79 @@ function scrollChatToBottom() {
       chat.scrollHeight;
   });
 }
+
+const nativeKeyboard =
+  window.Capacitor
+    ?.Plugins
+    ?.Keyboard;
+
+function alignChatAboveInput() {
+  if (!chat || !chatForm) {
+    return;
+  }
+
+  const chatRect =
+    chat.getBoundingClientRect();
+
+  const inputRect =
+    chatForm.getBoundingClientRect();
+
+  const paddingBottom =
+    Math.max(
+      0,
+      chatRect.bottom -
+        inputRect.top +
+        12
+    );
+
+  chat.style.paddingBottom =
+    `${paddingBottom}px`;
+
+  chat.style.scrollPaddingBottom =
+    `${paddingBottom}px`;
+
+  scrollChatToBottom();
+}
+
+function resetChatKeyboardSpacing() {
+  if (!chat) {
+    return;
+  }
+
+  chat.style.paddingBottom = "";
+  chat.style.scrollPaddingBottom = "";
+}
+
+nativeKeyboard?.addListener(
+  "keyboardDidShow",
+  () => {
+    requestAnimationFrame(() => {
+      alignChatAboveInput();
+
+      setTimeout(
+        alignChatAboveInput,
+        80
+      );
+    });
+  }
+);
+
+nativeKeyboard?.addListener(
+  "keyboardDidHide",
+  () => {
+    resetChatKeyboardSpacing();
+  }
+);
+
+messageInput?.addEventListener(
+  "focus",
+  () => {
+    setTimeout(
+      alignChatAboveInput,
+      350
+    );
+  }
+);
 
 function parseConversationDate(createdAt) {
   if (!createdAt) {

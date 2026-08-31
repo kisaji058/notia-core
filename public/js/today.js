@@ -119,10 +119,16 @@ function renderTodayBriefing(
     `今日は予定が${eventCount}件、` +
     `タスクが${taskCount}件あります。`;
 
-  const nextText =
-    nextItem
-      ? `次は${nextItem.startTime}から「${nextItem.title}」です。`
-      : "このあとの予定はありません。";
+
+  const nextConnector =
+  nextItem?.type === "task"
+    ? "までに"
+    : "から";
+
+const nextText =
+  nextItem
+    ? `次は${nextItem.startTime}${nextConnector}「${nextItem.title}」です。`
+    : "このあとの予定はありません。";
 
   const summary =
   document.createElement("p");

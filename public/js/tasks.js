@@ -2753,6 +2753,10 @@ function openPlanEventEditSheet(
     `
   );
 
+  enhanceNativeDateTimeInputs(
+    sheetContent
+  );
+
   bindEventEditForm(
     eventItem
   );
@@ -2797,6 +2801,29 @@ function renderEventEditForm(
       id="editEventForm"
       class="task-create-form event-create-form"
     >
+
+    <div class="plan-edit-type-switch">
+  <label>
+    <input
+      id="editEventTypeTask"
+      type="radio"
+      name="editEventType"
+      value="task"
+    >
+    <span>タスク</span>
+  </label>
+
+  <label>
+    <input
+      id="editEventTypeEvent"
+      type="radio"
+      name="editEventType"
+      value="event"
+      checked
+    >
+    <span>予定</span>
+  </label>
+</div>
       <label
         class="task-create-label"
         for="editEventTitle"
@@ -3280,6 +3307,11 @@ function bindEventEditForm(
     async (event) => {
       event.preventDefault();
 
+      const convertToTask =
+  document.getElementById(
+    "editEventTypeTask"
+  )?.checked === true;
+
       const startTime =
         startTimeInput.value ||
         null;
@@ -3370,23 +3402,87 @@ function bindEventEditForm(
         errorMessage.hidden =
           true;
 
-        const response =
-          await fetch(
-            `/api/events/${eventItem.id}`,
-            {
-              method: "PUT",
+        let endpoint;
+let method;
+let requestBody;
 
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
+if (convertToTask) {
+  endpoint =
+    `/api/events/${eventItem.id}/convert-to-task`;
 
-              body:
-                JSON.stringify(
-                  payload
-                ),
-            }
-          );
+  method = "POST";
+
+  requestBody = {
+    title:
+      document
+        .getElementById(
+          "editEventTitle"
+        )
+        .value
+        .trim(),
+
+    description:
+      document
+        .getElementById(
+          "editEventDescription"
+        )
+        .value
+        .trim(),
+
+    eventDate:
+      document
+        .getElementById(
+          "editEventDate"
+        )
+        .value,
+
+    startTime,
+
+    priority:
+      document
+        .getElementById(
+          "editEventPriorityImportant"
+        )
+        .checked
+        ? "important"
+        : "normal",
+
+    category:
+      document
+        .getElementById(
+          "editEventCategory"
+        )
+        .value,
+
+    notification:
+      notificationInput.value,
+  };
+} else {
+  endpoint =
+    `/api/events/${eventItem.id}`;
+
+  method = "PUT";
+
+  requestBody = payload;
+}
+
+const response =
+  await fetch(
+    endpoint,
+    {
+      method,
+
+      headers: {
+        "Content-Type":
+          "application/json",
+      },
+
+      body:
+        JSON.stringify(
+          requestBody
+        ),
+    }
+  );
 
         const result =
           await response
