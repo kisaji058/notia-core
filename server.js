@@ -119,6 +119,7 @@ const PORT = process.env.PORT || 3000;
 const nativeAppOrigins =
   new Set([
     "capacitor://localhost",
+    "https://localhost",
   ]);
 
 app.use((req, res, next) => {
