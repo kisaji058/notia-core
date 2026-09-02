@@ -890,17 +890,51 @@
   const ADMOB_TEST_BANNER_ID =
     "ca-app-pub-3940256099942544/2934735716";
 
-  const ADMOB_PRODUCTION_BANNER_ID =
+  const ADMOB_IOS_PRODUCTION_BANNER_ID =
     "ca-app-pub-4900678819792582/1200959035";
 
+  const ADMOB_ANDROID_PRODUCTION_BANNER_ID =
+    "";
+
+  function getAdMobProductionBannerId() {
+    const platform =
+      window.Capacitor
+        ?.getPlatform?.();
+
+    if (platform === "android") {
+      return (
+        ADMOB_ANDROID_PRODUCTION_BANNER_ID
+      );
+    }
+
+    return (
+      ADMOB_IOS_PRODUCTION_BANNER_ID
+    );
+  }
+
   function getAdMobBannerConfig() {
+    if (ADMOB_USE_TEST_ADS) {
+      return {
+        adId:
+          ADMOB_TEST_BANNER_ID,
+        isTesting:
+          true,
+      };
+    }
+
+    const adId =
+      getAdMobProductionBannerId();
+
+    if (!adId) {
+      throw new Error(
+        "Production AdMob banner ID is not configured"
+      );
+    }
+
     return {
-      adId:
-        ADMOB_USE_TEST_ADS
-          ? ADMOB_TEST_BANNER_ID
-          : ADMOB_PRODUCTION_BANNER_ID,
+      adId,
       isTesting:
-        ADMOB_USE_TEST_ADS,
+        false,
     };
   }
 
