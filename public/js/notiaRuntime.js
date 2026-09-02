@@ -798,10 +798,25 @@
       return null;
     }
 
-    return window.Capacitor
-      ?.Plugins
-      ?.NotiaStoreKit ||
-      null;
+    const platform =
+      window.Capacitor
+        ?.getPlatform?.();
+
+    if (platform === "android") {
+      return (
+        window.Capacitor
+          ?.Plugins
+          ?.NotiaPlayBilling ||
+        null
+      );
+    }
+
+    return (
+      window.Capacitor
+        ?.Plugins
+        ?.NotiaStoreKit ||
+      null
+    );
   }
 
   function getAdMob() {
@@ -948,7 +963,7 @@
           .style
           .setProperty(
             "--ad-banner-height",
-            "50px"
+            "58px"
           );
       }
     );
@@ -966,6 +981,51 @@
     );
 
     adMobBannerListenersReady = true;
+  }
+
+  function hasVisibleAdBlockingDialog() {
+    const candidates =
+      document.querySelectorAll(
+        [
+          '[role="dialog"]',
+          'dialog',
+          '.sheet-overlay',
+          '.document-editor-overlay',
+          '.notification-settings-sheet',
+          '.notia-paywall-sheet',
+          '.chat-onboarding',
+        ].join(",")
+      );
+
+    return Array.from(candidates).some(
+      (element) => {
+        if (
+          element.hidden ||
+          element.getAttribute(
+            "aria-hidden"
+          ) === "true"
+        ) {
+          return false;
+        }
+
+        const style =
+          window.getComputedStyle(
+            element
+          );
+
+        if (
+          style.display === "none" ||
+          style.visibility === "hidden"
+        ) {
+          return false;
+        }
+
+        return (
+          element.getClientRects()
+            .length > 0
+        );
+      }
+    );
   }
 
   async function updateAdBanner() {
@@ -986,6 +1046,23 @@
       document.querySelector(
         ".bottom-nav"
       );
+
+    if (
+      adKeyboardVisible ||
+      hasVisibleAdBlockingDialog()
+    ) {
+      document.documentElement
+        .style
+        .setProperty(
+          "--ad-banner-height",
+          "0px"
+        );
+
+      await adMob.removeBanner()
+        .catch(() => {});
+
+      return;
+    }
 
     if (!bottomNav) {
       document.documentElement
@@ -1056,6 +1133,13 @@
     await adMob.removeBanner()
       .catch(() => {});
 
+    const bottomNavHeight =
+      Math.ceil(
+        bottomNav
+          .getBoundingClientRect()
+          .height
+      );
+
     await adMob.showBanner({
       adId:
         getAdMobBannerConfig().adId,
@@ -1064,12 +1148,115 @@
       position:
         "BOTTOM_CENTER",
       margin:
-        64,
+  Math.max(
+    bottomNavHeight - 10,
+    0
+  ),
       isTesting:
         getAdMobBannerConfig().isTesting,
       npa: true,
     });
   }
+
+  let adDialogUpdateTimer = null;
+
+  const adDialogObserver =
+    new MutationObserver(() => {
+      clearTimeout(
+        adDialogUpdateTimer
+      );
+
+      adDialogUpdateTimer =
+        setTimeout(() => {
+          updateAdBanner()
+            .catch((error) => {
+              console.warn(
+                "Ad banner dialog update failed:",
+                error
+              );
+            });
+        }, 100);
+    });
+
+  adDialogObserver.observe(
+    document.body,
+    {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: [
+        "hidden",
+        "aria-hidden",
+        "class",
+        "open",
+      ],
+    }
+  );
+
+  let adKeyboardVisible = false;
+
+  async function hideAdBannerForKeyboard() {
+    adKeyboardVisible = true;
+
+    const adMob = getAdMob();
+
+    if (adMob) {
+      await adMob.removeBanner()
+        .catch(() => {});
+    }
+
+    document.documentElement
+      .style
+      .setProperty(
+        "--ad-banner-height",
+        "0px"
+      );
+  }
+
+  async function restoreAdBannerAfterKeyboard() {
+    adKeyboardVisible = false;
+
+    await updateAdBanner()
+      .catch((error) => {
+        console.warn(
+          "Ad banner keyboard restore failed:",
+          error
+        );
+      });
+  }
+
+  function initializeKeyboardAdBehavior() {
+    if (!isNativeApp()) {
+      return;
+    }
+
+    const keyboard =
+      window.Capacitor
+        ?.Plugins
+        ?.Keyboard;
+
+    if (!keyboard) {
+      return;
+    }
+
+    keyboard.addListener(
+      "keyboardWillShow",
+      () => {
+        hideAdBannerForKeyboard()
+          .catch(() => {});
+      }
+    );
+
+    keyboard.addListener(
+      "keyboardWillHide",
+      () => {
+        restoreAdBannerAfterKeyboard()
+          .catch(() => {});
+      }
+    );
+  }
+
+  initializeKeyboardAdBehavior();
 
   async function getCurrentSubscription() {
     const storeKit =
@@ -1243,6 +1430,94 @@
     return result;
   }
 
+
+  async function syncGoogleSubscription(
+    entitlement
+  ) {
+    const productId =
+      entitlement?.productId;
+
+    const purchaseToken =
+      entitlement?.purchaseToken;
+
+    if (
+      typeof productId !== "string" ||
+      !productId
+    ) {
+      throw new Error(
+        "Google productId is required"
+      );
+    }
+
+    if (
+      typeof purchaseToken !== "string" ||
+      !purchaseToken
+    ) {
+      throw new Error(
+        "Google purchaseToken is required"
+      );
+    }
+
+    const authToken =
+      isNativeApp()
+        ? await getAuthToken()
+        : null;
+
+    if (
+      isNativeApp() &&
+      !authToken
+    ) {
+      throw new Error(
+        "Auth token is required"
+      );
+    }
+
+    const headers = {
+      "Content-Type":
+        "application/json",
+    };
+
+    if (authToken) {
+      headers.Authorization =
+        `Bearer ${authToken}`;
+    }
+
+    const response =
+      await fetch(
+        apiUrl(
+          "/api/subscription/google-sync"
+        ),
+        {
+          method: "POST",
+          headers,
+          credentials:
+            isNativeApp()
+              ? "omit"
+              : "same-origin",
+          body: JSON.stringify({
+            productId,
+            purchaseToken,
+          }),
+        }
+      );
+
+    const result =
+      await response
+        .json()
+        .catch(
+          () => ({})
+        );
+
+    if (!response.ok) {
+      throw new Error(
+        result.error ||
+        `Google subscription sync failed: ${response.status}`
+      );
+    }
+
+    return result;
+  }
+
   async function purchaseSubscription(
     productId
   ) {
@@ -1288,9 +1563,19 @@
         : null;
 
     if (activeEntitlement) {
-      await syncAppleSubscription(
-        activeEntitlement
-      );
+      const platform =
+        window.Capacitor
+          ?.getPlatform?.();
+
+      if (platform === "android") {
+        await syncGoogleSubscription(
+          activeEntitlement
+        );
+      } else {
+        await syncAppleSubscription(
+          activeEntitlement
+        );
+      }
 
       await updateAdBanner();
     }
@@ -1333,9 +1618,19 @@
         : null;
 
     if (activeEntitlement) {
-      await syncAppleSubscription(
-        activeEntitlement
-      );
+      const platform =
+        window.Capacitor
+          ?.getPlatform?.();
+
+      if (platform === "android") {
+        await syncGoogleSubscription(
+          activeEntitlement
+        );
+      } else {
+        await syncAppleSubscription(
+          activeEntitlement
+        );
+      }
 
       await updateAdBanner();
     }
@@ -1360,6 +1655,7 @@
     getCurrentSubscription,
     syncDevSubscription,
     syncAppleSubscription,
+    syncGoogleSubscription,
     purchaseSubscription,
     restoreSubscription,
     updateAdBanner,
@@ -1367,7 +1663,7 @@
 
   setupNativeKeyboard();
 
-  async function refreshAppleSubscriptionState() {
+  async function refreshSubscriptionState() {
     if (!isNativeApp()) {
       return;
     }
@@ -1399,20 +1695,30 @@
           : null;
 
       if (activeEntitlement) {
-        await syncAppleSubscription(
-          activeEntitlement
-        );
+        const platform =
+          window.Capacitor
+            ?.getPlatform?.();
+
+        if (platform === "android") {
+          await syncGoogleSubscription(
+            activeEntitlement
+          );
+        } else {
+          await syncAppleSubscription(
+            activeEntitlement
+          );
+        }
       }
     } catch (error) {
       console.warn(
-        "Apple subscription refresh error:",
+        "Subscription refresh error:",
         error
       );
     }
   }
 
   const startAdBanner = async () => {
-    await refreshAppleSubscriptionState();
+    await refreshSubscriptionState();
 
     await updateAdBanner();
   };

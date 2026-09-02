@@ -5,7 +5,8 @@
   "loggingBehavior": "none",
   "plugins": {
     "Keyboard": {
-      "resize": "none"
+      "resize": "none",
+      "resizeOnFullScreen": true
     }
   }
 }

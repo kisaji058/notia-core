@@ -1578,7 +1578,7 @@ input:checked + span {
   --keyboard-height: 0px;
 }
 
-.chat-page.keyboard-open .input-area {
+body.keyboard-open .input-area {
   bottom:
     calc(
       var(--keyboard-height) +

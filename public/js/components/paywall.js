@@ -418,14 +418,18 @@
         <div class="notia-paywall-legal">
           <p class="notia-paywall-note">
             各プランは月額の自動更新サブスクリプションです。
-            購入確定時にApple Accountへ請求され、
+            購入確定時に${window.Capacitor?.getPlatform?.() === "android"
+              ? "Google Play"
+              : "Apple Account"}へ請求され、
             更新日の24時間前までに解約されない限り
             自動的に更新されます。
           </p>
 
           <p class="notia-paywall-note">
             サブスクリプションの管理・解約は
-            Apple Accountの設定から行えます。
+            ${window.Capacitor?.getPlatform?.() === "android"
+              ? "Google Play"
+              : "Apple Account"}の設定から行えます。
           </p>
 
           <div class="notia-paywall-legal-links">

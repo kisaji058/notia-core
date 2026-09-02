@@ -10,6 +10,7 @@ const {
 const {
   syncLocalSubscription,
   syncVerifiedAppleSubscription,
+  syncVerifiedGoogleSubscription,
 } = require(
   "../services/SubscriptionService"
 );
@@ -18,6 +19,13 @@ const {
   verifySignedTransaction,
 } = require(
   "../services/AppleSubscriptionVerificationService"
+);
+
+const {
+  verifyGoogleSubscription,
+  acknowledgeGoogleSubscription,
+} = require(
+  "../services/GooglePlaySubscriptionVerificationService"
 );
 
 const router =
@@ -148,6 +156,192 @@ router.post(
             "APPLE_TRANSACTION_VERIFICATION_FAILED",
           error:
             "Appleの購入情報を確認できませんでした。",
+        });
+    }
+  }
+);
+
+
+router.post(
+  "/subscription/google-sync",
+  async (req, res) => {
+    try {
+      const {
+        productId,
+        purchaseToken,
+      } = req.body || {};
+
+      if (
+        typeof productId !==
+          "string" ||
+        !productId
+      ) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            code:
+              "PRODUCT_ID_REQUIRED",
+            error:
+              "productIdが必要です。",
+          });
+      }
+
+      if (
+        typeof purchaseToken !==
+          "string" ||
+        !purchaseToken
+      ) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            code:
+              "PURCHASE_TOKEN_REQUIRED",
+            error:
+              "purchaseTokenが必要です。",
+          });
+      }
+
+      const purchase =
+        await verifyGoogleSubscription({
+          productId,
+          purchaseToken,
+        });
+
+      const shouldAcknowledge =
+        purchase
+          ?.acknowledgementState ===
+          "ACKNOWLEDGEMENT_STATE_PENDING" &&
+        purchase?.status !==
+          "inactive" &&
+        purchase?.status !==
+          "expired" &&
+        purchase?.status !==
+          "revoked";
+
+      if (shouldAcknowledge) {
+        await acknowledgeGoogleSubscription({
+          productId:
+            purchase.productId,
+          purchaseToken:
+            purchase.purchaseToken,
+        });
+      }
+
+      const subscription =
+        await syncVerifiedGoogleSubscription({
+          userId:
+            req.userId,
+          purchase,
+        });
+
+      const entitlements =
+        getEntitlements(
+          req.userId
+        );
+
+      return res.json({
+        success: true,
+        subscription,
+        entitlements,
+      });
+
+    } catch (error) {
+      console.error(
+        "Google subscription sync error:",
+        error
+      );
+
+      if (
+        error.code ===
+          "GOOGLE_PLAY_VERIFICATION_NOT_CONFIGURED" ||
+        error.code ===
+          "GOOGLE_PLAY_VERIFICATION_NOT_IMPLEMENTED"
+      ) {
+        return res
+          .status(503)
+          .json({
+            success: false,
+            code:
+              error.code,
+            error:
+              "Google Playの購入検証は現在準備中です。",
+          });
+      }
+
+      if (
+        error.code ===
+          "PRODUCT_ID_REQUIRED" ||
+        error.code ===
+          "PURCHASE_TOKEN_REQUIRED" ||
+        error.code ===
+          "INVALID_PRODUCT_ID"
+      ) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            code:
+              error.code,
+            error:
+              error.message,
+          });
+      }
+
+      if (
+        error.code ===
+          "SUBSCRIPTION_ALREADY_LINKED"
+      ) {
+        return res
+          .status(409)
+          .json({
+            success: false,
+            code:
+              error.code,
+            error:
+              "このGoogle Playの購入は、別のNotiaアカウントに紐づいています。",
+          });
+      }
+
+      if (
+        error.code ===
+          "GOOGLE_PLAY_ACKNOWLEDGEMENT_FAILED"
+      ) {
+        return res
+          .status(502)
+          .json({
+            success: false,
+            code:
+              error.code,
+            error:
+              "Google Playで購入の確定処理に失敗しました。",
+          });
+      }
+
+      if (
+        error.code ===
+          "GOOGLE_PLAY_VERIFICATION_FAILED"
+      ) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            code:
+              error.code,
+            error:
+              "Google Playの購入情報を確認できませんでした。",
+          });
+      }
+
+      return res
+        .status(500)
+        .json({
+          success: false,
+          code:
+            "GOOGLE_SUBSCRIPTION_SYNC_FAILED",
+          error:
+            "Google Playの購入情報を確認できませんでした。",
         });
     }
   }

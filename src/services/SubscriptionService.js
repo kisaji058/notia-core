@@ -215,8 +215,126 @@ async function syncVerifiedAppleSubscription({
   );
 }
 
+
+async function syncVerifiedGoogleSubscription({
+  userId,
+  purchase,
+}) {
+  const productId =
+    purchase?.productId;
+
+  const purchaseToken =
+    purchase?.purchaseToken;
+
+  const plan =
+    getPlanFromProductId(
+      productId
+    );
+
+  if (!plan) {
+    const error =
+      new Error(
+        "Unknown subscription product."
+      );
+
+    error.code =
+      "INVALID_PRODUCT_ID";
+
+    throw error;
+  }
+
+  if (
+    typeof purchaseToken !==
+      "string" ||
+    !purchaseToken
+  ) {
+    const error =
+      new Error(
+        "Google Play purchase token is required."
+      );
+
+    error.code =
+      "PURCHASE_TOKEN_REQUIRED";
+
+    throw error;
+  }
+
+  const existing =
+    getSubscriptionByOriginalTransactionId(
+      purchaseToken
+    );
+
+  if (
+    existing &&
+    Number(existing.user_id) !==
+      Number(userId)
+  ) {
+    const error =
+      new Error(
+        "This Google Play subscription is already linked to another Notia account."
+      );
+
+    error.code =
+      "SUBSCRIPTION_ALREADY_LINKED";
+
+    throw error;
+  }
+
+  const expiresAt =
+    purchase?.expiresAt ||
+    null;
+
+  let status =
+    purchase?.status ||
+    "active";
+
+  if (
+    expiresAt &&
+    new Date(
+      expiresAt
+    ).getTime() <=
+      Date.now()
+  ) {
+    status =
+      "expired";
+  }
+
+  upsertUserSubscription({
+    userId,
+
+    platform:
+      "google",
+
+    plan,
+
+    productId,
+
+    originalTransactionId:
+      purchaseToken,
+
+    status,
+
+    expiresAt,
+
+    autoRenewStatus:
+      purchase?.autoRenewStatus === false
+        ? 0
+        : status === "active"
+          ? 1
+          : 0,
+
+    lastVerifiedAt:
+      new Date().toISOString(),
+  });
+
+  return getUserSubscription(
+    userId
+  );
+}
+
 module.exports = {
   getPlanFromProductId,
   syncLocalSubscription,
   syncVerifiedAppleSubscription,
+  syncVerifiedGoogleSubscription,
 };
