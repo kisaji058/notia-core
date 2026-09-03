@@ -894,7 +894,7 @@
     "ca-app-pub-4900678819792582/1200959035";
 
   const ADMOB_ANDROID_PRODUCTION_BANNER_ID =
-    "";
+    "ca-app-pub-4900678819792582/7295879507";
 
   function getAdMobProductionBannerId() {
     const platform =
