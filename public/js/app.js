@@ -11,6 +11,11 @@ const attachmentInput =
     "attachmentInput"
   );
 
+const cameraInput =
+  document.getElementById(
+    "cameraInput"
+  );
+
 let selectedAttachment = null;
 const sendButton =
   chatForm.querySelector(
@@ -63,6 +68,10 @@ function clearAttachmentPreview() {
   if (attachmentInput) {
     attachmentInput.value = "";
   }
+
+  if (cameraInput) {
+  cameraInput.value = "";
+}
 
   const preview =
     document.querySelector(
@@ -2324,7 +2333,16 @@ attachmentButton?.addEventListener(
       return;
     }
 
-    attachmentInput?.click();
+    const useCamera =
+      window.confirm(
+        "写真を撮影しますか？\n\nOK：カメラで撮影\nキャンセル：写真・PDFを選択"
+      );
+
+    if (useCamera) {
+      cameraInput?.click();
+    } else {
+      attachmentInput?.click();
+    }
   }
 );
 
@@ -2371,6 +2389,47 @@ attachmentInput?.addEventListener(
 
     selectedAttachment =
       file;
+
+    showAttachmentPreview(
+      file
+    );
+  }
+);
+
+cameraInput?.addEventListener(
+  "change",
+  () => {
+    const file =
+      cameraInput.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (
+      !file.type.startsWith(
+        "image/"
+      )
+    ) {
+      alert(
+        "画像ファイルのみ添付できます。"
+      );
+      clearAttachmentPreview();
+      return;
+    }
+
+    const maxSize =
+      25 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+      alert(
+        "ファイルサイズは25MB以下にしてください。"
+      );
+      clearAttachmentPreview();
+      return;
+    }
+
+    selectedAttachment = file;
 
     showAttachmentPreview(
       file

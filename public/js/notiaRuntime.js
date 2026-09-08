@@ -508,6 +508,11 @@
         ? "production"
         : "sandbox";
 
+    const platform =
+      result?.platform === "android"
+        ? "android"
+        : "ios";
+
     if (
       typeof deviceToken !==
         "string" ||
@@ -532,6 +537,7 @@
           body: JSON.stringify({
             deviceToken,
             environment,
+            platform,
           }),
         }
       );

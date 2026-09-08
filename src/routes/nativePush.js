@@ -20,6 +20,11 @@ router.post(
       const environment =
         req.body?.environment;
 
+      const platform =
+        req.body?.platform === "android"
+          ? "android"
+          : "ios";
+
       if (
         typeof deviceToken !==
           "string" ||
@@ -42,8 +47,7 @@ router.post(
           req.userId,
         deviceToken:
           deviceToken.trim(),
-        platform:
-          "ios",
+        platform,
         apnsEnvironment,
       });
 

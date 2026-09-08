@@ -19,3 +19,6 @@ backups/
 
 # Application logs
 logs/
+
+# Firebase Android config
+android/app/google-services.json
