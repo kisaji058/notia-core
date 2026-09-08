@@ -100,6 +100,10 @@ const {
 } = require("./src/services/APNsService");
 
 const {
+  sendFCMPush,
+} = require("./src/services/FCMService");
+
+const {
   extractDocumentSchedule,
 } = require("./openai");
 
@@ -1118,13 +1122,31 @@ async function sendNativePushNotification(
   const results =
     await Promise.allSettled(
       tokens.map(
-        (token) =>
-          sendPush({
+        (token) => {
+          if (
+            token.platform ===
+              "android"
+          ) {
+            return sendFCMPush({
+              deviceToken:
+                token.device_token,
+              title,
+              body,
+            });
+          }
+
+          return sendPush({
             deviceToken:
               token.device_token,
             title,
             body,
-          })
+            environment:
+              token.apns_environment ===
+                "production"
+                ? "production"
+                : "sandbox",
+          });
+        }
       )
     );
 
@@ -1146,10 +1168,12 @@ async function sendNativePushNotification(
           userId,
           pushTokenId:
             tokens[index].id,
+          platform:
+            tokens[index].platform,
           error:
             result.reason
               ?.message ||
-            "Unknown APNs error",
+            "Unknown push error",
         }
       );
     }
