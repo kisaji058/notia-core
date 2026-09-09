@@ -134,6 +134,16 @@
       return;
     }
 
+    const platform =
+      window.Capacitor
+        ?.getPlatform?.();
+
+    // Android WebView already resizes around the soft keyboard.
+    // Do not additionally move the input area by keyboardHeight.
+    if (platform === "android") {
+      return;
+    }
+
     const keyboard =
       window.Capacitor
         ?.Plugins
@@ -998,7 +1008,7 @@
 
     await adMob.addListener(
       "bannerAdLoaded",
-      () => {
+      (info) => {
         document.documentElement
           .style
           .setProperty(
@@ -1010,7 +1020,7 @@
 
     await adMob.addListener(
       "bannerAdFailedToLoad",
-      () => {
+      (error) => {
         document.documentElement
           .style
           .setProperty(
@@ -1189,7 +1199,7 @@
         "BOTTOM_CENTER",
       margin:
   Math.max(
-    bottomNavHeight - 10,
+    bottomNavHeight + 2,
     0
   ),
       isTesting:
