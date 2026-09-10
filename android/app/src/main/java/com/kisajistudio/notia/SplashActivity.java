@@ -58,6 +58,13 @@ public class SplashActivity extends Activity {
                         MainActivity.class
                     );
 
+                Bundle extras =
+                    getIntent().getExtras();
+
+                if (extras != null) {
+                    intent.putExtras(extras);
+                }
+
                 startActivity(intent);
 
                 finish();

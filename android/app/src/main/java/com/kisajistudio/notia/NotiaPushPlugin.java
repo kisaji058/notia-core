@@ -10,14 +10,34 @@ import com.google.firebase.messaging.FirebaseMessaging;
 @CapacitorPlugin(name = "NotiaPush")
 public class NotiaPushPlugin extends Plugin {
 
+    private static String pendingRoute = null;
+
+    public static synchronized void setPendingRoute(
+        String route
+    ) {
+        if (
+            route == null ||
+            route.isEmpty() ||
+            !route.startsWith("/")
+        ) {
+            return;
+        }
+
+        pendingRoute = route;
+    }
+
+    private static synchronized String consumePendingRoute() {
+        String route = pendingRoute;
+        pendingRoute = null;
+        return route;
+    }
+
     @PluginMethod
     public void getDeviceToken(PluginCall call) {
-
         FirebaseMessaging
             .getInstance()
             .getToken()
             .addOnCompleteListener(task -> {
-
                 if (!task.isSuccessful()) {
                     call.reject(
                         "FCM token acquisition failed",
@@ -64,14 +84,26 @@ public class NotiaPushPlugin extends Plugin {
     public void getPendingRoute(
         PluginCall call
     ) {
+        String route =
+            consumePendingRoute();
 
         JSObject result =
             new JSObject();
 
-        result.put(
-            "route",
-            JSObject.NULL
-        );
+        if (
+            route != null &&
+            !route.isEmpty()
+        ) {
+            result.put(
+                "route",
+                route
+            );
+        } else {
+            result.put(
+                "route",
+                JSObject.NULL
+            );
+        }
 
         call.resolve(result);
     }

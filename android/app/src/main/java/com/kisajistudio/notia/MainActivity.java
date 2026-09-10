@@ -1,6 +1,7 @@
 package com.kisajistudio.notia;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -12,11 +13,11 @@ import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
 
-    private static final int REQUEST_POST_NOTIFICATIONS = 1001;
+    private static final int REQUEST_POST_NOTIFICATIONS =
+        1001;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-
         registerPlugin(
             NotiaPlayBillingPlugin.class
         );
@@ -25,13 +26,42 @@ public class MainActivity extends BridgeActivity {
             NotiaPushPlugin.class
         );
 
+        capturePushRoute(
+            getIntent()
+        );
+
         super.onCreate(savedInstanceState);
 
         requestNotificationPermissionIfNeeded();
     }
 
-    private void requestNotificationPermissionIfNeeded() {
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
 
+        setIntent(intent);
+
+        capturePushRoute(intent);
+    }
+
+    private void capturePushRoute(
+        Intent intent
+    ) {
+        if (intent == null) {
+            return;
+        }
+
+        String route =
+            intent.getStringExtra(
+                "route"
+            );
+
+        NotiaPushPlugin.setPendingRoute(
+            route
+        );
+    }
+
+    private void requestNotificationPermissionIfNeeded() {
         if (
             Build.VERSION.SDK_INT <
             Build.VERSION_CODES.TIRAMISU
