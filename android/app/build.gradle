@@ -1,6 +1,15 @@
 apply plugin: 'com.android.application'
 
 android {
+
+    signingConfigs {
+        release {
+            storeFile file(project.findProperty("NOTIA_UPLOAD_STORE_FILE") ?: "notia-upload-key.jks")
+            storePassword project.findProperty("NOTIA_UPLOAD_STORE_PASSWORD")
+            keyAlias project.findProperty("NOTIA_UPLOAD_KEY_ALIAS")
+            keyPassword project.findProperty("NOTIA_UPLOAD_KEY_PASSWORD")
+        }
+    }
     namespace = "com.kisajistudio.notia"
     compileSdk = rootProject.ext.compileSdkVersion
 
@@ -19,6 +28,7 @@ android {
 
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

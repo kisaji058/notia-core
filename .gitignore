@@ -22,3 +22,6 @@ logs/
 
 # Firebase Android config
 android/app/google-services.json
+
+# Android release signing key
+android/app/notia-upload-key.jks
