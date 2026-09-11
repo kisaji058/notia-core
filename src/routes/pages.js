@@ -60,6 +60,18 @@ router.get(
 );
 
 router.get(
+  "/delete-account",
+  (req, res) => {
+    return res.sendFile(
+      path.join(
+        publicDir,
+        "delete-account.html"
+      )
+    );
+  }
+);
+
+router.get(
   "/login",
   (req, res) => {
     if (req.session?.userId) {
