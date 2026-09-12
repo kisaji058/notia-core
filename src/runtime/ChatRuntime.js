@@ -176,7 +176,8 @@ const isDecliningSuggestion =
 
 if (
   analysis.intent === "task_complete" &&
-  !isExplicitCompletion
+  !isExplicitCompletion &&
+  !analysis.targetTaskId
 ) {
   console.warn(
     "曖昧な完了判定を無効化しました。",

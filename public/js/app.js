@@ -1,5 +1,86 @@
 const chat = document.getElementById("chat");
 const chatForm = document.getElementById("chatForm");
+
+const characterChat =
+  document.getElementById(
+    "characterChat"
+  );
+
+const normalChatModeButton =
+  document.getElementById(
+    "normalChatModeButton"
+  );
+
+const characterChatModeButton =
+  document.getElementById(
+    "characterChatModeButton"
+  );
+
+const characterLatestMessage =
+  document.getElementById(
+    "characterLatestMessage"
+  );
+
+const characterActionCard =
+  document.getElementById(
+    "characterActionCard"
+  );
+
+const characterTia =
+  document.querySelector(
+    ".character-tia"
+  );
+
+const secretaryLevel =
+  document.getElementById(
+    "secretaryLevel"
+  );
+
+const secretaryExpBar =
+  document.getElementById(
+    "secretaryExpBar"
+  );
+
+const secretaryExpCurrent =
+  document.getElementById(
+    "secretaryExpCurrent"
+  );
+
+const secretaryExpNext =
+  document.getElementById(
+    "secretaryExpNext"
+  );
+
+const secretaryHelpButton =
+  document.getElementById(
+    "secretaryHelpButton"
+  );
+
+const secretaryHelpPopover =
+  document.getElementById(
+    "secretaryHelpPopover"
+  );
+
+const todaySummary =
+  document.querySelector(
+    ".today-summary"
+  );
+
+let currentChatView = "normal";
+let previousSecretaryLevel = null;
+let currentSecretaryLevel = 1;
+let currentNotiaExpression = "default";
+let isRestoringConversationHistory = false;
+
+let latestCharacterReply = "";
+let latestChatUpdatedAt = null;
+let characterIdleTimer = null;
+
+const CHARACTER_IDLE_MESSAGE =
+  "何かお手伝いしましょうか？";
+
+const CHARACTER_IDLE_THRESHOLD_MS =
+  2 * 60 * 60 * 1000;
 const messageInput = document.getElementById("messageInput");
 const attachmentButton =
   document.querySelector(
@@ -37,6 +118,16 @@ const todaySummaryScheduleBody =
     "todaySummaryScheduleBody"
   );
 
+const characterTodayDate =
+  document.getElementById(
+    "characterTodayDate"
+  );
+
+const characterTodayList =
+  document.getElementById(
+    "characterTodayList"
+  );
+
 todaySummaryToggle?.addEventListener(
   "click",
   () => {
@@ -59,6 +150,260 @@ todaySummaryToggle?.addEventListener(
     }
   }
 );
+
+function setChatView(mode) {
+  const isCharacter =
+    mode === "character";
+
+  currentChatView =
+    isCharacter
+      ? "character"
+      : "normal";
+
+  try {
+    localStorage.setItem(
+      "notia.chatViewMode",
+      currentChatView
+    );
+  } catch (error) {
+    console.warn(
+      "Chat view preference save failed:",
+      error
+    );
+  }
+
+  if (chat) {
+    chat.hidden =
+      isCharacter;
+  }
+
+  if (characterChat) {
+    characterChat.hidden =
+      !isCharacter;
+  }
+
+  if (todaySummary) {
+    todaySummary.hidden =
+      isCharacter;
+  }
+
+  normalChatModeButton
+    ?.classList.toggle(
+      "active",
+      !isCharacter
+    );
+
+  characterChatModeButton
+    ?.classList.toggle(
+      "active",
+      isCharacter
+    );
+
+  normalChatModeButton
+    ?.setAttribute(
+      "aria-pressed",
+      String(!isCharacter)
+    );
+
+  characterChatModeButton
+    ?.setAttribute(
+      "aria-pressed",
+      String(isCharacter)
+    );
+
+  if (!isCharacter) {
+    scrollChatToBottom();
+  }
+}
+
+normalChatModeButton
+  ?.addEventListener(
+    "click",
+    () => {
+      setChatView("normal");
+    }
+  );
+
+characterChatModeButton
+  ?.addEventListener(
+    "click",
+    () => {
+      setChatView("character");
+    }
+  );
+
+function restoreChatView() {
+  let savedMode = null;
+
+  try {
+    savedMode =
+      localStorage.getItem(
+        "notia.chatViewMode"
+      );
+  } catch (error) {
+    console.warn(
+      "Chat view preference load failed:",
+      error
+    );
+  }
+
+  setChatView(
+    savedMode === "character"
+      ? "character"
+      : "normal"
+  );
+}
+
+restoreChatView();
+
+function renderCharacterMessage() {
+  if (!characterLatestMessage) {
+    return;
+  }
+
+  const now = Date.now();
+
+  const isIdle =
+    latestChatUpdatedAt &&
+    now - latestChatUpdatedAt >=
+      CHARACTER_IDLE_THRESHOLD_MS;
+
+  if (isIdle) {
+    characterLatestMessage.textContent =
+      CHARACTER_IDLE_MESSAGE;
+    return;
+  }
+
+  if (latestCharacterReply) {
+    characterLatestMessage.textContent =
+      latestCharacterReply;
+  }
+}
+
+function updateCharacterLatestMessage(
+  text,
+  createdAt = null
+) {
+  if (text) {
+    latestCharacterReply = text;
+  }
+
+  const parsedDate =
+    createdAt
+      ? parseConversationDate(createdAt)
+      : new Date();
+
+  if (
+    parsedDate instanceof Date &&
+    !Number.isNaN(parsedDate.getTime())
+  ) {
+    latestChatUpdatedAt =
+      parsedDate.getTime();
+  }
+
+  renderCharacterMessage();
+}
+
+function startCharacterIdleTimer() {
+  if (characterIdleTimer) {
+    clearInterval(characterIdleTimer);
+  }
+
+  characterIdleTimer =
+    setInterval(
+      () => {
+        renderCharacterMessage();
+      },
+      60 * 1000
+    );
+}
+
+startCharacterIdleTimer();
+
+function playNotiaReplyReaction() {
+  if (!characterTia) {
+    return;
+  }
+
+  characterTia.classList.remove(
+    "notia-reply-react"
+  );
+
+  void characterTia.offsetWidth;
+
+  characterTia.classList.add(
+    "notia-reply-react"
+  );
+
+  window.setTimeout(() => {
+    characterTia.classList.remove(
+      "notia-reply-react"
+    );
+  }, 450);
+}
+
+
+const NOTIA_EXPRESSION_IMAGES = {
+  default:
+    "/images/character/tia-default.png",
+  smile:
+    "/images/character/tia-smile.png",
+  worried:
+    "/images/character/tia-worried.png",
+  surprised:
+    "/images/character/tia-surprised.png",
+  sidelook:
+    "/images/character/tia-sidelook.png",
+};
+
+function setNotiaExpression(
+  expression = "default"
+) {
+  if (!characterTia) {
+    return;
+  }
+
+  const requestedExpression =
+    expression || "default";
+
+  currentNotiaExpression =
+    requestedExpression;
+
+  const effectiveExpression =
+    requestedExpression === "default" &&
+    currentSecretaryLevel >= 5
+      ? "smile"
+      : requestedExpression;
+
+  const src =
+    NOTIA_EXPRESSION_IMAGES[
+      effectiveExpression
+    ] ||
+    NOTIA_EXPRESSION_IMAGES.default;
+
+  if (
+    characterTia.getAttribute("src") !==
+    src
+  ) {
+    characterTia.src = src;
+  }
+}
+
+function updateNotiaExpression(
+  expression = "default"
+) {
+  setNotiaExpression(
+    expression || "default"
+  );
+}
+
+/* 表情画像を先読みして切替時のちらつきを防ぐ */
+Object.values(
+  NOTIA_EXPRESSION_IMAGES
+).forEach((src) => {
+  const image = new Image();
+  image.src = src;
+});
 
 let isSending = false;
 
@@ -513,6 +858,346 @@ todayNextSchedule.textContent =
   }
 }
 
+function showSecretaryLevelUp(
+  level
+) {
+  const characterWorld =
+    characterChat?.querySelector(
+      ".character-world"
+    );
+
+  if (!characterWorld) {
+    return;
+  }
+
+  const oldToast =
+    characterWorld.querySelector(
+      ".character-level-up-toast"
+    );
+
+  if (oldToast) {
+    oldToast.remove();
+  }
+
+  const toast =
+    document.createElement("div");
+
+  toast.className =
+    "character-level-up-toast";
+
+  toast.textContent =
+    `Secretary Lv.${level}`;
+
+  characterWorld.appendChild(
+    toast
+  );
+
+  const status =
+    characterWorld.querySelector(
+      ".character-secretary-status"
+    );
+
+  status?.classList.remove(
+    "secretary-level-up"
+  );
+
+  void status?.offsetWidth;
+
+  status?.classList.add(
+    "secretary-level-up"
+  );
+
+  playNotiaReplyReaction();
+
+  window.setTimeout(() => {
+    toast.classList.add(
+      "is-leaving"
+    );
+  }, 1400);
+
+  window.setTimeout(() => {
+    toast.remove();
+
+    status?.classList.remove(
+      "secretary-level-up"
+    );
+  }, 1900);
+}
+
+async function loadSecretaryProgress() {
+  if (
+    !secretaryLevel ||
+    !secretaryExpBar ||
+    !secretaryExpCurrent ||
+    !secretaryExpNext
+  ) {
+    return;
+  }
+
+  try {
+    const response =
+      await fetch(
+        "/api/secretary-progress"
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        `Secretary progress取得失敗: ${response.status}`
+      );
+    }
+
+    const data =
+      await response.json();
+
+    const level =
+      Number(data.level) || 1;
+
+    currentSecretaryLevel =
+      level;
+
+    const didLevelUp =
+      previousSecretaryLevel !== null &&
+      level > previousSecretaryLevel;
+
+    previousSecretaryLevel =
+      level;
+
+    const currentExp =
+      Number(data.currentExp) || 0;
+
+    const requiredExp =
+      Number(data.requiredExp) || 100;
+
+    const percent =
+      Math.max(
+        0,
+        Math.min(
+          100,
+          Math.round(
+            (currentExp / requiredExp) *
+            100
+          )
+        )
+      );
+
+    secretaryLevel.textContent =
+      String(level);
+
+    secretaryExpCurrent.textContent =
+      String(currentExp);
+
+    secretaryExpNext.textContent =
+      String(requiredExp);
+
+    secretaryExpBar.style.width =
+      `${percent}%`;
+
+    setNotiaExpression(
+      currentNotiaExpression
+    );
+
+    const progressBar =
+      secretaryExpBar.parentElement;
+
+    if (progressBar) {
+      progressBar.setAttribute(
+        "aria-valuemin",
+        "0"
+      );
+
+      progressBar.setAttribute(
+        "aria-valuemax",
+        String(requiredExp)
+      );
+
+      progressBar.setAttribute(
+        "aria-valuenow",
+        String(currentExp)
+      );
+    }
+
+    if (didLevelUp) {
+      showSecretaryLevelUp(
+        level
+      );
+    }
+  } catch (error) {
+    console.error(
+      "Secretary progress load error:",
+      error
+    );
+  }
+}
+
+async function loadCharacterToday() {
+  if (
+    !characterTodayDate ||
+    !characterTodayList
+  ) {
+    return;
+  }
+
+  const today =
+    getJapanDateString();
+
+  try {
+    const response =
+      await fetch(
+        `/api/today?date=${encodeURIComponent(today)}`
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        `Character Today取得失敗: ${response.status}`
+      );
+    }
+
+    const data =
+      await response.json();
+
+    const timeline =
+      Array.isArray(data.timeline)
+        ? data.timeline
+        : [];
+
+    const date =
+      new Date(
+        `${today}T00:00:00+09:00`
+      );
+
+    const monthDay =
+      date.toLocaleDateString(
+        "ja-JP",
+        {
+          month: "numeric",
+          day: "numeric",
+          timeZone: "Asia/Tokyo",
+        }
+      );
+
+    const weekday =
+      date.toLocaleDateString(
+        "ja-JP",
+        {
+          weekday: "short",
+          timeZone: "Asia/Tokyo",
+        }
+      );
+
+    characterTodayDate.textContent =
+      `${monthDay}（${weekday}）`;
+
+    characterTodayList.replaceChildren();
+
+    const visibleItems =
+      timeline.slice(0, 3);
+
+    if (visibleItems.length === 0) {
+      const empty =
+        document.createElement("p");
+
+      empty.className =
+        "character-today-empty";
+
+      empty.textContent =
+        "今日の予定はありません";
+
+      characterTodayList.appendChild(
+        empty
+      );
+
+      return;
+    }
+
+    visibleItems.forEach(
+      (item) => {
+        const row =
+          document.createElement("div");
+
+        row.className =
+          "character-today-item";
+
+        const check =
+          document.createElement("span");
+
+        check.className =
+          "character-today-check";
+
+        const isCompletedTask =
+          item.type === "task" &&
+          item.status === "completed";
+
+        if (isCompletedTask) {
+          check.textContent = "✓";
+        } else {
+          check.classList.add(
+            "empty"
+          );
+        }
+
+        const title =
+          document.createElement("span");
+
+        title.className =
+          "character-today-title";
+
+        title.textContent =
+          item.title ||
+          "名称未設定";
+
+        const time =
+          document.createElement("span");
+
+        time.className =
+          "character-today-time";
+
+        if (item.startTime) {
+          time.textContent =
+            String(
+              item.startTime
+            ).slice(0, 5);
+        } else if (
+          item.type === "event" &&
+          item.isAllDay
+        ) {
+          time.textContent =
+            "終日";
+        } else {
+          time.textContent = "";
+        }
+
+        row.appendChild(check);
+        row.appendChild(title);
+        row.appendChild(time);
+
+        characterTodayList.appendChild(
+          row
+        );
+      }
+    );
+  } catch (error) {
+    console.error(
+      "Character Today error:",
+      error
+    );
+
+    characterTodayList.replaceChildren();
+
+    const errorMessage =
+      document.createElement("p");
+
+    errorMessage.className =
+      "character-today-empty";
+
+    errorMessage.textContent =
+      "予定を取得できませんでした";
+
+    characterTodayList.appendChild(
+      errorMessage
+    );
+  }
+}
+
 const todaySummaryGreeting =
   document.getElementById(
     "todaySummaryGreeting"
@@ -715,7 +1400,8 @@ function addMessage(
   role,
   text,
   createdAt = null,
-  processingStatus = null
+  processingStatus = null,
+  expression = null
 ) {
   const wrapper =
     document.createElement("div");
@@ -807,6 +1493,19 @@ if (meta) {
 
 chat.appendChild(wrapper);
 
+if (role === "assistant") {
+  updateCharacterLatestMessage(
+    text,
+    createdAt
+  );
+
+  updateNotiaExpression(
+    expression
+  );
+
+  playNotiaReplyReaction();
+}
+
   scrollChatToBottom();
 
   return {
@@ -843,6 +1542,194 @@ function formatTaskDueDate(
   }
 
   return `${formattedDate} ${dueTime.slice(0, 5)}`;
+}
+
+function clearCharacterActionCard() {
+  if (!characterActionCard) {
+    return;
+  }
+
+  characterActionCard.innerHTML = "";
+  characterActionCard.hidden = true;
+}
+
+function showCharacterCreatedItemCard(task) {
+  if (
+    isRestoringConversationHistory ||
+    !characterActionCard ||
+    !task?.id
+  ) {
+    return;
+  }
+
+  const itemType =
+    task.item_type ??
+    task.itemType ??
+    "task";
+
+  const title =
+    task.title ||
+    task.task_name ||
+    (
+      itemType === "event"
+        ? "名称未設定の予定"
+        : "名称未設定のタスク"
+    );
+
+  const due =
+    formatTaskDueDate(
+      task.due_date ?? task.dueDate,
+      task.due_time ?? task.dueTime
+    );
+
+  characterActionCard.innerHTML = "";
+
+  const heading =
+    document.createElement("p");
+
+  heading.className =
+    "character-action-card-heading";
+
+  heading.textContent =
+    itemType === "event"
+      ? "予定を登録しました"
+      : "タスクを登録しました";
+
+  const titleElement =
+    document.createElement("p");
+
+  titleElement.className =
+    "character-action-card-title";
+
+  titleElement.textContent = title;
+
+  const dueElement =
+    document.createElement("p");
+
+  dueElement.className =
+    "character-action-card-due";
+
+  dueElement.textContent = due;
+
+  const link =
+    document.createElement("a");
+
+  link.className =
+    "character-action-card-link";
+
+  if (itemType === "event") {
+    const params =
+      new URLSearchParams();
+
+    params.set(
+      "eventId",
+      String(task.id)
+    );
+
+    const eventDate =
+      task.due_date ??
+      task.dueDate;
+
+    if (eventDate) {
+      params.set(
+        "date",
+        eventDate
+      );
+    }
+
+    link.href =
+      NotiaRuntime.pageUrl(
+        `/calendar?${params.toString()}`
+      );
+  } else {
+    link.href =
+      NotiaRuntime.pageUrl(
+        `/tasks/${encodeURIComponent(
+          task.id
+        )}`
+      );
+  }
+
+  link.textContent =
+    "詳細を見る ›";
+
+  characterActionCard.append(
+    heading,
+    titleElement,
+    dueElement,
+    link
+  );
+
+  characterActionCard.hidden = false;
+}
+
+function showCharacterDocumentCard(
+  itemCount
+) {
+  if (
+    isRestoringConversationHistory ||
+    !characterActionCard
+  ) {
+    return;
+  }
+
+  characterActionCard.innerHTML = "";
+
+  const heading =
+    document.createElement("p");
+
+  heading.className =
+    "character-action-card-heading";
+
+  heading.textContent =
+    itemCount > 0
+      ? `資料から${itemCount}件見つかりました`
+      : "登録できそうな項目は見つかりませんでした";
+
+  const subtext =
+    document.createElement("p");
+
+  subtext.className =
+    "character-action-card-subtext";
+
+  subtext.textContent =
+    itemCount > 0
+      ? "内容を確認してから追加できます。"
+      : "必要なら、Logから再調査できます。";
+
+  const button =
+    document.createElement("button");
+
+  button.type = "button";
+
+  button.className =
+    "character-action-card-button";
+
+  button.textContent =
+    itemCount > 0
+      ? "確認する ›"
+      : "Logを開く ›";
+
+  button.addEventListener(
+    "click",
+    () => {
+      setChatView("normal");
+
+      requestAnimationFrame(
+        () => {
+          scrollChatToBottom();
+        }
+      );
+    }
+  );
+
+  characterActionCard.append(
+    heading,
+    subtext,
+    button
+  );
+
+  characterActionCard.hidden = false;
 }
 
 function addCreatedTaskCard(task) {
@@ -954,6 +1841,10 @@ heading.textContent =
 
   cardWrapper.appendChild(card);
   chat.appendChild(cardWrapper);
+
+  showCharacterCreatedItemCard(
+    task
+  );
 
   scrollChatToBottom();
 }
@@ -1743,6 +2634,10 @@ function addDocumentCandidateCards(
 
   items = normalizedItems;
 
+  showCharacterDocumentCard(
+    items.length
+  );
+
   const wrapper =
     document.createElement("div");
 
@@ -2248,6 +3143,9 @@ actions.appendChild(
 }
 
 async function loadConversationHistory() {
+  isRestoringConversationHistory = true;
+  clearCharacterActionCard();
+
   try {
     const res = await fetch("/api/conversations");
 
@@ -2323,9 +3221,11 @@ conversations.forEach((conversation) => {
       "会話履歴の読み込みに失敗しました。",
       error
     );
+  } finally {
+    isRestoringConversationHistory = false;
   }
-}
 
+}
 attachmentButton?.addEventListener(
   "click",
   () => {
@@ -2652,8 +3552,12 @@ return;
       addMessage(
         "assistant",
         data.reply,
-        new Date()
+        new Date(),
+        null,
+        data.expression
       );
+
+      loadSecretaryProgress();
 
       console.log(
         "taskResult:",
@@ -3159,3 +4063,116 @@ loadConversationHistory();
 
 renderTodaySummary();
 loadTodayNextSchedule();
+loadCharacterToday();
+loadSecretaryProgress();
+
+/* ===== Secretary Help v01 ===== */
+
+function closeSecretaryHelp() {
+  if (
+    !secretaryHelpButton ||
+    !secretaryHelpPopover
+  ) {
+    return;
+  }
+
+  secretaryHelpPopover.hidden = true;
+
+  secretaryHelpButton.setAttribute(
+    "aria-expanded",
+    "false"
+  );
+}
+
+secretaryHelpButton?.addEventListener(
+  "click",
+  (event) => {
+    event.stopPropagation();
+
+    if (!secretaryHelpPopover) {
+      return;
+    }
+
+    const willOpen =
+      secretaryHelpPopover.hidden;
+
+    secretaryHelpPopover.hidden =
+      !willOpen;
+
+    secretaryHelpButton.setAttribute(
+      "aria-expanded",
+      String(willOpen)
+    );
+  }
+);
+
+secretaryHelpPopover?.addEventListener(
+  "click",
+  (event) => {
+    event.stopPropagation();
+  }
+);
+
+document.addEventListener(
+  "click",
+  () => {
+    closeSecretaryHelp();
+  }
+);
+
+document.addEventListener(
+  "keydown",
+  (event) => {
+    if (event.key === "Escape") {
+      closeSecretaryHelp();
+    }
+  }
+);
+
+/* ===== Character Time Background v01 ===== */
+
+let characterBackgroundTimer = null;
+
+function getCharacterTimePeriod() {
+  const hour = new Date().getHours();
+
+  if (hour >= 5 && hour < 17) {
+    return "day";
+  }
+
+  if (hour >= 17 && hour < 19) {
+    return "evening";
+  }
+
+  return "night";
+}
+
+function updateCharacterTimeBackground() {
+  if (!characterChat) {
+    return;
+  }
+
+  const period =
+    getCharacterTimePeriod();
+
+  characterChat.dataset.timePeriod =
+    period;
+}
+
+function startCharacterBackgroundTimer() {
+  updateCharacterTimeBackground();
+
+  if (characterBackgroundTimer) {
+    clearInterval(
+      characterBackgroundTimer
+    );
+  }
+
+  characterBackgroundTimer =
+    setInterval(
+      updateCharacterTimeBackground,
+      5 * 60 * 1000
+    );
+}
+
+startCharacterBackgroundTimer();

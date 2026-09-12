@@ -13,6 +13,7 @@ const {
   restoreTaskById,
   deleteTaskById,
   convertTaskToEvent,
+  addSecretaryExp,
 } = require("../../database");
 
 const router = express.Router();
@@ -358,6 +359,13 @@ router.post("/tasks/:id/complete", (req, res) => {
   req.userId,
   req.params.id
 );
+
+    if (completed) {
+      addSecretaryExp(
+        req.userId,
+        5
+      );
+    }
 
     return res.json({
       ok: completed,

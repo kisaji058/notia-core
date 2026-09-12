@@ -91,6 +91,8 @@ const {
   registerDocumentForRecheck,
   reserveDocumentRecheck,
   releaseDocumentRecheck,
+  getSecretaryProgress,
+  addSecretaryExp,
 } = require("./database");
 
 const notificationManager = require("./src/managers/NotificationManager");
@@ -105,6 +107,7 @@ const {
 
 const {
   extractDocumentSchedule,
+  chooseNotiaExpression,
 } = require("./openai");
 
 const {
@@ -1048,6 +1051,30 @@ app.post(
   }
 );
 
+app.get(
+  "/api/secretary-progress",
+  (req, res) => {
+    try {
+      const progress =
+        getSecretaryProgress(
+          req.userId
+        );
+
+      return res.json(progress);
+    } catch (error) {
+      console.error(
+        "Secretary progress error:",
+        error
+      );
+
+      return res.status(500).json({
+        error:
+          "Secretary progressの取得に失敗しました。",
+      });
+    }
+  }
+);
+
 app.post("/api/chat", async (req, res) => {
   try {
     const { message } = req.body;
@@ -1064,7 +1091,23 @@ app.post("/api/chat", async (req, res) => {
     req.userId
   );
 
-    return res.json(result);
+    const expression =
+      await chooseNotiaExpression(
+        message,
+        result.reply
+      );
+
+    const secretaryProgress =
+      addSecretaryExp(
+        req.userId,
+        1
+      );
+
+    return res.json({
+      ...result,
+      expression,
+      secretaryProgress,
+    });
   } catch (error) {
     console.error(error);
 

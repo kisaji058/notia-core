@@ -51,6 +51,117 @@ ${systemHint || "自然に会話してください。"}
   return response.choices[0].message.content;
 }
 
+const NOTIA_EXPRESSIONS = new Set([
+  "default",
+  "smile",
+  "worried",
+  "surprised",
+  "sidelook",
+]);
+
+async function chooseNotiaExpression(
+  userMessage = "",
+  reply = ""
+) {
+  try {
+    const response =
+      await client.chat.completions.create({
+        model: "gpt-4.1-mini",
+        messages: [
+          {
+            role: "system",
+            content: `
+あなたはAI秘書Notiaの表情演出を決めます。
+
+Notiaは落ち着いていて有能な秘書です。
+感情表現はかなり控えめで、
+基本は default を選んでください。
+
+使用できる表情は次の5種類だけです。
+
+default:
+通常。迷った場合は必ずこれ。
+
+smile:
+穏やかな喜び、安心、成功、
+祝福、感謝など。
+大げさな笑顔にはしません。
+
+worried:
+ユーザーへの心配、
+体調や疲労への気遣い、
+危険や失敗への注意など。
+
+surprised:
+本当に意外な出来事や、
+明確に驚くべき内容だけ。
+頻繁に使用しないでください。
+
+sidelook:
+軽いツッコミ、
+少し呆れた反応、
+やや微妙な内容への反応。
+強い否定や侮辱には使いません。
+
+重要:
+- 表情を大きく動かしすぎない
+- default を最も多く使用する
+- smile でも落ち着いた表情
+- surprised はかなり稀
+- 判断に迷ったら default
+
+返答は必ず次のどれか1語だけにしてください。
+
+default
+smile
+worried
+surprised
+sidelook
+            `.trim(),
+          },
+          {
+            role: "user",
+            content: `
+ユーザー:
+${String(userMessage).slice(0, 2000)}
+
+Notiaの返答:
+${String(reply).slice(0, 3000)}
+            `.trim(),
+          },
+        ],
+        temperature: 0,
+        max_tokens: 10,
+      });
+
+    const expression =
+      String(
+        response.choices?.[0]
+          ?.message?.content || ""
+      )
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z]/g, "");
+
+    if (
+      NOTIA_EXPRESSIONS.has(
+        expression
+      )
+    ) {
+      return expression;
+    }
+
+    return "default";
+  } catch (error) {
+    console.error(
+      "Notia expression error:",
+      error
+    );
+
+    return "default";
+  }
+}
+
 async function extractDocumentSchedule({
   buffer,
   mimeType,
@@ -1440,5 +1551,6 @@ ${chunkText}
 
 module.exports = {
   chatWithNotia,
+  chooseNotiaExpression,
   extractDocumentSchedule,
 };

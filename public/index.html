@@ -20,7 +20,7 @@
   />
   <link
     rel="stylesheet"
-    href="/css/chat.css?v=onboarding-20260820-1"
+    href="/css/chat.css?v=character-v01-20260911-62"
   />
 </head>
 
@@ -39,6 +39,30 @@
         src="/images/notia-wordmark.png"
         alt="Notia"
       />
+    </div>
+
+    <div
+      class="chat-view-switch"
+      role="group"
+      aria-label="チャット表示を切り替える"
+    >
+      <button
+        id="normalChatModeButton"
+        class="chat-view-switch-button active"
+        type="button"
+        aria-pressed="true"
+      >
+        Log
+      </button>
+
+      <button
+        id="characterChatModeButton"
+        class="chat-view-switch-button"
+        type="button"
+        aria-pressed="false"
+      >
+        Notia
+      </button>
     </div>
 
     <button
@@ -121,6 +145,182 @@
       <div class="message assistant">
         おはようございます。Notiaです。<br />
         今日は何を整理しましょうか？
+      </div>
+    </section>
+
+    <section
+      id="characterChat"
+      class="character-chat"
+      hidden
+    >
+      <div class="character-world">
+
+        <div class="character-scene-bg">
+          <div class="character-scene-window"></div>
+          <div class="character-scene-light"></div>
+          <div class="character-scene-plant plant-left"></div>
+          <div class="character-scene-plant plant-right"></div>
+
+          <div class="character-scene-note">
+            やることが整うと
+            <br>
+            きっと、毎日が少し好きになる。
+            <br>
+            ―― Notia
+          </div>
+        </div>
+
+        <section class="character-secretary-status">
+          <div class="character-secretary-title-row">
+            <span class="character-secretary-title">
+              Secretary Lv.
+              <strong id="secretaryLevel">12</strong>
+            </span>
+
+            <button
+              type="button"
+              id="secretaryHelpButton"
+              class="character-secretary-help"
+              aria-label="Secretary Levelについて"
+              aria-expanded="false"
+              aria-controls="secretaryHelpPopover"
+            >
+              ?
+            </button>
+
+            <div
+              id="secretaryHelpPopover"
+              class="character-secretary-help-popover"
+              hidden
+            >
+              <strong>Secretary Level</strong>
+
+              <p>
+                Notiaとの日々の積み重ねを表すレベルです。
+              </p>
+
+              <ul>
+                <li>会話：+1 EXP</li>
+                <li>タスク作成：+2 EXP</li>
+                <li>タスク完了：+5 EXP</li>
+                <li>予定作成：+3 EXP</li>
+              </ul>
+
+              <p class="character-secretary-help-note">
+                レベルによって基本機能が制限されることはありません。
+              </p>
+            </div>
+          </div>
+
+          <div
+            class="character-exp-bar"
+            role="progressbar"
+            aria-label="Secretary Level経験値"
+            aria-valuemin="0"
+            aria-valuemax="500"
+            aria-valuenow="320"
+          >
+            <div
+              id="secretaryExpBar"
+              class="character-exp-bar-value"
+              style="width: 64%;"
+            ></div>
+          </div>
+
+          <p class="character-exp-text">
+            <span id="secretaryExpCurrent">320</span>
+            /
+            <span id="secretaryExpNext">500</span>
+          </p>
+        </section>
+
+
+        <section
+          class="character-today-board"
+          aria-label="今日の予定"
+        >
+          <div class="character-today-board-header">
+            <strong>Today</strong>
+
+            <span id="characterTodayDate">
+              --/--（-）
+            </span>
+          </div>
+
+          <div
+            id="characterTodayList"
+            class="character-today-list"
+          >
+            <div class="character-today-item">
+              <span class="character-today-check">
+                ✓
+              </span>
+
+              <span class="character-today-title">
+                今日の予定
+              </span>
+
+              <span class="character-today-time">
+                --
+              </span>
+            </div>
+
+            <div class="character-today-item">
+              <span class="character-today-check empty">
+              </span>
+
+              <span class="character-today-title">
+                タスクを確認
+              </span>
+
+              <span class="character-today-time">
+                --
+              </span>
+            </div>
+          </div>
+
+          <a
+            class="character-today-link"
+            href="/today"
+          >
+            ＋ Todayを開く
+            <span aria-hidden="true">›</span>
+          </a>
+        </section>
+
+
+        <div class="character-conversation-area">
+          <div
+            id="characterLatestMessage"
+            class="character-latest-message"
+          >
+            おはようございます。
+            今日は何を整理しましょうか？
+          </div>
+        </div>
+
+        <div
+          id="characterActionCard"
+          class="character-action-card"
+          hidden
+        ></div>
+
+
+        <div class="character-tia-area">
+          <img
+            class="character-tia"
+            src="/images/character/tia-default.png"
+            alt="Notia"
+          >
+        </div>
+
+        <img
+          class="character-foreground"
+          src="/images/character/notia-room-foreground.png"
+          alt=""
+          aria-hidden="true"
+        >
+
       </div>
     </section>
 
@@ -296,6 +496,6 @@
 <script src="/js/authGuard.js?v=app-ready-1"></script>
   <script src="/js/components/paywall.js"></script>
 <script src="/js/components/accountMenu.js"></script>
-  <script src="/js/app.js?v=20260831-recheck-1"></script>
+  <script src="/js/app.js?v=character-v01-20260911-24"></script>
 </body>
 </html>

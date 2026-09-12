@@ -7,6 +7,7 @@ const {
   deleteEventById,
   getActiveEvents,
   convertEventToTask,
+  addSecretaryExp,
 } = require("../../database");
 
 const router = express.Router();
@@ -190,6 +191,11 @@ if (!VALID_NOTIFICATIONS.includes(notification)) {
   category,
   notification
 );
+
+    addSecretaryExp(
+      req.userId,
+      3
+    );
 
     const event = getEventById(
   req.userId,

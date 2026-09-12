@@ -4,6 +4,7 @@ const {
   findActiveTasks,
   updateTaskById,
   completeTask,
+  addSecretaryExp,
 } = require("../../database");
 
 class TaskManager {
@@ -106,6 +107,11 @@ if (task.itemType === "event") {
 
   console.log("✅ 予定登録:", task.title);
 
+  addSecretaryExp(
+    userId,
+    3
+  );
+
   createdTasks.push({
   id: eventId,
   title: task.title,
@@ -156,6 +162,11 @@ if (task.itemType === "event") {
 );
 
     console.log("✅ タスク登録:", task.title);
+
+    addSecretaryExp(
+      userId,
+      2
+    );
 
     createdTasks.push({
   id: taskId,
@@ -248,6 +259,13 @@ if (task.itemType === "event") {
       userId,
       analysis.targetTaskId
     );
+
+    if (success) {
+      addSecretaryExp(
+        userId,
+        5
+      );
+    }
 
     console.log("✅ タスク完了:", analysis.targetTaskId);
 

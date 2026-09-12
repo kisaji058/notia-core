@@ -70,6 +70,7 @@ function getUserById(userId) {
 function deleteUserAccount(userId) {
   const transaction = db.transaction(() => {
     const tables = [
+      "user_secretary_progress",
       "task_calendar_links",
       "external_calendar_events",
       "daily_notification_logs",
@@ -811,6 +812,7 @@ function completeTask(
       completed_at = CURRENT_TIMESTAMP
     WHERE id = ?
       AND user_id = ?
+      AND status = 'active'
   `).run(
     id,
     userId
@@ -2725,7 +2727,140 @@ function releaseDocumentRecheck({
   );
 }
 
+
+// =====================
+// Secretary progress
+// =====================
+
+function calculateSecretaryProgress(
+  totalExp = 0
+) {
+  let remainingExp =
+    Math.max(
+      0,
+      Number(totalExp) || 0
+    );
+
+  let level = 1;
+
+  while (true) {
+    const requiredExp =
+      level * 100;
+
+    if (
+      remainingExp <
+      requiredExp
+    ) {
+      return {
+        level,
+        currentExp:
+          remainingExp,
+        requiredExp,
+        totalExp:
+          Math.max(
+            0,
+            Number(totalExp) || 0
+          ),
+      };
+    }
+
+    remainingExp -=
+      requiredExp;
+
+    level += 1;
+  }
+}
+
+function getSecretaryProgress(
+  userId
+) {
+  let row = db.prepare(`
+    SELECT
+      user_id,
+      total_exp,
+      created_at,
+      updated_at
+    FROM user_secretary_progress
+    WHERE user_id = ?
+    LIMIT 1
+  `).get(userId);
+
+  if (!row) {
+    db.prepare(`
+      INSERT INTO user_secretary_progress (
+        user_id,
+        total_exp
+      )
+      VALUES (?, 0)
+    `).run(userId);
+
+    row = db.prepare(`
+      SELECT
+        user_id,
+        total_exp,
+        created_at,
+        updated_at
+      FROM user_secretary_progress
+      WHERE user_id = ?
+      LIMIT 1
+    `).get(userId);
+  }
+
+  return {
+    ...calculateSecretaryProgress(
+      row.total_exp
+    ),
+    updatedAt:
+      row.updated_at,
+  };
+}
+
+
+function addSecretaryExp(
+  userId,
+  amount = 1
+) {
+  const safeAmount =
+    Math.max(
+      0,
+      Math.floor(
+        Number(amount) || 0
+      )
+    );
+
+  if (safeAmount <= 0) {
+    return getSecretaryProgress(
+      userId
+    );
+  }
+
+  db.prepare(`
+    INSERT INTO user_secretary_progress (
+      user_id,
+      total_exp
+    )
+    VALUES (?, ?)
+    ON CONFLICT(user_id)
+    DO UPDATE SET
+      total_exp =
+        user_secretary_progress.total_exp +
+        excluded.total_exp,
+      updated_at =
+        CURRENT_TIMESTAMP
+  `).run(
+    userId,
+    safeAmount
+  );
+
+  return getSecretaryProgress(
+    userId
+  );
+}
+
 module.exports = {
+  getSecretaryProgress,
+  addSecretaryExp,
+  calculateSecretaryProgress,
   registerDocumentForRecheck,
   reserveDocumentRecheck,
   releaseDocumentRecheck,
