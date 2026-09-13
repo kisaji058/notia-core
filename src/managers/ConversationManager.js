@@ -369,6 +369,46 @@ if (!analyzedDueDate && !wantsNoDueDate) {
     };
   }
 
+  // 既存タスクの日付変更確認だった場合は、
+  // 新規作成せず元のタスクを更新する
+  if (session.pendingIntent === "task_update") {
+    const pendingTask = pendingTasks[0];
+
+    const updates = {
+      ...(pendingTask.updates || {}),
+      dueDate: pendingTask.dueDate,
+    };
+
+    if (pendingTask.dueTime) {
+      updates.dueTime = pendingTask.dueTime;
+    }
+
+    const fixedAnalysis = {
+      ...analysis,
+      intent: "task_update",
+      targetTaskId: pendingTask.targetTaskId,
+      targetTaskTitle: pendingTask.targetTaskTitle,
+      updates,
+      needsDateConfirmation: false,
+      dateExpression: null,
+    };
+
+    const result = taskManager.handle(
+      fixedAnalysis,
+      userId
+    );
+
+    sessionManager.clear(userId);
+
+    return {
+      handled: true,
+      reply:
+        `「${pendingTask.targetTaskTitle || pendingTask.title}」の期限を${pendingTask.dueDate}に変更しました。`,
+      analysis: fixedAnalysis,
+      taskResult: result,
+    };
+  }
+
   const firstTask = pendingTasks[0];
 
   const fixedAnalysis = {
