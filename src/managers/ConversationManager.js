@@ -18,7 +18,8 @@ if (
 // 時間回答として扱わず通常処理へ戻す
 const isNewRequest =
   analysis?.intent === "task_create" ||
-  analysis?.intent === "routine_create";
+  analysis?.intent === "routine_create" ||
+  analysis?.intent === "task_complete";
 
 if (isNewRequest) {
   sessionManager.clear(userId);
