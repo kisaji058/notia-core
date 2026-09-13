@@ -1698,29 +1698,6 @@ body.keyboard-open .input-area {
   font-weight: 700;
 }
 
-.character-latest-message {
-  align-self: flex-start;
-
-  max-width: 78%;
-
-  padding: 16px 18px;
-
-  color: #24364f;
-  background: #ffffff;
-
-  border: 1px solid #d8e4e1;
-  border-radius: 20px 20px 20px 6px;
-
-  box-shadow:
-    0 4px 14px
-    rgba(36, 54, 79, 0.08);
-
-  font-size: 16px;
-  line-height: 1.6;
-
-  white-space: pre-line;
-}
-
 .character-tia-placeholder {
   display: grid;
   place-items: center;
@@ -1923,182 +1900,7 @@ body.keyboard-open .input-area {
 
 /* Today board */
 
-.character-today-board {
-  position: absolute;
-
-  top: 6px;
-  right: 0;
-
-  z-index: 2;
-
-  width: min(260px, 42%);
-
-  padding: 16px;
-
-  background:
-    rgba(255, 255, 255, 0.78);
-
-  border: 1px solid #d7e4e1;
-  border-radius: 18px;
-
-  box-shadow:
-    0 5px 18px
-    rgba(36, 54, 79, 0.06);
-
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-
-.character-today-board-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  gap: 12px;
-}
-
-.character-today-board-header strong {
-  color: #24364f;
-
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.character-today-board-header span {
-  color: #718481;
-
-  font-size: 12px;
-}
-
-.character-today-list {
-  display: flex;
-  flex-direction: column;
-
-  gap: 10px;
-
-  margin-top: 14px;
-}
-
-.character-today-item {
-  display: grid;
-  grid-template-columns:
-    24px
-    minmax(0, 1fr)
-    auto;
-
-  align-items: center;
-
-  gap: 8px;
-}
-
-.character-today-check {
-  display: grid;
-  place-items: center;
-
-  width: 20px;
-  height: 20px;
-
-  color: #ffffff;
-  background: #2fa99d;
-
-  border-radius: 50%;
-
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.character-today-check.empty {
-  background: transparent;
-
-  border: 1px solid #a8bdb8;
-}
-
-.character-today-title {
-  overflow: hidden;
-
-  color: #31454f;
-
-  font-size: 13px;
-  font-weight: 600;
-
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.character-today-time {
-  color: #7e8c8a;
-
-  font-size: 12px;
-}
-
-.character-today-link {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  margin-top: 14px;
-
-  color: #2fa99d;
-
-  font-size: 13px;
-  font-weight: 700;
-  text-decoration: none;
-}
-
-
 /* Latest message */
-
-.character-conversation-area {
-  position: absolute;
-
-  top: 165px;
-  left: 0;
-
-  z-index: 4;
-
-  width: min(360px, 62%);
-}
-
-.character-latest-message {
-  position: relative;
-
-  width: fit-content;
-  max-width: 100%;
-
-  padding: 18px 20px;
-
-  color: #24364f;
-  background: rgba(255, 255, 255, 0.96);
-
-  border: 1px solid #d8e4e1;
-  border-radius: 22px 22px 22px 8px;
-
-  box-shadow:
-    0 5px 18px
-    rgba(36, 54, 79, 0.08);
-
-  font-size: 17px;
-  line-height: 1.65;
-
-  white-space: pre-line;
-}
-
-.character-latest-message::after {
-  position: absolute;
-
-  right: -12px;
-  bottom: 24px;
-
-  width: 0;
-  height: 0;
-
-  border-top: 10px solid transparent;
-  border-bottom: 10px solid transparent;
-  border-left: 14px solid #ffffff;
-
-  content: "";
-}
-
 
 /* Character */
 
@@ -2150,20 +1952,6 @@ body.keyboard-open .input-area {
     width: 210px;
   }
 
-  .character-today-board {
-    top: 150px;
-    right: 0;
-
-    width: 230px;
-  }
-
-  .character-conversation-area {
-    top: 140px;
-    left: 0;
-
-    width: 66%;
-  }
-
   .character-tia-area {
     top: 360px;
   }
@@ -2189,27 +1977,6 @@ body.keyboard-open .input-area {
     width: 200px;
   }
 
-  .character-today-board {
-    top: 155px;
-    right: 0;
-
-    width: 210px;
-
-    padding: 14px;
-  }
-
-  .character-conversation-area {
-    top: 145px;
-
-    width: 72%;
-  }
-
-  .character-latest-message {
-    padding: 16px 18px;
-
-    font-size: 16px;
-  }
-
   .character-tia-area {
     top: 380px;
   }
@@ -2223,36 +1990,12 @@ body.keyboard-open .input-area {
 /* ===== Character World v0.1 spacing fix ===== */
 
 @media (max-width: 700px) {
-  .character-today-board {
-    top: 150px;
-    right: 0;
-    width: 230px;
-  }
-
-  .character-conversation-area {
-    top: 330px;
-    left: 0;
-    width: 72%;
-  }
-
   .character-tia-area {
     top: 500px;
   }
 }
 
 @media (max-width: 480px) {
-  .character-today-board {
-    top: 155px;
-    right: 0;
-    width: 210px;
-  }
-
-  .character-conversation-area {
-    top: 325px;
-    left: 0;
-    width: 76%;
-  }
-
   .character-tia-area {
     top: 500px;
   }
@@ -2287,20 +2030,6 @@ body.keyboard-open .input-area {
     width: 210px;
   }
 
-  .character-today-board {
-    top: 140px;
-    right: 0;
-
-    width: 230px;
-  }
-
-  .character-conversation-area {
-    top: 305px;
-    left: 0;
-
-    width: 72%;
-  }
-
   .character-tia-area {
     top: auto;
     bottom: 52px;
@@ -2324,29 +2053,6 @@ body.keyboard-open .input-area {
     width: 200px;
   }
 
-  .character-today-board {
-    top: 135px;
-    right: 0;
-
-    width: 205px;
-
-    padding: 13px;
-  }
-
-  .character-conversation-area {
-    top: 295px;
-    left: 0;
-
-    width: 74%;
-  }
-
-  .character-latest-message {
-    padding: 14px 16px;
-
-    font-size: 15px;
-    line-height: 1.55;
-  }
-
   .character-tia-area {
     top: auto;
     bottom: 46px;
@@ -2361,21 +2067,6 @@ body.keyboard-open .input-area {
 /* ===== Character World v0.1 balance tune ===== */
 
 @media (max-width: 700px) {
-  .character-today-board {
-    top: 125px;
-  }
-
-  .character-conversation-area {
-    top: 275px;
-    width: 68%;
-  }
-
-  .character-latest-message {
-    padding: 14px 16px;
-    font-size: 15px;
-    line-height: 1.5;
-  }
-
   .character-tia-area {
     bottom: 78px;
   }
@@ -2387,21 +2078,6 @@ body.keyboard-open .input-area {
 }
 
 @media (max-width: 480px) {
-  .character-today-board {
-    top: 120px;
-  }
-
-  .character-conversation-area {
-    top: 265px;
-    width: 70%;
-  }
-
-  .character-latest-message {
-    padding: 13px 15px;
-    font-size: 14px;
-    line-height: 1.5;
-  }
-
   .character-tia-area {
     bottom: 72px;
   }
@@ -2558,18 +2234,6 @@ body.keyboard-open .input-area {
 
 /* Layout tune */
 
-.character-today-board {
-  top: 108px;
-  right: 0;
-  width: 225px;
-}
-
-.character-conversation-area {
-  top: 258px;
-  left: 0;
-  width: 70%;
-}
-
 .character-tia-area {
   top: auto;
   bottom: 76px;
@@ -2593,18 +2257,6 @@ body.keyboard-open .input-area {
     left: 18px;
 
     font-size: 12px;
-  }
-
-  .character-today-board {
-    top: 112px;
-
-    width: 210px;
-  }
-
-  .character-conversation-area {
-    top: 250px;
-
-    width: 68%;
   }
 
   .character-tia-area {
@@ -2641,236 +2293,20 @@ body.keyboard-open .input-area {
 }
 
 /* 背景上で読みやすく */
-.character-today-board {
-  background:
-    rgba(255, 255, 255, 0.88);
-
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-}
-
-.character-latest-message {
-  background:
-    rgba(255, 255, 255, 0.95);
-
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-
-
-/* ===== Character Tia image ===== */
-
-.character-tia-area {
-  display: flex;
-  align-items: end;
-  justify-content: center;
-
-  width: 190px;
-  height: 250px;
-}
-
-.character-tia {
-  display: block;
-
-  width: 100%;
-  height: 100%;
-
-  object-fit: contain;
-  object-position: center bottom;
-
-  filter:
-    drop-shadow(
-      0 10px 18px rgba(36, 54, 79, 0.10)
-    );
-}
-
-@media (max-width: 480px) {
-  .character-tia-area {
-    width: 180px;
-    height: 240px;
-  }
-}
-
-/* ===== Character Tia size up ===== */
-
-.character-tia-area {
-  width: 240px;
-  height: 320px;
-
-  bottom: 54px;
-}
-
-.character-tia {
-  object-fit: contain;
-  object-position: center bottom;
-}
-
-@media (max-width: 480px) {
-  .character-tia-area {
-    width: 225px;
-    height: 300px;
-
-    bottom: 52px;
-  }
-}
-
-/* ===== Character Tia larger ===== */
-
-.character-tia-area {
-  width: 270px;
-  height: 360px;
-
-  bottom: 38px;
-}
-
-@media (max-width: 480px) {
-  .character-tia-area {
-    width: 255px;
-    height: 340px;
-
-    bottom: 36px;
-  }
-}
-
-/* ===== Character Tia top-anchor ===== */
-
-.character-tia-area {
-  top: 470px;
-  bottom: auto;
-
-  width: 265px;
-  height: 390px;
-}
-
-.character-tia {
-  width: 100%;
-  height: 100%;
-
-  object-fit: contain;
-  object-position: center top;
-}
-
-@media (max-width: 480px) {
-  .character-tia-area {
-    top: 468px;
-    bottom: auto;
-
-    width: 250px;
-    height: 380px;
-  }
-}
-
-/* ===== Character Tia span between bubble and input ===== */
-
-.character-world {
-  overflow: visible;
-}
-
-.character-tia-area {
-  position: absolute;
-
-  top: 470px;
-  bottom: 18px;
-
-  left: 50%;
-
-  width: 330px;
-  height: auto;
-
-  transform: translateX(-50%);
-
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
-
-  z-index: 3;
-}
-
-.character-tia {
-  display: block;
-
-  width: 100%;
-  height: 100%;
-
-  object-fit: contain;
-  object-position: center bottom;
-
-  filter:
-    drop-shadow(
-      0 10px 18px
-      rgba(36, 54, 79, 0.10)
-    );
-}
-
-@media (max-width: 480px) {
-  .character-tia-area {
-    top: 455px;
-    bottom: 14px;
-
-    width: 315px;
-    height: auto;
-  }
-}
-
-/* ===== Character Tia final positioning test ===== */
+/* ===== Character Tia canonical ===== */
 
 .character-chat {
   overflow: hidden;
 }
 
 .character-world {
-  overflow: hidden;
-}
-
-.character-tia-area {
-  position: absolute;
-
-  top: 475px;
-  bottom: auto;
-
-  left: 50%;
-
-  width: 340px;
-  height: 510px;
-
-  display: block;
-
-  transform: translateX(-50%);
-
-  z-index: 3;
-}
-
-.character-tia {
-  display: block;
-
-  width: 100%;
-  height: 100%;
-
-  object-fit: contain;
-  object-position: center top;
-}
-
-@media (max-width: 480px) {
-  .character-tia-area {
-    top: 470px;
-
-    width: 320px;
-    height: 500px;
-  }
-}
-
-/* ===== Character Tia bottom anchored scale ===== */
-
-.character-world {
   overflow: visible;
 }
 
 .character-tia-area {
   position: absolute;
-
   top: auto;
-  bottom: 38px;
-
+  bottom: -15px;
   left: 50%;
 
   width: 240px;
@@ -2896,12 +2332,18 @@ body.keyboard-open .input-area {
 
   object-fit: contain;
   object-position: center bottom;
+
+  filter:
+    drop-shadow(
+      0 10px 18px
+      rgba(36, 54, 79, 0.10)
+    );
 }
 
 @media (max-width: 480px) {
   .character-tia-area {
     top: auto;
-    bottom: 34px;
+    bottom: -15px;
 
     width: 225px;
     height: 300px;
@@ -2915,107 +2357,6 @@ body.keyboard-open .input-area {
   }
 }
 
-/* ===== Character Tia lower ===== */
-
-.character-tia-area {
-  bottom: 6px;
-}
-
-@media (max-width: 480px) {
-  .character-tia-area {
-    bottom: 4px;
-  }
-}
-
-/* ===== Character Tia align to input ===== */
-
-.character-world {
-  overflow: visible;
-}
-
-.character-tia-area {
-  top: auto;
-  bottom: -105px;
-}
-
-@media (max-width: 480px) {
-  .character-tia-area {
-    top: auto;
-    bottom: -105px;
-  }
-}
-
-/* ===== Character Tia raise a bit ===== */
-
-.character-tia-area {
-  bottom: -75px;
-}
-
-@media (max-width: 480px) {
-  .character-tia-area {
-    bottom: -75px;
-  }
-}
-
-/* ===== Character Tia raise slightly ===== */
-
-.character-tia-area {
-  bottom: -60px;
-}
-
-@media (max-width: 480px) {
-  .character-tia-area {
-    bottom: -60px;
-  }
-}
-
-/* ===== Character Tia final slight raise ===== */
-
-.character-tia-area {
-  bottom: -70px;
-}
-
-@media (max-width: 480px) {
-  .character-tia-area {
-    bottom: -70px;
-  }
-}
-
-/* ===== Character Tia raise more ===== */
-
-.character-tia-area {
-  bottom: -40px;
-}
-
-@media (max-width: 480px) {
-  .character-tia-area {
-    bottom: -40px;
-  }
-}
-
-/* ===== Character Tia raise to -30 ===== */
-
-.character-tia-area {
-  bottom: -30px;
-}
-
-@media (max-width: 480px) {
-  .character-tia-area {
-    bottom: -30px;
-  }
-}
-
-/* ===== Character Tia raise to -15 ===== */
-
-.character-tia-area {
-  bottom: -15px;
-}
-
-@media (max-width: 480px) {
-  .character-tia-area {
-    bottom: -15px;
-  }
-}
 
 /* ===== Character World layered background final ===== */
 
@@ -3047,10 +2388,6 @@ body.keyboard-open .input-area {
 /* Secretary / Today / 吹き出しは前景葉よりさらに前 */
 .character-secretary-status,
 .character-today-board,
-.character-conversation-area {
-  z-index: 6;
-}
-
 /* ティア */
 .character-tia-area {
   z-index: 4;
@@ -3145,282 +2482,25 @@ body.keyboard-open .input-area {
   }
 }
 
-/* ===== Character Today + Bubble final direction ===== */
-
 /* Todayを背景のホワイトボード上へ */
-.character-today-board {
-  top: 78px;
-  right: 18px;
-
-  width: 238px;
-
-  padding: 14px 16px;
-
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-
-  box-shadow: none;
-
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-
-  z-index: 6;
-}
-
-.character-today-board-header {
-  margin-bottom: 8px;
-}
-
-.character-today-board-header strong {
-  font-size: 17px;
-}
-
-.character-today-board-header span {
-  font-size: 12px;
-}
-
-.character-today-list {
-  gap: 8px;
-
-  margin-top: 8px;
-}
-
-.character-today-item {
-  gap: 7px;
-}
-
-.character-today-title {
-  font-size: 12px;
-}
-
-.character-today-time {
-  font-size: 11px;
-}
-
-.character-today-link {
-  margin-top: 10px;
-
-  font-size: 12px;
-}
-
-
 /* 吹き出しをノティアの左側へ */
-.character-conversation-area {
-  top: 355px;
-  left: 18px;
-
-  width: 300px;
-
-  z-index: 6;
-}
-
-.character-latest-message {
-  width: auto;
-  max-width: 100%;
-
-  padding: 14px 17px;
-
-  font-size: 14px;
-  line-height: 1.55;
-
-  border-radius:
-    22px 22px 22px 10px;
-}
-
-.character-latest-message::after {
-  right: -14px;
-  bottom: 24px;
-
-  border-top-width: 9px;
-  border-bottom-width: 9px;
-  border-left-width: 15px;
-}
-
-
 /* 小さい画面用 */
 @media (max-width: 480px) {
-  .character-today-board {
-    top: 76px;
-    right: 14px;
-
-    width: 220px;
-
-    padding: 12px 14px;
   }
-
-  .character-conversation-area {
-    top: 350px;
-    left: 16px;
-
-    width: 285px;
-  }
-
-  .character-latest-message {
-    padding: 13px 15px;
-
-    font-size: 13px;
-  }
-}
-
-/* ===== Character bubble final position ===== */
-
-.character-conversation-area {
-  top: 330px;
-  left: 22px;
-
-  width: 300px;
-
-  z-index: 6;
-}
-
-.character-latest-message {
-  width: auto;
-  max-width: 100%;
-
-  padding: 14px 17px;
-
-  font-size: 14px;
-  line-height: 1.55;
-
-  border-radius:
-    22px 22px 22px 10px;
-}
-
-.character-latest-message::after {
-  right: -14px;
-  bottom: 22px;
-
-  border-top-width: 9px;
-  border-bottom-width: 9px;
-  border-left-width: 15px;
-}
 
 @media (max-width: 480px) {
-  .character-conversation-area {
-    top: 325px;
-    left: 18px;
-
-    width: 285px;
   }
 
-  .character-latest-message {
-    padding: 13px 15px;
-
-    font-size: 13px;
-    line-height: 1.5;
-  }
-}
-
-/* ===== Character Today final positioning test ===== */
-
-.character-today-board {
-  top: 118px;
-  right: 18px;
-
-  width: 220px;
-
-  padding: 0;
-
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-
-  z-index: 6;
-}
-
-.character-today-board-header {
-  margin-bottom: 8px;
-}
-
-.character-today-board-header strong {
-  font-size: 16px;
-}
-
-.character-today-board-header span {
-  font-size: 11px;
-}
-
-.character-today-list {
-  gap: 7px;
-  margin-top: 8px;
-}
-
-.character-today-title {
-  font-size: 12px;
-}
-
-.character-today-time {
-  font-size: 11px;
-}
-
-.character-today-link {
-  margin-top: 9px;
-
-  font-size: 12px;
-}
-
-@media (max-width: 480px) {
-  .character-today-board {
-    top: 112px;
-    right: 16px;
-
-    width: 210px;
-  }
-}
-
-/* ===== Character Today final placement ===== */
-
-.character-today-board {
-  top: 128px;
-  right: -52px;
-
-  width: 220px;
-}
-
-@media (max-width: 480px) {
-  .character-today-board {
-    top: 122px;
-    right: -48px;
-
-    width: 210px;
-  }
-}
-
-/* ===== Character Today fit whiteboard ===== */
-
-.character-today-board {
-  top: 128px;
-  right: 12px;
-
-  width: 180px;
-}
-
-@media (max-width: 480px) {
-  .character-today-board {
-    top: 122px;
-    right: 10px;
-
-    width: 176px;
-  }
-}
-
-/* ===== Character Today board percentage anchor ===== */
+/* ===== Character Today canonical ===== */
 
 .character-today-board {
   position: absolute;
 
-  /* 背景ホワイトボードに対する座標 */
-  top: 7%;
-  left: 62%;
+  top: 10.2%;
+  left: 65.4%;
   right: auto;
 
   width: 34%;
-
   padding: 10px 8px;
 
   box-sizing: border-box;
@@ -3433,383 +2513,151 @@ body.keyboard-open .input-area {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 
+  transform-origin: center center;
+  transform:
+    rotate(-3deg)
+    skewY(-1.2deg)
+    scaleX(0.97);
+
+  transform-style: preserve-3d;
+
   z-index: 6;
 }
 
 .character-today-board-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
   margin: 0 0 8px;
 }
 
 .character-today-board-header strong {
   color: #24364f;
+
   font-size: 16px;
+  font-weight: 700;
   line-height: 1.2;
 }
 
 .character-today-board-header span {
   color: #617372;
+
   font-size: 11px;
 }
 
 .character-today-list {
+  display: flex;
+  flex-direction: column;
+
   margin-top: 6px;
   gap: 7px;
 }
 
 .character-today-item {
-  grid-template-columns: 22px minmax(0, 1fr) auto;
+  display: grid;
+  grid-template-columns:
+    22px minmax(0, 1fr) auto;
+
+  align-items: center;
   gap: 6px;
 }
 
 .character-today-check {
+  display: grid;
+  place-items: center;
+
   width: 19px;
   height: 19px;
+
+  color: #ffffff;
+  background: #2fa99d;
+
+  border-radius: 50%;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.character-today-check.empty {
+  background: transparent;
+  border: 1px solid #a8bdb8;
 }
 
 .character-today-title {
+  overflow: hidden;
+
+  color: #31454f;
+
   font-size: 11px;
+  font-weight: 600;
   line-height: 1.25;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .character-today-time {
+  color: #7e8c8a;
   font-size: 10px;
 }
 
 .character-today-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
   margin-top: 9px;
 
+  color: #2fa99d;
+
   font-size: 11px;
-}
+  font-weight: 700;
 
-@media (max-width: 480px) {
-  .character-today-board {
-    top: 7%;
-    left: 61%;
-
-    width: 35%;
-
-    padding: 8px 6px;
-  }
-}
-
-/* ===== Character Today fine tune ===== */
-
-.character-today-board {
-  top: 8%;
-  left: 64%;
-  width: 32%;
-}
-
-@media (max-width: 480px) {
-  .character-today-board {
-    top: 8%;
-    left: 63%;
-    width: 33%;
-  }
-}
-
-/* ===== Character Today perspective fine tune ===== */
-
-.character-today-board {
-  top: 8%;
-  left: 61.8%;
-  width: 32%;
-
-  transform-origin: top left;
-  transform:
-    rotate(-1.2deg)
-    skewX(-1deg);
-}
-
-@media (max-width: 480px) {
-  .character-today-board {
-    top: 8%;
-    left: 60.8%;
-    width: 33%;
-
-    transform-origin: top left;
-    transform:
-      rotate(-1.2deg)
-      skewX(-1deg);
-  }
-}
-
-/* ===== Character Today stronger perspective ===== */
-
-.character-today-board {
-  top: 7.8%;
-  left: 59.5%;
-  width: 34%;
-
-  transform-origin: left center;
-
-  transform:
-    perspective(700px)
-    rotateY(-10deg)
-    rotateZ(-1deg);
-
-  transform-style: preserve-3d;
-}
-
-@media (max-width: 480px) {
-  .character-today-board {
-    top: 7.8%;
-    left: 58.5%;
-    width: 35%;
-
-    transform:
-      perspective(700px)
-      rotateY(-10deg)
-      rotateZ(-1deg);
-  }
-}
-
-/* ===== Character Today match board angle ===== */
-
-.character-today-board {
-  top: 7.8%;
-  left: 57%;
-  width: 36%;
-
-  transform-origin: center center;
-
-  transform:
-    rotate(-2.5deg)
-    skewY(-2deg)
-    scaleX(0.94);
-}
-
-@media (max-width: 480px) {
-  .character-today-board {
-    top: 7.8%;
-    left: 56%;
-    width: 37%;
-
-    transform:
-      rotate(-2.5deg)
-      skewY(-2deg)
-      scaleX(0.94);
-  }
-}
-
-/* ===== Character Today position + angle tune ===== */
-
-.character-today-board {
-  top: 9.2%;
-  left: 62.5%;
-  width: 34%;
-
-  transform-origin: center center;
-
-  transform:
-    rotate(-3deg)
-    skewY(-2deg)
-    scaleX(0.94);
-}
-
-@media (max-width: 480px) {
-  .character-today-board {
-    top: 9%;
-    left: 61.5%;
-    width: 35%;
-
-    transform:
-      rotate(-3deg)
-      skewY(-2deg)
-      scaleX(0.94);
-  }
-}
-
-/* ===== Character Today fine position v38 ===== */
-
-.character-today-board {
-  top: 10.2%;
-  left: 65.4%;
-  width: 34%;
-
-  transform-origin: center center;
-  transform:
-    rotate(-3deg)
-    skewY(-2deg)
-    scaleX(0.94);
+  text-decoration: none;
 }
 
 @media (max-width: 480px) {
   .character-today-board {
     top: 10.1%;
     left: 65%;
+
     width: 35%;
+    padding: 8px 6px;
 
-    transform:
-      rotate(-3deg)
-      skewY(-2deg)
-      scaleX(0.94);
-  }
-}
-
-/* ===== Character Today + Bubble fine tune v39 ===== */
-
-/* Todayを少しだけ斜めに強める */
-.character-today-board {
-  transform-origin: center center;
-  transform:
-    rotate(-5deg)
-    skewY(-2.5deg)
-    scaleX(0.94);
-}
-
-/* 吹き出し全体を窓側へ寄せる */
-.character-conversation-area {
-  top: 42%;
-  left: 5.5%;
-  width: 55%;
-  z-index: 4;
-}
-
-/* 吹き出しの横幅を少し狭くする */
-.character-latest-message {
-  width: 100%;
-  max-width: 100%;
-}
-
-/* スマホ幅での微調整 */
-@media (max-width: 480px) {
-  .character-today-board {
-    transform:
-      rotate(-5deg)
-      skewY(-2.5deg)
-      scaleX(0.94);
-  }
-
-  .character-conversation-area {
-    top: 42%;
-    left: 5%;
-    width: 56%;
-  }
-}
-
-/* ===== Character Today + Bubble fine tune v40 ===== */
-
-/* Todayの斜めを少し戻す */
-.character-today-board {
-  transform-origin: center center;
-  transform:
-    rotate(-3deg)
-    skewY(-1.2deg)
-    scaleX(0.97);
-}
-
-/* 吹き出しを窓側へ戻しつつ、前面に出す */
-.character-conversation-area {
-  top: 45%;
-  left: 4%;
-  width: 50%;
-  z-index: 8;
-}
-
-/* 吹き出し本体 */
-.character-latest-message {
-  width: 100%;
-  max-width: 100%;
-}
-
-/* スマホ幅の微調整 */
-@media (max-width: 480px) {
-  .character-today-board {
     transform:
       rotate(-3deg)
       skewY(-1.2deg)
       scaleX(0.97);
   }
+}
 
-  .character-conversation-area {
-    top: 45%;
-    left: 4%;
-    width: 50%;
-    z-index: 8;
+
+/* 吹き出し全体を窓側へ寄せる */
+/* 吹き出しの横幅を少し狭くする */
+/* スマホ幅での微調整 */
+@media (max-width: 480px) {
   }
-}
 
+/* 吹き出しを窓側へ戻しつつ、前面に出す */
+/* 吹き出し本体 */
+/* スマホ幅の微調整 */
+@media (max-width: 480px) {
+  }
 
-/* ===== Character Bubble raise v41 ===== */
-
-.character-conversation-area {
-  top: 39%;
-}
 
 @media (max-width: 480px) {
-  .character-conversation-area {
-    top: 39%;
   }
-}
 
-
-/* ===== Character Bubble raise more v42 ===== */
-
-.character-conversation-area {
-  top: 32%;
-}
 
 @media (max-width: 480px) {
-  .character-conversation-area {
-    top: 32%;
   }
-}
 
-
-/* ===== Character Bubble position + tail v43 ===== */
-
-.character-conversation-area {
-  top: 24%;
-  left: 4%;
-  width: 50%;
-  z-index: 8;
-}
-
-.character-latest-message {
-  position: relative;
-  width: 100%;
-  max-width: 100%;
-}
 
 /* 既存の横向き三角を解除して、右下向きのしっぽに変更 */
-.character-latest-message::after {
-  content: "";
-
-  position: absolute;
-
-  right: 28px;
-  bottom: -9px;
-
-  width: 18px;
-  height: 18px;
-
-  background: rgba(255, 255, 255, 0.95);
-
-  border: 0;
-  border-right: 1px solid #d8e4e1;
-  border-bottom: 1px solid #d8e4e1;
-
-  transform: rotate(45deg);
-
-  z-index: -1;
-}
-
 @media (max-width: 480px) {
-  .character-conversation-area {
-    top: 24%;
-    left: 4%;
-    width: 50%;
   }
-
-  .character-latest-message::after {
-    right: 24px;
-    bottom: -8px;
-
-    width: 16px;
-    height: 16px;
-  }
-}
 
 /* ===== Notia subtle idle motion v01 ===== */
 
@@ -3884,37 +2732,95 @@ body.keyboard-open .input-area {
 }
 
 
-/* ===== Character Bubble long-text position v44 ===== */
+@media (max-width: 480px) {
+  }
+
+
+/* スクロールバーを目立たせすぎない */
+@media (max-width: 480px) {
+  }
+
+/* ===== Character Bubble canonical ===== */
 
 .character-conversation-area {
+  position: absolute;
+
   top: 18%;
+  left: 4%;
+
+  width: 50%;
+
+  z-index: 8;
 }
-
-@media (max-width: 480px) {
-  .character-conversation-area {
-    top: 18%;
-  }
-}
-
-
-/* ===== Character Bubble long-text scroll v01 ===== */
 
 .character-latest-message {
+  position: relative;
+
+  width: 100%;
+  max-width: 100%;
   max-height: 300px;
+
+  padding: 14px 17px;
+
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 
+  color: #24364f;
+
+  background:
+    rgba(255, 255, 255, 0.95);
+
+  border: 1px solid #d8e4e1;
+  border-radius:
+    22px 22px 22px 10px;
+
+  box-shadow:
+    0 5px 18px
+    rgba(36, 54, 79, 0.08);
+
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+
+  font-size: 14px;
+  line-height: 1.55;
+
+  white-space: pre-line;
+
   scrollbar-width: thin;
 }
 
-/* スクロールバーを目立たせすぎない */
+.character-latest-message::after {
+  content: "";
+
+  position: absolute;
+
+  right: 28px;
+  bottom: -9px;
+
+  width: 18px;
+  height: 18px;
+
+  background:
+    rgba(255, 255, 255, 0.95);
+
+  border: 0;
+  border-right: 1px solid #d8e4e1;
+  border-bottom: 1px solid #d8e4e1;
+
+  transform: rotate(45deg);
+
+  z-index: -1;
+}
+
 .character-latest-message::-webkit-scrollbar {
   width: 4px;
 }
 
 .character-latest-message::-webkit-scrollbar-thumb {
-  background: rgba(40, 86, 92, 0.22);
+  background:
+    rgba(40, 86, 92, 0.22);
+
   border-radius: 999px;
 }
 
@@ -3923,45 +2829,72 @@ body.keyboard-open .input-area {
 }
 
 @media (max-width: 480px) {
+  .character-conversation-area {
+    top: 18%;
+    left: 4%;
+
+    width: 50%;
+  }
+
   .character-latest-message {
     max-height: 280px;
+
+    padding: 13px 15px;
+
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .character-latest-message::after {
+    right: 24px;
+    bottom: -8px;
+
+    width: 16px;
+    height: 16px;
   }
 }
 
-/* ===== Secretary Help Popover v01 ===== */
+/* ===== Secretary Help Popover canonical ===== */
 
 .character-secretary-title-row {
   position: relative;
 }
 
+/* 吹き出しより前面に表示 */
+.character-secretary-status {
+  z-index: 40;
+}
+
 .character-secretary-help-popover {
   position: absolute;
 
-  top: calc(100% + 10px);
+  top: 44px;
   left: 0;
 
-  width: 250px;
+  width: 230px;
+  max-width: calc(100vw - 80px);
 
-  padding: 14px 16px;
+  padding: 13px 15px;
 
-  border: 1px solid
+  border:
+    1px solid
     rgba(58, 111, 113, 0.16);
 
   border-radius: 16px;
 
   background:
-    rgba(255, 255, 255, 0.96);
+    rgba(255, 255, 255, 0.98);
 
   box-shadow:
-    0 12px 32px
-    rgba(25, 67, 70, 0.16);
+    0 10px 28px
+    rgba(25, 67, 70, 0.18);
 
   color: #294f52;
 
   font-size: 12px;
   line-height: 1.55;
 
-  z-index: 30;
+  z-index: 50;
 }
 
 .character-secretary-help-popover[hidden] {
@@ -3973,56 +2906,9 @@ body.keyboard-open .input-area {
 
   margin-bottom: 6px;
 
-  font-size: 13px;
   color: #285e61;
-}
 
-.character-secretary-help-popover p {
-  margin: 0 0 8px;
-}
-
-.character-secretary-help-popover ul {
-  margin: 8px 0 10px;
-  padding-left: 18px;
-}
-
-.character-secretary-help-popover li {
-  margin: 2px 0;
-}
-
-.character-secretary-help-note {
-  margin-bottom: 0 !important;
-
-  color:
-    rgba(41, 79, 82, 0.72);
-}
-
-
-/* ===== Secretary Help Popover fix v02 ===== */
-
-/* 子要素のz-indexが吹き出しに負けないよう、親ごと前面へ */
-.character-secretary-status {
-  z-index: 40;
-}
-
-/* 説明カードを少しコンパクトに */
-.character-secretary-help-popover {
-  top: 44px;
-  left: 0;
-
-  width: 230px;
-  max-width: calc(100vw - 80px);
-
-  padding: 13px 15px;
-
-  background:
-    rgba(255, 255, 255, 0.98);
-
-  box-shadow:
-    0 10px 28px
-    rgba(25, 67, 70, 0.18);
-
-  z-index: 50;
+  font-size: 13px;
 }
 
 .character-secretary-help-popover p {
@@ -4038,12 +2924,20 @@ body.keyboard-open .input-area {
   margin: 1px 0;
 }
 
+.character-secretary-help-note {
+  margin-bottom: 0 !important;
+
+  color:
+    rgba(41, 79, 82, 0.72);
+}
+
 @media (max-width: 480px) {
   .character-secretary-help-popover {
     width: 225px;
     max-width: calc(100vw - 70px);
   }
 }
+
 
 /* ===== Character Time Background Images v02 ===== */
 
