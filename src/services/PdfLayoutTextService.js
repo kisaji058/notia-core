@@ -241,43 +241,30 @@ function buildColumnBoundaries(
         a.x - b.x
     );
 
+  if (sorted.length === 0) {
+    return [];
+  }
+
+  const equalWidth =
+    pageWidth /
+    sorted.length;
+
   return sorted.map(
     (
       header,
       index
-    ) => {
-      const previous =
-        sorted[
-          index - 1
-        ];
-
-      const next =
-        sorted[
-          index + 1
-        ];
-
-      const left =
-        previous
-          ? (
-              previous.x +
-              header.x
-            ) / 2
-          : 0;
-
-      const right =
-        next
-          ? (
-              header.x +
-              next.x
-            ) / 2
-          : pageWidth;
-
-      return {
-        ...header,
-        left,
-        right,
-      };
-    }
+    ) => ({
+      ...header,
+      left:
+        equalWidth *
+        index,
+      right:
+        index ===
+          sorted.length - 1
+          ? pageWidth
+          : equalWidth *
+            (index + 1),
+    })
   );
 }
 
@@ -353,9 +340,101 @@ function groupItemsIntoRows(
     .filter(Boolean);
 }
 
+function detectScheduleSubcolumns(
+  items,
+  column,
+  headerY
+) {
+  const headerCandidates =
+    items.filter((item) => {
+      const normalized =
+        String(item.text || "")
+          .replace(/\\s+/g, "")
+          .trim();
+
+      return (
+        item.x >= column.left &&
+        item.x < column.right &&
+        item.y <= headerY + 5 &&
+        item.y >= headerY - 60 &&
+        (
+          normalized === "予定" ||
+          normalized === "備考"
+        )
+      );
+    });
+
+  const planHeader =
+    headerCandidates
+      .filter(
+        (item) =>
+          String(item.text || "")
+            .replace(/\\s+/g, "")
+            .trim() === "予定"
+      )
+      .sort(
+        (a, b) =>
+          Math.abs(headerY - a.y) -
+          Math.abs(headerY - b.y)
+      )[0] || null;
+
+  const noteHeader =
+    headerCandidates
+      .filter(
+        (item) =>
+          String(item.text || "")
+            .replace(/\\s+/g, "")
+            .trim() === "備考"
+      )
+      .sort(
+        (a, b) =>
+          Math.abs(headerY - a.y) -
+          Math.abs(headerY - b.y)
+      )[0] || null;
+
+  if (
+    !planHeader ||
+    !noteHeader
+  ) {
+    return null;
+  }
+
+  const planCenter =
+    planHeader.x +
+    Number(planHeader.width || 0) / 2;
+
+  const noteCenter =
+    noteHeader.x +
+    Number(noteHeader.width || 0) / 2;
+
+  if (
+    !Number.isFinite(planCenter) ||
+    !Number.isFinite(noteCenter) ||
+    noteCenter <= planCenter
+  ) {
+    return null;
+  }
+
+  const spacing =
+    noteCenter - planCenter;
+
+  return {
+    planLeft:
+      planCenter -
+      spacing / 2,
+
+    noteLeft:
+      (
+        planCenter +
+        noteCenter
+      ) / 2,
+  };
+}
+
 function buildDayAnchoredBlocks(
   items,
-  column
+  column,
+  subcolumns = null
 ) {
   const weekdaySet =
     new Set([
@@ -401,7 +480,7 @@ function buildDayAnchoredBlocks(
             item.x >=
               column.left &&
             item.x <
-              column.x - 15 &&
+              column.x &&
             column.x -
               item.x <
               110
@@ -538,6 +617,58 @@ function buildDayAnchoredBlocks(
         contentItems
       );
 
+    let schoolLines = [];
+    let planLines = [];
+    let noteLines = [];
+
+    if (subcolumns) {
+      const getCenterX = (item) =>
+        item.x +
+        Number(item.width || 0) / 2;
+
+      const schoolItems =
+        contentItems.filter(
+          (item) =>
+            getCenterX(item) <
+            subcolumns.planLeft
+        );
+
+      const planItems =
+        contentItems.filter((item) => {
+          const centerX =
+            getCenterX(item);
+
+          return (
+            centerX >=
+              subcolumns.planLeft &&
+            centerX <
+              subcolumns.noteLeft
+          );
+        });
+
+      const noteItems =
+        contentItems.filter(
+          (item) =>
+            getCenterX(item) >=
+            subcolumns.noteLeft
+        );
+
+      schoolLines =
+        groupItemsIntoRows(
+          schoolItems
+        );
+
+      planLines =
+        groupItemsIntoRows(
+          planItems
+        );
+
+      noteLines =
+        groupItemsIntoRows(
+          noteItems
+        );
+    }
+
     blocks.push({
       day:
         anchor.day,
@@ -547,6 +678,9 @@ function buildDayAnchoredBlocks(
           : null,
       lines:
         contentRows,
+      schoolLines,
+      planLines,
+      noteLines,
     });
   }
 
@@ -673,6 +807,68 @@ function buildMonthDayBlocks(
         page.width
       );
 
+    console.log(
+      "[pdf-layout] month headers:",
+      headers
+    );
+
+    console.log(
+      "[pdf-layout] schedule-header candidates:",
+      page.items
+        .filter((item) => {
+          const normalized =
+            String(item.text || "")
+              .replace(/\s+/g, "")
+              .trim();
+
+          return (
+            normalized === "予定" ||
+            normalized === "備考"
+          );
+        })
+        .map((item) => ({
+          text: item.text,
+          x: item.x,
+          y: item.y,
+          width: item.width || 0,
+        }))
+        .sort(
+          (a, b) =>
+            b.y - a.y ||
+            a.x - b.x
+        )
+    );
+
+    console.log(
+      "[pdf-layout] day-number candidates:",
+      page.items
+        .filter((item) => {
+          const normalized =
+            normalizeDigits(
+              item.text
+            ).trim();
+
+          return /^(1|2|3|4|5|6|7|8|9|10)$/.test(
+            normalized
+          );
+        })
+        .map((item) => ({
+          text:
+            normalizeDigits(
+              item.text
+            ).trim(),
+          x: item.x,
+          y: item.y,
+          width:
+            item.width || 0,
+        }))
+        .sort(
+          (a, b) =>
+            b.y - a.y ||
+            a.x - b.x
+        )
+    );
+
     const headerY =
       Math.max(
         ...headers.map(
@@ -696,10 +892,18 @@ function buildMonthDayBlocks(
               column.right
         );
 
+      const subcolumns =
+        detectScheduleSubcolumns(
+          page.items,
+          column,
+          headerY
+        );
+
       const dayBlocks =
         buildDayAnchoredBlocks(
           columnItems,
-          column
+          column,
+          subcolumns
         );
 
       for (
@@ -717,6 +921,12 @@ function buildMonthDayBlocks(
             dayBlock.weekday,
           lines:
             dayBlock.lines,
+          schoolLines:
+            dayBlock.schoolLines || [],
+          planLines:
+            dayBlock.planLines || [],
+          noteLines:
+            dayBlock.noteLines || [],
         });
       }
     }

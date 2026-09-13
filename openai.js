@@ -410,6 +410,24 @@ dateEvidence:
             block.lines.length > 0
         );
 
+      console.log(
+        "[document] structured PDF day BLOCKs:",
+        structuredPdfDayBlocks.map(
+          (block, index) => ({
+            blockId: index + 1,
+            month: block.month,
+            day: block.day,
+            weekday: block.weekday,
+            schoolLines:
+              block.schoolLines || [],
+            planLines:
+              block.planLines || [],
+            noteLines:
+              block.noteLines || [],
+          })
+        )
+      );
+
       const normalizedHeader =
         String(
           structuredPdfText || ""
@@ -490,11 +508,58 @@ dateEvidence:
       structuredPdfDayBlocks.length > 0
         ? structuredPdfDayBlocks
             .map(
-              (block, index) => [
-                `BLOCK ${index + 1}`,
-                `${block.month}/${block.day} ${block.weekday || ""}`.trim(),
-                ...block.lines,
-              ].join("\n")
+              (block, index) => {
+                const structuredLines = [
+                  `BLOCK ${index + 1}`,
+                  `${block.month}/${block.day} ${block.weekday || ""}`.trim(),
+                ];
+
+                if (
+                  Array.isArray(block.schoolLines) &&
+                  block.schoolLines.length > 0
+                ) {
+                  structuredLines.push(
+                    "SCHOOL:",
+                    ...block.schoolLines.map(
+                      (line) => `  ${line}`
+                    )
+                  );
+                }
+
+                if (
+                  Array.isArray(block.planLines) &&
+                  block.planLines.length > 0
+                ) {
+                  structuredLines.push(
+                    "PLAN:",
+                    ...block.planLines.map(
+                      (line) => `  ${line}`
+                    )
+                  );
+                }
+
+                if (
+                  Array.isArray(block.noteLines) &&
+                  block.noteLines.length > 0
+                ) {
+                  structuredLines.push(
+                    "NOTE:",
+                    ...block.noteLines.map(
+                      (line) => `  ${line}`
+                    )
+                  );
+                }
+
+                if (
+                  structuredLines.length === 2
+                ) {
+                  structuredLines.push(
+                    ...block.lines
+                  );
+                }
+
+                return structuredLines.join("\n");
+              }
             )
             .join("\n\n")
         : "";
@@ -513,6 +578,24 @@ dateEvidence:
 - 元PDFの見た目から別の日付を推測してはいけません
 - 各BLOCK内の本文は、そのBLOCKの日付に属します
 - 複数行の本文は同じ日の予定です
+- SCHOOLは学校行事・学校側の日程です
+- PLANはその日の部活動の主な予定です
+- NOTEはPLANに対する場所・相手・練習内容・補足情報です
+- PLANとNOTEは原則として同じ日の情報として関連付けてください
+- NOTEだけを独立した予定として重複抽出しないでください
+- 「@日体」「@浜松市立」「会場未定」などは、単独の予定名ではなく場所・補足として扱ってください
+- 「BT」「PT」「GT」「テスト勉強」などは、資料上の関係を保ち、勝手に意味を展開しないでください
+- 「AM」「PM」「ALL」だけから具体的な時刻を推測してはいけません
+- 資料本文を説明的な文章へ言い換えてはいけません
+- 「午前中の活動」「終日行事」「競技会」「学校行事」「2日目」など、資料に書かれていない意味を補ってはいけません
+- descriptionには原則として資料に書かれた文言をそのまま残してください
+- SCHOOLとPLANの両方に内容がある場合、それぞれ独立した予定として扱って構いません。無理に1件へ統合しないでください
+- PLANに具体的な活動名がある場合、その原文をtitleとして優先してください
+- PLANが「16:00～」「AM」「PM」「ALL」など時間帯情報だけで、NOTEに「BT」「BT＋PT」「GT」など活動内容がある場合は、NOTE側の活動内容をtitleとして使用してください
+- この場合、時間情報はstartTimeまたはdescriptionに残し、「未記載予定」などの仮タイトルを作らないでください
+- NOTEの「＠日体」「＠浜松市立」「会場未定」など明示的な場所情報はlocationへ入れてください
+- 場所情報が複数書かれている場合は、1つを勝手に捨てず、すべて保持してください
+- 「浜松城北工業来校」「クラブチーム来校」などは勝手に場所名へ変換せず、原文のままdescriptionへ残してください
 - 元PDFは内容補助として使わず、このBLOCK情報を基準にしてください
 - 出力では、各予定を必ず元のBLOCK番号に紐づけてください
 - blockIdは入力に書かれているBLOCK番号をそのまま返してください
@@ -533,12 +616,7 @@ ${structuredBlockText}
       Boolean(
         structuredPdfText
       ) &&
-      structuredPdfDayBlocks.length > 0 &&
-      Number.isInteger(
-        structuredPdfYear
-      ) &&
-      structuredPdfYear >= 1900 &&
-      structuredPdfYear <= 2200;
+      structuredPdfDayBlocks.length > 0;
 
     if (canUseStructuredPdf) {
       useStructuredPdf = true;
@@ -598,11 +676,56 @@ ${structuredBlockText}
                   offset +
                   1;
 
-            return [
+            const structuredLines = [
               `BLOCK ${blockId}`,
               `${block.month}/${block.day} ${block.weekday || ""}`.trim(),
-              ...block.lines,
-            ].join("\n");
+            ];
+
+            if (
+              Array.isArray(block.schoolLines) &&
+              block.schoolLines.length > 0
+            ) {
+              structuredLines.push(
+                "SCHOOL:",
+                ...block.schoolLines.map(
+                  (line) => `  ${line}`
+                )
+              );
+            }
+
+            if (
+              Array.isArray(block.planLines) &&
+              block.planLines.length > 0
+            ) {
+              structuredLines.push(
+                "PLAN:",
+                ...block.planLines.map(
+                  (line) => `  ${line}`
+                )
+              );
+            }
+
+            if (
+              Array.isArray(block.noteLines) &&
+              block.noteLines.length > 0
+            ) {
+              structuredLines.push(
+                "NOTE:",
+                ...block.noteLines.map(
+                  (line) => `  ${line}`
+                )
+              );
+            }
+
+            if (
+              structuredLines.length === 2
+            ) {
+              structuredLines.push(
+                ...block.lines
+              );
+            }
+
+            return structuredLines.join("\n");
           }
         )
         .join("\n\n");
@@ -616,6 +739,24 @@ ${structuredBlockText}
 - BLOCKごとに月・日・曜日は確定済みです
 - 各BLOCK内の本文は、そのBLOCKの日付に属します
 - 複数行の本文は同じ日の予定です
+- SCHOOLは学校行事・学校側の日程です
+- PLANはその日の部活動の主な予定です
+- NOTEはPLANに対する場所・相手・練習内容・補足情報です
+- PLANとNOTEは原則として同じ日の情報として関連付けてください
+- NOTEだけを独立した予定として重複抽出しないでください
+- 「@日体」「@浜松市立」「会場未定」などは、単独の予定名ではなく場所・補足として扱ってください
+- 「BT」「PT」「GT」「テスト勉強」などは、資料上の関係を保ち、勝手に意味を展開しないでください
+- 「AM」「PM」「ALL」だけから具体的な時刻を推測してはいけません
+- 資料本文を説明的な文章へ言い換えてはいけません
+- 「午前中の活動」「終日行事」「競技会」「学校行事」「2日目」など、資料に書かれていない意味を補ってはいけません
+- descriptionには原則として資料に書かれた文言をそのまま残してください
+- SCHOOLとPLANの両方に内容がある場合、それぞれ独立した予定として扱って構いません。無理に1件へ統合しないでください
+- PLANに具体的な活動名がある場合、その原文をtitleとして優先してください
+- PLANが「16:00～」「AM」「PM」「ALL」など時間帯情報だけで、NOTEに「BT」「BT＋PT」「GT」など活動内容がある場合は、NOTE側の活動内容をtitleとして使用してください
+- この場合、時間情報はstartTimeまたはdescriptionに残し、「未記載予定」などの仮タイトルを作らないでください
+- NOTEの「＠日体」「＠浜松市立」「会場未定」など明示的な場所情報はlocationへ入れてください
+- 場所情報が複数書かれている場合は、1つを勝手に捨てず、すべて保持してください
+- 「浜松城北工業来校」「クラブチーム来校」などは勝手に場所名へ変換せず、原文のままdescriptionへ残してください
 - 各予定を必ず元のBLOCK番号に紐づけてください
 - blockIdは入力のBLOCK番号をそのまま返してください
 - 存在しないBLOCK番号を作らないでください
@@ -1290,6 +1431,88 @@ ${chunkText}
       );
   }
 
+  // AIがdescriptionへ内部解析情報を混ぜても、
+  // ユーザー向けデータには残さない。
+  for (const item of result.items) {
+    const description =
+      String(
+        item.description || ""
+      );
+
+    const title =
+      String(
+        item.title || ""
+      ).trim();
+
+    item.description =
+      description
+        .split(/\r?\n/)
+        .map(
+          (line) =>
+            line
+              .trim()
+              .replace(
+                /^(SCHOOL|PLAN|NOTE)\s*:\s*/i,
+                ""
+              )
+        )
+        .filter(
+          (line) =>
+            line &&
+            line !== title &&
+            !/^blockId\s*:/i.test(line) &&
+            !/^sourceYear\s*:/i.test(line) &&
+            !/^sourceMonth\s*:/i.test(line) &&
+            !/^sourceDay\s*:/i.test(line) &&
+            !/^sourceWeekday\s*:/i.test(line) &&
+            !/^@?\d{1,2}\/\d{1,2}\s*[日月火水木金土]?$/.test(
+              line
+            )
+        )
+        .join("\n");
+  }
+
+  // AM / PM / ALL や「@場所」だけを
+  // 独立した予定として登録しない。
+  result.items =
+    result.items.filter(
+      (item) => {
+        const title =
+          String(
+            item.title || ""
+          ).trim();
+
+        if (
+          /^(AM|PM|ALL)$/i.test(
+            title
+          )
+        ) {
+          return false;
+        }
+
+        if (
+          /^[@＠]/.test(
+            title
+          )
+        ) {
+          if (
+            !String(
+              item.location || ""
+            ).trim()
+          ) {
+            item.location =
+              title;
+          }
+
+          item.title = "";
+
+          return true;
+        }
+
+        return true;
+      }
+    );
+
   const weekdayMap = {
     日: 0,
     月: 1,
@@ -1368,6 +1591,7 @@ ${chunkText}
   };
 
   let shouldRecheck = false;
+  const inferredYears = new Set();
 
   for (const item of result.items) {
     item.date = null;
@@ -1424,8 +1648,8 @@ ${chunkText}
             .filter(Boolean)
             .join(" / ");
 
-        result.warnings.push(
-          `${item.title || "予定"}の年は資料に明記されていないため、曜日との整合性から${year}年と推定しました。`
+        inferredYears.add(
+          year
         );
       }
     }
@@ -1525,6 +1749,261 @@ ${chunkText}
       `${String(year).padStart(4, "0")}-` +
       `${String(month).padStart(2, "0")}-` +
       `${String(day).padStart(2, "0")}`;
+  }
+
+  if (inferredYears.size > 0) {
+    const years =
+      [...inferredYears]
+        .sort(
+          (a, b) => a - b
+        );
+
+    result.warnings =
+      result.warnings.filter(
+        (warning) =>
+          !/年は資料に明記されていないため、曜日との整合性から\d{4}年と推定しました。/.test(
+            String(warning)
+          )
+      );
+
+    result.warnings.push(
+      years.length === 1
+        ? `資料に年の記載がないため、日付と曜日の整合性から${years[0]}年と推定しました。`
+        : `資料に年の記載がないため、日付と曜日の整合性から${years.join("年・")}年と推定しました。`
+    );
+  }
+
+  // 構造化PDFで、翌日のBLOCKが場所情報だけの場合は、
+  // 直前日の予定が継続している可能性が高いので予定名を引き継ぐ。
+  if (useStructuredPdf) {
+    const toUtcDate = (item) => {
+      const year =
+        Number(
+          String(item.date || "")
+            .slice(0, 4)
+        );
+
+      const month =
+        Number(item.sourceMonth);
+
+      const day =
+        Number(item.sourceDay);
+
+      if (
+        !Number.isInteger(year) ||
+        !Number.isInteger(month) ||
+        !Number.isInteger(day)
+      ) {
+        return null;
+      }
+
+      return new Date(
+        Date.UTC(
+          year,
+          month - 1,
+          day
+        )
+      );
+    };
+
+    for (
+      let index = 1;
+      index < result.items.length;
+      index++
+    ) {
+      const current =
+        result.items[index];
+
+      const currentTitle =
+        String(
+          current.title || ""
+        ).trim();
+
+      const currentLocation =
+        String(
+          current.location || ""
+        ).trim();
+
+      if (
+        currentTitle ||
+        !/^[@＠]/.test(
+          currentLocation
+        )
+      ) {
+        continue;
+      }
+
+      let previous = null;
+
+      for (
+        let previousIndex =
+          index - 1;
+        previousIndex >= 0;
+        previousIndex--
+      ) {
+        const candidate =
+          result.items[
+            previousIndex
+          ];
+
+        const candidateTitle =
+          String(
+            candidate.title || ""
+          ).trim();
+
+        if (!candidateTitle) {
+          continue;
+        }
+
+        previous = candidate;
+        break;
+      }
+
+      if (!previous) {
+        continue;
+      }
+
+      const previousDate =
+        toUtcDate(previous);
+
+      const currentDate =
+        toUtcDate(current);
+
+      if (
+        !previousDate ||
+        !currentDate
+      ) {
+        continue;
+      }
+
+      const dayDiff =
+        Math.round(
+          (
+            currentDate -
+            previousDate
+          ) /
+          86400000
+        );
+
+      if (dayDiff === 1) {
+        current.title =
+          previous.title;
+      }
+    }
+  }
+
+  // 構造化PDFで、タイトルがなく場所だけ記載された翌日の予定は、
+  // 直前日のイベント名を引き継ぐ。
+  if (useStructuredPdf) {
+    const parseDate = (value) => {
+      if (
+        typeof value !== "string" ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(value)
+      ) {
+        return null;
+      }
+
+      const [year, month, day] =
+        value.split("-").map(Number);
+
+      return new Date(
+        Date.UTC(
+          year,
+          month - 1,
+          day
+        )
+      );
+    };
+
+    for (
+      let index = 0;
+      index < result.items.length;
+      index++
+    ) {
+      const current =
+        result.items[index];
+
+      const title =
+        String(
+          current.title || ""
+        ).trim();
+
+      const location =
+        String(
+          current.location || ""
+        ).trim();
+
+      if (
+        title ||
+        !/^[@＠]/.test(location) ||
+        !current.date
+      ) {
+        continue;
+      }
+
+      const currentDate =
+        parseDate(current.date);
+
+      if (!currentDate) {
+        continue;
+      }
+
+      let matchedPrevious = null;
+
+      for (
+        let previousIndex = 0;
+        previousIndex < result.items.length;
+        previousIndex++
+      ) {
+        const candidate =
+          result.items[previousIndex];
+
+        if (
+          candidate === current ||
+          candidate.type !== "event" ||
+          !candidate.title ||
+          !candidate.date
+        ) {
+          continue;
+        }
+
+        const candidateDate =
+          parseDate(candidate.date);
+
+        if (!candidateDate) {
+          continue;
+        }
+
+        const diffDays =
+          Math.round(
+            (
+              currentDate -
+              candidateDate
+            ) /
+            86400000
+          );
+
+        if (diffDays === 1) {
+          matchedPrevious =
+            candidate;
+        }
+      }
+
+      if (matchedPrevious) {
+        current.title =
+          matchedPrevious.title;
+
+        if (
+          /BLOCK\d+にて|記載予定なし/.test(
+            String(
+              current.description || ""
+            )
+          )
+        ) {
+          current.description = "";
+        }
+      }
+    }
   }
 
   if (
