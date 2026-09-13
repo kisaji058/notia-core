@@ -1034,7 +1034,67 @@ console.log(
   }
 );
 
-const analysis = this.safeParse(response);
+let analysis = this.safeParse(response);
+
+// task_create でユーザーが日付を一切指定していない場合、
+// AIが勝手に今日・明日などを補完しても採用しない。
+if (analysis.intent === "task_create") {
+  const messageText =
+    String(userMessage || "");
+
+  const hasNoDueDateCue =
+    /(期限なし|期日なし|締切なし|日付なし|期限はいらない|期限不要|未定で登録)/.test(
+      messageText
+    );
+
+  const hasDateCue =
+    /(今日|本日|明日|明後日|今週|来週|再来週|今月|来月|再来月|\d{1,2}月\d{1,2}日|\d{4}[\/-]\d{1,2}[\/-]\d{1,2}|\d{1,2}[\/-]\d{1,2}|月曜|月曜日|火曜|火曜日|水曜|水曜日|木曜|木曜日|金曜|金曜日|土曜|土曜日|日曜|日曜日|\d+日後|\d+週間後|一週間後)/.test(
+      messageText
+    );
+
+  if (!hasDateCue) {
+    const correctedTasks =
+      Array.isArray(analysis.tasks)
+        ? analysis.tasks.map((task) => ({
+            ...task,
+            dueDate: null,
+            needsDateConfirmation:
+              !hasNoDueDateCue,
+            dateExpression:
+              hasNoDueDateCue
+                ? null
+                : "期限未指定",
+          }))
+        : [];
+
+    const firstTask =
+      correctedTasks[0] || null;
+
+    analysis = {
+      ...analysis,
+      tasks: correctedTasks,
+      dueDate: null,
+      needsDateConfirmation:
+        firstTask?.needsDateConfirmation ??
+        !hasNoDueDateCue,
+      dateExpression:
+        firstTask?.dateExpression ??
+        (
+          hasNoDueDateCue
+            ? null
+            : "期限未指定"
+        ),
+    };
+
+    console.warn(
+      "⚠️ 日付未指定task_createのdueDate補完を無効化:",
+      {
+        userMessage,
+        hasNoDueDateCue,
+      }
+    );
+  }
+}
 
 const shouldRetryWithoutTaskContext =
   analysis.intent === "task_update" &&

@@ -19,7 +19,9 @@ if (
 const isNewRequest =
   analysis?.intent === "task_create" ||
   analysis?.intent === "routine_create" ||
-  analysis?.intent === "task_complete";
+  analysis?.intent === "task_complete" ||
+  analysis?.intent === "schedule_query" ||
+  analysis?.intent === "chat";
 
 if (isNewRequest) {
   sessionManager.clear(userId);
@@ -265,6 +267,30 @@ let analyzedDueTime =
   analysis.updates?.dueTime ??
   analysis.dueTime ??
   null;
+
+// 期限確認中でも、今回の発言が期限回答ではなく
+// 明らかな新しい依頼・会話なら確認待ちを解除して通常処理へ戻す
+const isNewRequest =
+  !wantsNoDueDate &&
+  !wantsCancel &&
+  !analyzedDueDate &&
+  (
+    analysis?.intent === "task_create" ||
+    analysis?.intent === "routine_create" ||
+    analysis?.intent === "task_complete" ||
+    analysis?.intent === "schedule_query" ||
+    analysis?.intent === "chat"
+  );
+
+if (isNewRequest) {
+  sessionManager.clear(userId);
+
+  return {
+    handled: false,
+    systemHint: "",
+    analysis,
+  };
+}
 
 // ルール判定でも日付解析でも判断できなかった場合だけ、
 // AIによる確認応答判定を行う
