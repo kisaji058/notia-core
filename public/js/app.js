@@ -389,14 +389,6 @@ function setNotiaExpression(
   }
 }
 
-function updateNotiaExpression(
-  expression = "default"
-) {
-  setNotiaExpression(
-    expression || "default"
-  );
-}
-
 /* 表情画像を先読みして切替時のちらつきを防ぐ */
 Object.values(
   NOTIA_EXPRESSION_IMAGES
@@ -1499,7 +1491,7 @@ if (role === "assistant") {
     createdAt
   );
 
-  updateNotiaExpression(
+  setNotiaExpression(
     expression
   );
 
