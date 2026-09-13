@@ -985,6 +985,7 @@ CREATE TABLE IF NOT EXISTS events (
   title TEXT NOT NULL,
   description TEXT,
   event_date TEXT NOT NULL,
+  end_date TEXT,
   start_time TEXT,
   end_time TEXT,
   location TEXT,
@@ -997,6 +998,20 @@ CREATE TABLE IF NOT EXISTS events (
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 )
 `).run();
+
+if (!hasColumn("events", "end_date")) {
+  db.prepare(`
+    ALTER TABLE events
+    ADD COLUMN end_date TEXT
+  `).run();
+
+  db.prepare(`
+    UPDATE events
+    SET end_date = event_date
+    WHERE end_date IS NULL
+       OR end_date = ''
+  `).run();
+}
 
 if (!hasColumn("events", "priority")) {
   db.prepare(`
@@ -1974,7 +1989,8 @@ function addEvent(
   location = "",
   priority = "normal",
   category = "other",
-  notification = "none"
+  notification = "none",
+  endDate = null
 ){
   const result = db.prepare(`
     INSERT INTO events (
@@ -1982,6 +1998,7 @@ function addEvent(
   title,
   description,
   event_date,
+  end_date,
   start_time,
   end_time,
   location,
@@ -1989,12 +2006,13 @@ function addEvent(
   category,
   notification
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
   userId,
   title,
   description,
   eventDate,
+  endDate || eventDate,
   startTime,
   endTime,
   location,
@@ -2029,6 +2047,7 @@ function updateEventById(
     title,
     description,
     event_date,
+    end_date,
     start_time,
     end_time,
     location,
@@ -2044,6 +2063,7 @@ function updateEventById(
       title = ?,
       description = ?,
       event_date = ?,
+      end_date = ?,
       start_time = ?,
       end_time = ?,
       location = ?,
@@ -2058,6 +2078,7 @@ function updateEventById(
     title,
     description ?? null,
     event_date,
+    end_date ?? event_date,
     start_time ?? null,
     end_time ?? null,
     location ?? null,
@@ -2264,7 +2285,11 @@ function getEventsByDate(
     FROM events
     WHERE user_id = ?
       AND status = 'active'
-      AND event_date = ?
+      AND event_date <= ?
+      AND COALESCE(
+        end_date,
+        event_date
+      ) >= ?
     ORDER BY
       CASE
         WHEN start_time IS NULL
@@ -2276,6 +2301,7 @@ function getEventsByDate(
       id ASC
   `).all(
     userId,
+    date,
     date
   );
 }
@@ -2290,7 +2316,11 @@ function getEventsByDateRange(
     FROM events
     WHERE user_id = ?
       AND status = 'active'
-      AND event_date BETWEEN ? AND ?
+      AND event_date <= ?
+      AND COALESCE(
+        end_date,
+        event_date
+      ) >= ?
     ORDER BY
       event_date ASC,
       CASE
@@ -2303,8 +2333,8 @@ function getEventsByDateRange(
       id ASC
   `).all(
     userId,
-    startDate,
-    endDate
+    endDate,
+    startDate
   );
 }
 

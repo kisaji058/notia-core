@@ -102,6 +102,8 @@ JSONのみで返してください。
       "description": "string | null",
       "dueDate": "string | null",
       "dueTime": "string | null",
+      "endDate": "string | null",
+      "endTime": "string | null",
       "category": "work | school | shopping | private | other | null",
       "notification": "none | same_day | day_before | at_time | 10_minutes_before | 30_minutes_before | 1_hour_before | null",
       "needsDateConfirmation": "boolean",
@@ -122,6 +124,8 @@ JSONのみで返してください。
   "description": "string | null",
   "dueDate": "string | null",
   "dueTime": "string | null",
+  "endDate": "string | null",
+  "endTime": "string | null",
   "category": "work | school | shopping | private | other | null",
   "notification": "none | same_day | day_before | at_time | 10_minutes_before | 30_minutes_before | 1_hour_before | null",
   "targetTaskId": "number | null",
@@ -467,7 +471,13 @@ task_createの場合:
 - 時刻が指定されていない場合のみdueTimeをnullにする。
 - 複数のタスク・予定がある場合は、
   それぞれの行動に対応する日時を各tasks要素へ個別に設定する。
-- eventの場合も時刻はdueTimeへ入れる。
+- eventの場合、開始日はdueDate、開始時刻はdueTimeへ入れる。
+- eventに終了日時が指定されている場合は、
+  終了日をendDate、終了時刻をendTimeへ入れる。
+- 同じ日の予定でも終了時刻が指定されていればendTimeへ入れる。
+- 終了日が明示されていない場合、endDateはnullでよい。
+- taskの場合はendDateとendTimeをnullにする。
+- 日付を跨ぐ予定を1件のeventとして扱う。
 - 判断できない場合はcategoryをnullにする。
 - notificationの指定がなければnullにする。
 - updatesのすべての項目はnullにする。
@@ -1290,6 +1300,8 @@ ${userMessage}
           description: task.description ?? null,
           dueDate: task.dueDate ?? null,
           dueTime: task.dueTime ?? null,
+          endDate: task.endDate ?? null,
+          endTime: task.endTime ?? null,
           category: validateEnum(
   task.category,
   VALID_CATEGORIES
@@ -1325,6 +1337,8 @@ ${userMessage}
           description: parsed.description ?? null,
           dueDate: parsed.dueDate ?? null,
           dueTime: parsed.dueTime ?? null,
+          endDate: parsed.endDate ?? null,
+          endTime: parsed.endTime ?? null,
           category: parsed.category ?? null,
           notification: parsed.notification ?? null,
           needsDateConfirmation:
@@ -1395,6 +1409,8 @@ ${userMessage}
       description: parsed.description ?? null,
       dueDate: parsed.dueDate ?? null,
       dueTime: parsed.dueTime ?? null,
+      endDate: parsed.endDate ?? null,
+      endTime: parsed.endTime ?? null,
       category: parsed.category ?? null,
       notification: parsed.notification ?? null,
       needsDateConfirmation:
@@ -1458,6 +1474,8 @@ notification:
       description: text,
       dueDate: null,
       dueTime: null,
+      endDate: null,
+      endTime: null,
       category: null,
       notification: null,
       needsDateConfirmation: false,

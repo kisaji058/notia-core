@@ -2768,6 +2768,11 @@ function renderEventEditForm(
   const eventDate =
     eventItem.event_date || "";
 
+  const eventEndDate =
+    eventItem.end_date ||
+    eventItem.event_date ||
+    "";
+
   const startTime =
     eventItem.start_time
       ? String(
@@ -2842,22 +2847,45 @@ function renderEventEditForm(
         required
       >
 
-      <label
-        class="task-create-label"
-        for="editEventDate"
-      >
-        日付
-      </label>
+      <div class="plan-event-time-fields">
+        <div>
+          <label
+            class="task-create-label"
+            for="editEventDate"
+          >
+            開始日
+          </label>
 
-      <input
-        id="editEventDate"
-        class="task-create-input"
-        type="date"
-        value="${escapeCardHtml(
-          eventDate
-        )}"
-        required
-      >
+          <input
+            id="editEventDate"
+            class="task-create-input"
+            type="date"
+            value="${escapeCardHtml(
+              eventDate
+            )}"
+            required
+          >
+        </div>
+
+        <div>
+          <label
+            class="task-create-label"
+            for="editEventEndDate"
+          >
+            終了日
+          </label>
+
+          <input
+            id="editEventEndDate"
+            class="task-create-input"
+            type="date"
+            value="${escapeCardHtml(
+              eventEndDate
+            )}"
+            required
+          >
+        </div>
+      </div>
 
       <div class="plan-event-time-fields">
         <div>
@@ -3312,6 +3340,20 @@ function bindEventEditForm(
     "editEventTypeTask"
   )?.checked === true;
 
+      const eventDate =
+        document
+          .getElementById(
+            "editEventDate"
+          )
+          .value;
+
+      const endDate =
+        document
+          .getElementById(
+            "editEventEndDate"
+          )
+          .value;
+
       const startTime =
         startTimeInput.value ||
         null;
@@ -3324,13 +3366,26 @@ function bindEventEditForm(
           .value || null;
 
       if (
+        endDate < eventDate
+      ) {
+        errorMessage.textContent =
+          "終了日は開始日以降にしてください。";
+
+        errorMessage.hidden =
+          false;
+
+        return;
+      }
+
+      if (
+        eventDate === endDate &&
         hasInvalidEventTimeRange(
           startTime,
           endTime
         )
       ) {
         errorMessage.textContent =
-          "終了時刻は開始時刻より後にしてください。";
+          "同日の予定では、終了時刻は開始時刻より後にしてください。";
 
         errorMessage.hidden =
           false;
@@ -3347,12 +3402,9 @@ function bindEventEditForm(
             .value
             .trim(),
 
-        eventDate:
-          document
-            .getElementById(
-              "editEventDate"
-            )
-            .value,
+        eventDate,
+
+        endDate,
 
         startTime,
 
@@ -3627,20 +3679,41 @@ function renderEventCreateForm() {
         required
       >
 
-      <label
-        class="task-create-label"
-        for="newEventDate"
-      >
-        日付
-      </label>
+      <div class="plan-event-time-fields">
+        <div>
+          <label
+            class="task-create-label"
+            for="newEventDate"
+          >
+            開始日
+          </label>
 
-      <input
-        id="newEventDate"
-        class="task-create-input"
-        type="date"
-        value="${today}"
-        required
-      >
+          <input
+            id="newEventDate"
+            class="task-create-input"
+            type="date"
+            value="${today}"
+            required
+          >
+        </div>
+
+        <div>
+          <label
+            class="task-create-label"
+            for="newEventEndDate"
+          >
+            終了日
+          </label>
+
+          <input
+            id="newEventEndDate"
+            class="task-create-input"
+            type="date"
+            value="${today}"
+            required
+          >
+        </div>
+      </div>
 
       <div class="plan-event-time-fields">
         <div>
@@ -3973,6 +4046,13 @@ function bindEventCreateForm() {
           )
           .value;
 
+      const endDate =
+        document
+          .getElementById(
+            "newEventEndDate"
+          )
+          .value;
+
       const startTime =
         startTimeInput.value || null;
 
@@ -3984,9 +4064,19 @@ function bindEventCreateForm() {
         return;
       }
 
-      if (!eventDate) {
+      if (!eventDate || !endDate) {
         errorMessage.textContent =
-          "日付を入力してください。";
+          "開始日と終了日を入力してください。";
+
+        errorMessage.hidden =
+          false;
+
+        return;
+      }
+
+      if (endDate < eventDate) {
+        errorMessage.textContent =
+          "終了日は開始日以降にしてください。";
 
         errorMessage.hidden =
           false;
@@ -3995,13 +4085,14 @@ function bindEventCreateForm() {
       }
 
       if (
+        eventDate === endDate &&
         hasInvalidEventTimeRange(
           startTime,
           endTime
         )
       ) {
         errorMessage.textContent =
-          "終了時刻は開始時刻より後にしてください。";
+          "同日の予定では、終了時刻は開始時刻より後にしてください。";
 
         errorMessage.hidden =
           false;
@@ -4013,6 +4104,8 @@ function bindEventCreateForm() {
         title,
 
         eventDate,
+
+        endDate,
 
         startTime,
 

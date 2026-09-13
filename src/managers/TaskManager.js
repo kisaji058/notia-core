@@ -52,6 +52,8 @@ class TaskManager {
             description: analysis.description,
             dueDate: analysis.dueDate,
             dueTime: analysis.dueTime,
+            endDate: analysis.endDate,
+            endTime: analysis.endTime,
             priority: analysis.priority,
             category: analysis.category,
             notification: analysis.notification,
@@ -98,11 +100,12 @@ if (task.itemType === "event") {
   task.description || "",
   task.dueDate,
   task.dueTime || null,
-  null,
+  task.endTime || null,
   task.location || "",
   task.priority || "normal",
   task.category || "other",
-  task.notification || "none"
+  task.notification || "none",
+  task.endDate || task.dueDate
 );
 
   console.log("✅ 予定登録:", task.title);
@@ -120,6 +123,10 @@ if (task.itemType === "event") {
   dueDate: task.dueDate,
   dueTime:
     task.dueTime || null,
+  endDate:
+    task.endDate || task.dueDate,
+  endTime:
+    task.endTime || null,
   priority:
     task.priority || "normal",
   category:

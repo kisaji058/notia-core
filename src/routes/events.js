@@ -102,6 +102,7 @@ router.post("/events", (req, res) => {
   title,
   description,
   eventDate,
+  endDate,
   startTime,
   endTime,
   location,
@@ -128,6 +129,25 @@ router.post("/events", (req, res) => {
       });
     }
 
+    const resolvedEndDate =
+      endDate || eventDate;
+
+    if (
+      typeof resolvedEndDate !== "string" ||
+      !DATE_PATTERN.test(resolvedEndDate)
+    ) {
+      return res.status(400).json({
+        error: "終了日が正しくありません。",
+      });
+    }
+
+    if (resolvedEndDate < eventDate) {
+      return res.status(400).json({
+        error:
+          "終了日は開始日以降にしてください。",
+      });
+    }
+
     if (
       startTime &&
       !TIME_PATTERN.test(startTime)
@@ -147,6 +167,7 @@ router.post("/events", (req, res) => {
     }
 
     if (
+      resolvedEndDate === eventDate &&
       startTime &&
       endTime &&
       endTime < startTime
@@ -189,7 +210,8 @@ if (!VALID_NOTIFICATIONS.includes(notification)) {
     : "",
   priority,
   category,
-  notification
+  notification,
+  resolvedEndDate
 );
 
     addSecretaryExp(
@@ -238,6 +260,7 @@ router.put("/events/:id", (req, res) => {
   title,
   description,
   eventDate,
+  endDate,
   startTime,
   endTime,
   location,
@@ -264,6 +287,25 @@ router.put("/events/:id", (req, res) => {
       });
     }
 
+    const resolvedEndDate =
+      endDate || eventDate;
+
+    if (
+      typeof resolvedEndDate !== "string" ||
+      !DATE_PATTERN.test(resolvedEndDate)
+    ) {
+      return res.status(400).json({
+        error: "終了日が正しくありません。",
+      });
+    }
+
+    if (resolvedEndDate < eventDate) {
+      return res.status(400).json({
+        error:
+          "終了日は開始日以降にしてください。",
+      });
+    }
+
     if (
       startTime &&
       !TIME_PATTERN.test(startTime)
@@ -283,6 +325,7 @@ router.put("/events/:id", (req, res) => {
     }
 
     if (
+      resolvedEndDate === eventDate &&
       startTime &&
       endTime &&
       endTime < startTime
@@ -323,6 +366,7 @@ if (!VALID_NOTIFICATIONS.includes(notification)) {
       : "",
 
   event_date: eventDate,
+  end_date: resolvedEndDate,
 
   start_time:
     startTime || null,
@@ -363,7 +407,6 @@ if (!VALID_NOTIFICATIONS.includes(notification)) {
     });
   }
 });
-
 router.delete("/events/:id", (req, res) => {
   try {
     const id = Number(req.params.id);

@@ -732,26 +732,59 @@ function getWeekEntries(
   }
 
   for (const event of events) {
-  if (event.event_date !== dateString) {
+  const eventStartDate =
+    event.event_date;
+  const eventEndDate =
+    event.end_date ||
+    event.event_date;
+
+  if (
+    dateString < eventStartDate ||
+    dateString > eventEndDate
+  ) {
     continue;
   }
 
-  const time =
+  const startTime =
     normalizeCalendarTime(
       event.start_time
     );
+  const endTime =
+    normalizeCalendarTime(
+      event.end_time
+    );
+
+  const isStartDate =
+    dateString === eventStartDate;
+  const isEndDate =
+    dateString === eventEndDate;
+
+  let timeText = "継続";
+  let sortTime = "00:00";
+
+  if (isStartDate && isEndDate) {
+    timeText = startTime || "終日";
+    sortTime = startTime || "00:00";
+  } else if (isStartDate) {
+    timeText = startTime
+      ? `${startTime}〜`
+      : "開始";
+    sortTime = startTime || "00:00";
+  } else if (isEndDate) {
+    timeText = endTime
+      ? `〜${endTime}`
+      : "終了";
+    sortTime = "00:00";
+  }
 
   entries.push({
     title: event.title,
-    timeText: time || "終日",
-    sortTime: time || "00:00",
+    timeText,
+    sortTime,
     source: "event",
     taskId: null,
     eventItem: event,
-    endTimeText:
-      normalizeCalendarTime(
-        event.end_time
-      ),
+    endTimeText: endTime,
     routineId: null,
     completed: false,
     sourceOrder: 2,
@@ -1848,27 +1881,69 @@ for (const task of tasks) {
   // =====================
 
   for (const event of events) {
+    const eventStartDate =
+      event.event_date;
+    const eventEndDate =
+      event.end_date ||
+      event.event_date;
+
+    if (
+      selectedDate < eventStartDate ||
+      selectedDate > eventEndDate
+    ) {
+      continue;
+    }
+
     const startTime =
       normalizeCalendarTime(
         event.start_time
       );
+    const endTime =
+      normalizeCalendarTime(
+        event.end_time
+      );
+
+    const isStartDate =
+      selectedDate === eventStartDate;
+    const isEndDate =
+      selectedDate === eventEndDate;
+
+    let displayTime = null;
+    let displayText = "継続";
+
+    if (isStartDate && isEndDate) {
+      displayTime = startTime;
+      displayText =
+        startTime || "終日";
+    } else if (isStartDate) {
+      displayTime = startTime;
+      displayText = startTime
+        ? `${startTime}〜`
+        : "開始";
+    } else if (isEndDate) {
+      displayTime = endTime;
+      displayText = endTime
+        ? `〜${endTime}`
+        : "終了";
+    }
 
     const card = createDayCalendarItem({
-  title: event.title,
-  timeText: startTime || "終日",
-  source: "notia",
-  eventItem: event,
-  locationText: event.location || "",
-});
+      title: event.title,
+      timeText: displayText,
+      source: "notia",
+      eventItem: event,
+      locationText: event.location || "",
+    });
+
     addDayItemTypeIcon(
-  card,
-  "calendar"
-);
+      card,
+      "calendar"
+    );
 
     appendDayItem(
       card,
-      startTime,
-      "終日"
+      displayTime,
+      displayText
     );
   }
 
@@ -2226,23 +2301,48 @@ ${
         required
       />
 
-      <label
-        class="sheet-label"
-        for="eventDate"
-      >
-        日付
-      </label>
+      <div class="event-time-fields">
+        <div>
+          <label
+            class="sheet-label"
+            for="eventDate"
+          >
+            開始日
+          </label>
 
-      <input
-        id="eventDate"
-        class="sheet-input"
-        type="date"
-        value="${escapeEventSheetValue(
-          eventItem?.event_date ??
-          selectedDate
-        )}"
-        required
-      />
+          <input
+            id="eventDate"
+            class="sheet-input"
+            type="date"
+            value="${escapeEventSheetValue(
+              eventItem?.event_date ??
+              selectedDate
+            )}"
+            required
+          />
+        </div>
+
+        <div>
+          <label
+            class="sheet-label"
+            for="eventEndDate"
+          >
+            終了日
+          </label>
+
+          <input
+            id="eventEndDate"
+            class="sheet-input"
+            type="date"
+            value="${escapeEventSheetValue(
+              eventItem?.end_date ??
+              eventItem?.event_date ??
+              selectedDate
+            )}"
+            required
+          />
+        </div>
+      </div>
 
       <div class="event-time-fields">
         <div>
@@ -2695,6 +2795,11 @@ async function submitCalendarEvent(
         .getElementById("eventDate")
         .value,
 
+    endDate:
+      document
+        .getElementById("eventEndDate")
+        .value,
+
     startTime:
       document
         .getElementById("eventStartTime")
@@ -2736,6 +2841,26 @@ notification:
     )
     .value,
   };
+
+  if (
+    payload.endDate <
+    payload.eventDate
+  ) {
+    message.textContent =
+      "終了日は開始日以降にしてください。";
+    return;
+  }
+
+  if (
+    payload.endDate === payload.eventDate &&
+    payload.startTime &&
+    payload.endTime &&
+    payload.endTime < payload.startTime
+  ) {
+    message.textContent =
+      "同日の予定では、終了時刻を開始時刻以降にしてください。";
+    return;
+  }
 
   const isConvertingToTask =
   isEdit &&
