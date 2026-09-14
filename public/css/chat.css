@@ -1769,6 +1769,15 @@ body.keyboard-open .input-area {
   left: auto;
   right: 84px;
 
+  top:
+    calc(
+      max(
+        12px,
+        env(safe-area-inset-top, 0px)
+      ) +
+      24px
+    );
+
   transform: translateY(-50%);
 }
 
@@ -2496,7 +2505,7 @@ body.keyboard-open .input-area {
 .character-today-board {
   position: absolute;
 
-  top: 10.2%;
+  top: 8.2%;
   left: 65.4%;
   right: auto;
 
@@ -2521,7 +2530,7 @@ body.keyboard-open .input-area {
 
   transform-style: preserve-3d;
 
-  z-index: 6;
+  z-index: 3;
 }
 
 .character-today-board-header {
