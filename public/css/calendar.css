@@ -2693,3 +2693,40 @@ body.calendar-page.keyboard-open
   background: #eaf8f7;
   color: #0d918d;
 }
+
+/* =========================
+   Japanese holidays
+========================= */
+
+.month-day-cell.is-holiday:not(.is-today):not(.is-selected)
+.month-day-number {
+  color: #c9685d;
+}
+
+.month-holiday-name {
+  display: block;
+
+  min-width: 0;
+  margin: -2px 0 4px;
+
+  color: #c9685d;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.2;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.month-day-cell.is-outside-month
+.month-holiday-name {
+  opacity: 0.45;
+}
+
+@media (max-width: 640px) {
+  .month-holiday-name {
+    margin-bottom: 3px;
+    font-size: 8px;
+  }
+}

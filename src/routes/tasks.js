@@ -208,6 +208,7 @@ router.patch("/tasks/:id", (req, res) => {
   dueDate,
   dueTime,
   location,
+  itemsToBring,
   priority,
   category,
   notification,
@@ -295,6 +296,13 @@ router.patch("/tasks/:id", (req, res) => {
       ? location.trim()
       : "";
 }
+
+    if (itemsToBring !== undefined) {
+      updates.itemsToBring =
+        typeof itemsToBring === "string"
+          ? itemsToBring.trim()
+          : "";
+    }
 
     if (priority !== undefined) {
       updates.priority = priority;

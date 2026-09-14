@@ -12,7 +12,7 @@
 <link rel="prefetch" href="/tasks">
 <link rel="prefetch" href="/calendar">
   <link rel="stylesheet" href="/css/common.css?v=category-20260914-1">
-  <link rel="stylesheet" href="/css/calendar.css?v=category-filter-20260914-1">
+  <link rel="stylesheet" href="/css/calendar.css?v=holidays-20260914-1">
 </head>
 
 <body class="calendar-page">
@@ -67,18 +67,19 @@
     </button>
 
     <button
-      class="calendar-view-button"
+      class="calendar-view-button active"
       type="button"
       data-calendar-view="week"
+      aria-pressed="true"
     >
       週
     </button>
 
     <button
-      class="calendar-view-button active"
+      class="calendar-view-button"
       type="button"
       data-calendar-view="day"
-      aria-pressed="true"
+      aria-pressed="false"
     >
       日
     </button>
@@ -162,7 +163,6 @@
     id="weekView"
     class="calendar-view-panel week-view"
     aria-label="週表示"
-    hidden
   >
   <div
   id="weekSummary"
@@ -336,6 +336,6 @@
 <script src="/js/authGuard.js?v=app-ready-1"></script>
 <script src="/js/components/paywall.js"></script>
 <script src="/js/components/accountMenu.js?v=category-20260914-1"></script>
-<script src="/js/calendar.js?v=category-filter-20260914-1"></script>
+<script src="/js/calendar.js?v=holidays-20260914-1"></script>
 </body>
 </html>

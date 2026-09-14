@@ -239,15 +239,91 @@ renderTodayBriefing(
   }
 }
 
+function timeTextToMinutes(value) {
+  if (!value) {
+    return null;
+  }
+
+  const match =
+    String(value).match(
+      /^(\d{1,2}):(\d{2})/
+    );
+
+  if (!match) {
+    return null;
+  }
+
+  return (
+    Number(match[1]) * 60 +
+    Number(match[2])
+  );
+}
+
+function isPastTodayTimedItem(item) {
+  if (
+    !["event", "routine"].includes(
+      item?.type
+    ) ||
+    !item.startTime
+  ) {
+    return false;
+  }
+
+  const now = new Date();
+
+  const currentMinutes =
+    Number(
+      now.toLocaleTimeString(
+        "ja-JP",
+        {
+          timeZone: "Asia/Tokyo",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }
+      ).split(":")[0]
+    ) * 60 +
+    Number(
+      now.toLocaleTimeString(
+        "ja-JP",
+        {
+          timeZone: "Asia/Tokyo",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }
+      ).split(":")[1]
+    );
+
+  const endTime =
+    item.endTime ||
+    item.end_time ||
+    null;
+
+  const compareMinutes =
+    timeTextToMinutes(
+      endTime || item.startTime
+    );
+
+  if (compareMinutes === null) {
+    return false;
+  }
+
+  return (
+    compareMinutes <
+    currentMinutes
+  );
+}
+
 function renderTimeline(timeline) {
   if (!timelineElement) {
     return;
   }
 
-const scheduledItems =
-  timeline.filter(
-    (item) => item.startTime
-  );
+  const scheduledItems =
+    timeline.filter(
+      (item) => item.startTime
+    );
 
   if (scheduledItems.length === 0) {
     timelineElement.innerHTML = `
@@ -260,11 +336,126 @@ const scheduledItems =
   }
 
   timelineElement.innerHTML =
-  scheduledItems
-    .map((item) =>
-      window.createTimelineCard(item)
-    )
-    .join("");
+    scheduledItems
+      .map((item) =>
+        window.createTimelineCard(item)
+      )
+      .join("");
+
+  const cards =
+    timelineElement.querySelectorAll(
+      ".timeline-item"
+    );
+
+  scheduledItems.forEach(
+    (item, index) => {
+      const card =
+        cards[index];
+
+      if (!card) {
+        return;
+      }
+
+      if (
+        isPastTodayTimedItem(item)
+      ) {
+        card.classList.add(
+          "timeline-item--past-event"
+        );
+
+        return;
+      }
+
+      let targetUrl = null;
+
+      if (
+        item.type === "task" &&
+        item.id !== undefined
+      ) {
+        targetUrl =
+          `/tasks/${encodeURIComponent(
+            item.id
+          )}`;
+      }
+
+      if (
+        item.type === "routine" &&
+        item.id !== undefined
+      ) {
+        targetUrl =
+          `/routine-edit.html?id=${encodeURIComponent(
+            item.id
+          )}`;
+      }
+
+      if (
+        item.type === "event" &&
+        item.id !== undefined
+      ) {
+        const today =
+          formatDateForApi(
+            new Date()
+          );
+
+        targetUrl =
+          `/calendar.html?date=${encodeURIComponent(
+            today
+          )}&eventId=${encodeURIComponent(
+            item.id
+          )}`;
+      }
+
+      if (!targetUrl) {
+        return;
+      }
+
+      card.classList.add(
+        "timeline-item--clickable"
+      );
+
+      card.setAttribute(
+        "role",
+        "button"
+      );
+
+      card.tabIndex = 0;
+
+      const activate = () => {
+        if (
+          window.NotiaRuntime?.navigate
+        ) {
+          window.NotiaRuntime.navigate(
+            targetUrl
+          );
+
+          return;
+        }
+
+        window.location.href =
+          targetUrl;
+      };
+
+      card.addEventListener(
+        "click",
+        activate
+      );
+
+      card.addEventListener(
+        "keydown",
+        (event) => {
+          if (
+            event.key !== "Enter" &&
+            event.key !== " "
+          ) {
+            return;
+          }
+
+          event.preventDefault();
+          activate();
+        }
+      );
+    }
+  );
 }
 
 function renderUnscheduled(timeline) {

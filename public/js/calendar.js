@@ -61,7 +61,7 @@ const todayString = new Date().toLocaleDateString("sv-SE", {
 });
 
 let selectedDate = todayString;
-let currentView = "day";
+let currentView = "week";
 
 const calendarParams =
   new URLSearchParams(
@@ -83,6 +83,10 @@ if (
 
 let pendingEventId =
   calendarParams.get("eventId");
+
+if (pendingEventId !== null) {
+  currentView = "day";
+}
 
 const CALENDAR_FALLBACK_CATEGORIES = [
   { category_key: "work", label: "仕事" },
@@ -1705,6 +1709,515 @@ function renderMonthDetail(entries) {
   panel.appendChild(content);
 }
 
+const japanHolidayCache =
+  new Map();
+
+function formatHolidayDate(
+  year,
+  month,
+  day
+) {
+  return [
+    String(year).padStart(4, "0"),
+    String(month).padStart(2, "0"),
+    String(day).padStart(2, "0"),
+  ].join("-");
+}
+
+function getNthMonday(
+  year,
+  month,
+  nth
+) {
+  const first =
+    new Date(
+      Date.UTC(
+        year,
+        month - 1,
+        1
+      )
+    );
+
+  const firstWeekday =
+    first.getUTCDay();
+
+  const firstMonday =
+    1 +
+    (
+      8 - firstWeekday
+    ) % 7;
+
+  return (
+    firstMonday +
+    (nth - 1) * 7
+  );
+}
+
+function getVernalEquinoxDay(
+  year
+) {
+  if (
+    year < 1980 ||
+    year > 2099
+  ) {
+    return null;
+  }
+
+  return Math.floor(
+    20.8431 +
+    0.242194 *
+      (year - 1980) -
+    Math.floor(
+      (year - 1980) / 4
+    )
+  );
+}
+
+function getAutumnalEquinoxDay(
+  year
+) {
+  if (
+    year < 1980 ||
+    year > 2099
+  ) {
+    return null;
+  }
+
+  return Math.floor(
+    23.2488 +
+    0.242194 *
+      (year - 1980) -
+    Math.floor(
+      (year - 1980) / 4
+    )
+  );
+}
+
+function addHoliday(
+  holidays,
+  year,
+  month,
+  day,
+  name
+) {
+  holidays.set(
+    formatHolidayDate(
+      year,
+      month,
+      day
+    ),
+    name
+  );
+}
+
+function buildJapanHolidayMap(
+  year
+) {
+  const holidays =
+    new Map();
+
+  if (
+    year < 2007 ||
+    year > 2099
+  ) {
+    return holidays;
+  }
+
+  addHoliday(
+    holidays,
+    year,
+    1,
+    1,
+    "元日"
+  );
+
+  addHoliday(
+    holidays,
+    year,
+    1,
+    getNthMonday(
+      year,
+      1,
+      2
+    ),
+    "成人の日"
+  );
+
+  addHoliday(
+    holidays,
+    year,
+    2,
+    11,
+    "建国記念の日"
+  );
+
+  if (year >= 2020) {
+    addHoliday(
+      holidays,
+      year,
+      2,
+      23,
+      "天皇誕生日"
+    );
+  } else if (year <= 2018) {
+    addHoliday(
+      holidays,
+      year,
+      12,
+      23,
+      "天皇誕生日"
+    );
+  }
+
+  const vernal =
+    getVernalEquinoxDay(year);
+
+  if (vernal !== null) {
+    addHoliday(
+      holidays,
+      year,
+      3,
+      vernal,
+      "春分の日"
+    );
+  }
+
+  addHoliday(
+    holidays,
+    year,
+    4,
+    29,
+    "昭和の日"
+  );
+
+  addHoliday(
+    holidays,
+    year,
+    5,
+    3,
+    "憲法記念日"
+  );
+
+  addHoliday(
+    holidays,
+    year,
+    5,
+    4,
+    "みどりの日"
+  );
+
+  addHoliday(
+    holidays,
+    year,
+    5,
+    5,
+    "こどもの日"
+  );
+
+  if (year === 2020) {
+    addHoliday(
+      holidays,
+      year,
+      7,
+      23,
+      "海の日"
+    );
+
+    addHoliday(
+      holidays,
+      year,
+      7,
+      24,
+      "スポーツの日"
+    );
+
+    addHoliday(
+      holidays,
+      year,
+      8,
+      10,
+      "山の日"
+    );
+  } else if (year === 2021) {
+    addHoliday(
+      holidays,
+      year,
+      7,
+      22,
+      "海の日"
+    );
+
+    addHoliday(
+      holidays,
+      year,
+      7,
+      23,
+      "スポーツの日"
+    );
+
+    addHoliday(
+      holidays,
+      year,
+      8,
+      8,
+      "山の日"
+    );
+  } else {
+    addHoliday(
+      holidays,
+      year,
+      7,
+      getNthMonday(
+        year,
+        7,
+        3
+      ),
+      "海の日"
+    );
+
+    if (year >= 2016) {
+      addHoliday(
+        holidays,
+        year,
+        8,
+        11,
+        "山の日"
+      );
+    }
+
+    addHoliday(
+      holidays,
+      year,
+      10,
+      getNthMonday(
+        year,
+        10,
+        2
+      ),
+      year >= 2020
+        ? "スポーツの日"
+        : "体育の日"
+    );
+  }
+
+  addHoliday(
+    holidays,
+    year,
+    9,
+    getNthMonday(
+      year,
+      9,
+      3
+    ),
+    "敬老の日"
+  );
+
+  const autumnal =
+    getAutumnalEquinoxDay(year);
+
+  if (autumnal !== null) {
+    addHoliday(
+      holidays,
+      year,
+      9,
+      autumnal,
+      "秋分の日"
+    );
+  }
+
+  addHoliday(
+    holidays,
+    year,
+    11,
+    3,
+    "文化の日"
+  );
+
+  addHoliday(
+    holidays,
+    year,
+    11,
+    23,
+    "勤労感謝の日"
+  );
+
+  if (year === 2019) {
+    addHoliday(
+      holidays,
+      year,
+      5,
+      1,
+      "即位の日"
+    );
+
+    addHoliday(
+      holidays,
+      year,
+      10,
+      22,
+      "即位礼正殿の儀"
+    );
+  }
+
+  // 国民の休日
+  const yearStart =
+    new Date(
+      Date.UTC(
+        year,
+        0,
+        2
+      )
+    );
+
+  const yearEnd =
+    new Date(
+      Date.UTC(
+        year,
+        11,
+        30
+      )
+    );
+
+  for (
+    let cursor =
+      new Date(yearStart);
+    cursor <= yearEnd;
+    cursor.setUTCDate(
+      cursor.getUTCDate() + 1
+    )
+  ) {
+    const dateString =
+      cursor
+        .toISOString()
+        .slice(0, 10);
+
+    if (
+      holidays.has(
+        dateString
+      ) ||
+      cursor.getUTCDay() === 0
+    ) {
+      continue;
+    }
+
+    const previous =
+      new Date(cursor);
+
+    previous.setUTCDate(
+      previous.getUTCDate() - 1
+    );
+
+    const next =
+      new Date(cursor);
+
+    next.setUTCDate(
+      next.getUTCDate() + 1
+    );
+
+    const previousString =
+      previous
+        .toISOString()
+        .slice(0, 10);
+
+    const nextString =
+      next
+        .toISOString()
+        .slice(0, 10);
+
+    if (
+      holidays.has(
+        previousString
+      ) &&
+      holidays.has(
+        nextString
+      )
+    ) {
+      holidays.set(
+        dateString,
+        "国民の休日"
+      );
+    }
+  }
+
+  // 振替休日
+  const originalHolidays =
+    [...holidays.keys()]
+      .sort();
+
+  for (
+    const dateString
+    of originalHolidays
+  ) {
+    const holidayDate =
+      new Date(
+        `${dateString}T00:00:00Z`
+      );
+
+    if (
+      holidayDate.getUTCDay() !==
+      0
+    ) {
+      continue;
+    }
+
+    const substitute =
+      new Date(
+        holidayDate
+      );
+
+    do {
+      substitute.setUTCDate(
+        substitute.getUTCDate() +
+          1
+      );
+    } while (
+      holidays.has(
+        substitute
+          .toISOString()
+          .slice(0, 10)
+      )
+    );
+
+    holidays.set(
+      substitute
+        .toISOString()
+        .slice(0, 10),
+      "振替休日"
+    );
+  }
+
+  return holidays;
+}
+
+function getJapanHolidayName(
+  dateString
+) {
+  const year =
+    Number(
+      dateString.slice(0, 4)
+    );
+
+  if (
+    !japanHolidayCache.has(
+      year
+    )
+  ) {
+    japanHolidayCache.set(
+      year,
+      buildJapanHolidayMap(
+        year
+      )
+    );
+  }
+
+  return (
+    japanHolidayCache
+      .get(year)
+      .get(dateString) ||
+    null
+  );
+}
+
 function renderMonth(
   tasks,
   events,
@@ -1792,6 +2305,17 @@ function renderMonth(
     cell.className = "month-day-cell";
     cell.dataset.date = dateString;
 
+    const holidayName =
+      getJapanHolidayName(
+        dateString
+      );
+
+    if (holidayName) {
+      cell.classList.add(
+        "is-holiday"
+      );
+    }
+
     if (!isCurrentMonth) {
       cell.classList.add(
         "is-outside-month"
@@ -1815,7 +2339,13 @@ function renderMonth(
     dayButton.textContent = String(day);
     dayButton.setAttribute(
       "aria-label",
-      formatMonthDetailDate(dateString)
+      holidayName
+        ? `${formatMonthDetailDate(
+            dateString
+          )} ${holidayName}`
+        : formatMonthDetailDate(
+            dateString
+          )
     );
     dayButton.setAttribute(
       "aria-pressed",
@@ -1832,6 +2362,24 @@ function renderMonth(
     loadCalendar();
   }
 );
+
+    const holidayLabel =
+      holidayName
+        ? document.createElement(
+            "div"
+          )
+        : null;
+
+    if (holidayLabel) {
+      holidayLabel.className =
+        "month-holiday-name";
+
+      holidayLabel.textContent =
+        holidayName;
+
+      holidayLabel.title =
+        holidayName;
+    }
 
     const contents =
       document.createElement("div");
@@ -1893,6 +2441,13 @@ function renderMonth(
     }
 
     cell.appendChild(dayButton);
+
+    if (holidayLabel) {
+      cell.appendChild(
+        holidayLabel
+      );
+    }
+
     cell.appendChild(contents);
 
     monthGrid.appendChild(cell);
@@ -2801,6 +3356,23 @@ ${
 
       <label
         class="sheet-label"
+        for="eventItemsToBring"
+      >
+        持ち物
+      </label>
+
+      <input
+        id="eventItemsToBring"
+        class="sheet-input"
+        type="text"
+        value="${escapeEventSheetValue(
+          eventItem?.items_to_bring
+        )}"
+        placeholder="例：PC、充電器、資料"
+      />
+
+      <label
+        class="sheet-label"
         for="eventDescription"
       >
         メモ
@@ -3006,6 +3578,13 @@ async function submitCalendarEvent(
     location:
       document
         .getElementById("eventLocation")
+        .value.trim(),
+
+    itemsToBring:
+      document
+        .getElementById(
+          "eventItemsToBring"
+        )
         .value.trim(),
 
     description:

@@ -24,6 +24,11 @@ const taskPriorityImportant =
   document.getElementById("taskPriorityImportant");
 const taskLocation =
   document.getElementById("taskLocation");
+
+const taskItemsToBring =
+  document.getElementById(
+    "taskItemsToBring"
+  );
 const taskDescription = document.getElementById("taskDescription");
 const backLink = document.querySelector(".task-detail-back");
 const notificationButton =
@@ -367,6 +372,9 @@ async function renderTask(task) {
   taskLocation.value =
     task.location || "";
 
+  taskItemsToBring.value =
+    task.items_to_bring || "";
+
   taskDescription.value =
     task.description || "";
 
@@ -478,6 +486,9 @@ function getTaskFormState() {
 
     location:
       taskLocation.value.trim(),
+
+    itemsToBring:
+      taskItemsToBring.value.trim(),
 
     description:
       taskDescription.value.trim(),

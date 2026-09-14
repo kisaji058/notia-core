@@ -201,6 +201,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   due_date TEXT,
   due_time TEXT,
   location TEXT,
+  items_to_bring TEXT,
   priority TEXT DEFAULT 'normal',
   category TEXT DEFAULT 'other',
   notification TEXT DEFAULT 'none',
@@ -282,6 +283,13 @@ if (!hasColumn("tasks", "location")) {
   db.prepare(`
     ALTER TABLE tasks
     ADD COLUMN location TEXT
+  `).run();
+}
+
+if (!hasColumn("tasks", "items_to_bring")) {
+  db.prepare(`
+    ALTER TABLE tasks
+    ADD COLUMN items_to_bring TEXT
   `).run();
 }
 
@@ -493,7 +501,8 @@ function addTask(
   dueTime = null,
   notification = "none",
   itemType = "task",
-  location = ""
+  location = "",
+  itemsToBring = ""
 ) {
   const result = db.prepare(`
     INSERT INTO tasks (
@@ -506,9 +515,10 @@ function addTask(
       category,
       notification,
       item_type,
-      location
+      location,
+      items_to_bring
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     userId,
     title,
@@ -519,7 +529,8 @@ function addTask(
     category,
     notification,
     itemType,
-    location
+    location,
+    itemsToBring
   );
 
   return result.lastInsertRowid;
@@ -908,6 +919,11 @@ if (updates.location !== undefined) {
   values.push(updates.location);
 }
 
+if (updates.itemsToBring !== undefined) {
+  fields.push("items_to_bring = ?");
+  values.push(updates.itemsToBring);
+}
+
 if (updates.priority !== undefined) {
   fields.push("priority = ?");
   values.push(updates.priority);
@@ -989,6 +1005,7 @@ CREATE TABLE IF NOT EXISTS events (
   start_time TEXT,
   end_time TEXT,
   location TEXT,
+  items_to_bring TEXT,
   priority TEXT DEFAULT 'normal',
   category TEXT DEFAULT 'other',
   notification TEXT DEFAULT 'none',
@@ -1010,6 +1027,13 @@ if (!hasColumn("events", "end_date")) {
     SET end_date = event_date
     WHERE end_date IS NULL
        OR end_date = ''
+  `).run();
+}
+
+if (!hasColumn("events", "items_to_bring")) {
+  db.prepare(`
+    ALTER TABLE events
+    ADD COLUMN items_to_bring TEXT
   `).run();
 }
 
@@ -1990,7 +2014,8 @@ function addEvent(
   priority = "normal",
   category = "other",
   notification = "none",
-  endDate = null
+  endDate = null,
+  itemsToBring = ""
 ){
   const result = db.prepare(`
     INSERT INTO events (
@@ -2002,11 +2027,12 @@ function addEvent(
   start_time,
   end_time,
   location,
+  items_to_bring,
   priority,
   category,
   notification
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
   userId,
   title,
@@ -2016,6 +2042,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   startTime,
   endTime,
   location,
+  itemsToBring,
   priority,
   category,
   notification
@@ -2051,6 +2078,7 @@ function updateEventById(
     start_time,
     end_time,
     location,
+    items_to_bring,
     priority,
     category,
     notification,
@@ -2067,6 +2095,7 @@ function updateEventById(
       start_time = ?,
       end_time = ?,
       location = ?,
+      items_to_bring = ?,
       priority = ?,
       category = ?,
       notification = ?,
@@ -2082,6 +2111,7 @@ function updateEventById(
     start_time ?? null,
     end_time ?? null,
     location ?? null,
+    items_to_bring ?? null,
     priority ?? "normal",
     category ?? "other",
     notification ?? "none",
@@ -2168,7 +2198,15 @@ eventData.category !== undefined
 
 eventData.notification !== undefined
   ? eventData.notification
-  : task.notification || "none"
+  : task.notification || "none",
+
+eventData.endDate !== undefined
+  ? eventData.endDate
+  : eventDate,
+
+eventData.itemsToBring !== undefined
+  ? eventData.itemsToBring
+  : task.items_to_bring || ""
     );
 
     const deleted =
@@ -2252,7 +2290,11 @@ taskData.notification !== undefined
 
 taskData.location !== undefined
   ? taskData.location
-  : event.location || ""
+  : event.location || "",
+
+taskData.itemsToBring !== undefined
+  ? taskData.itemsToBring
+  : event.items_to_bring || ""
 );
 
     const deleted =

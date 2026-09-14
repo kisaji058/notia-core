@@ -99,6 +99,7 @@ router.post("/events", (req, res) => {
   startTime,
   endTime,
   location,
+  itemsToBring = "",
   priority = "normal",
   category = "other",
   notification = "none",
@@ -207,7 +208,10 @@ if (!VALID_NOTIFICATIONS.includes(notification)) {
   priority,
   category,
   notification,
-  resolvedEndDate
+  resolvedEndDate,
+  typeof itemsToBring === "string"
+    ? itemsToBring.trim()
+    : ""
 );
 
     addSecretaryExp(
@@ -260,6 +264,7 @@ router.put("/events/:id", (req, res) => {
   startTime,
   endTime,
   location,
+  itemsToBring = "",
   priority = "normal",
   category = "other",
   notification = "none",
@@ -376,6 +381,11 @@ if (!VALID_NOTIFICATIONS.includes(notification)) {
   location:
     typeof location === "string"
       ? location.trim()
+      : "",
+
+  items_to_bring:
+    typeof itemsToBring === "string"
+      ? itemsToBring.trim()
       : "",
 
   priority,

@@ -545,3 +545,63 @@ body {
   background: #a3adaf;
   box-shadow: none;
 }
+/* ===== Past event ===== */
+
+.timeline-item--past-event {
+  opacity: 0.58;
+}
+
+.timeline-item--past-event
+.timeline-item-time {
+  color: #9aa6aa;
+}
+
+.timeline-item--past-event
+.timeline-item-marker {
+  background: #b8c2c4;
+}
+
+.timeline-item--past-event
+.timeline-item-content {
+  background: #f4f6f6;
+  border-color: #e1e6e6;
+  box-shadow: none;
+}
+
+.timeline-item--past-event
+.timeline-item-main h3 {
+  color: #8d999d;
+}
+
+.timeline-item--past-event
+.timeline-tag {
+  color: #929da0;
+  background: #e8ecec;
+}
+
+.timeline-item--clickable {
+  cursor: pointer;
+}
+
+.timeline-item--clickable
+.timeline-item-content {
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.timeline-item--clickable:active
+.timeline-item-content {
+  transform: scale(0.985);
+  background: #f8fbfa;
+}
+
+.timeline-item--past-event {
+  cursor: default;
+}
+
+.timeline-item--past-event
+.timeline-item-content {
+  pointer-events: none;
+}
