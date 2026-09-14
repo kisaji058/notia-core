@@ -88,9 +88,49 @@ function escapeCategoryHtml(
 
 async function loadCategories() {
   try {
+    const runtime =
+      window.NotiaRuntime;
+
+    const isNative =
+      runtime
+        ?.isNativeApp
+        ?.() === true;
+
+    const headers = {};
+
+    if (isNative) {
+      const authToken =
+        await runtime
+          .getAuthToken();
+
+      if (!authToken) {
+        throw new Error(
+          "分類取得用の認証トークンがありません。"
+        );
+      }
+
+      headers.Authorization =
+        `Bearer ${authToken}`;
+    }
+
+    const url =
+      runtime?.apiUrl
+        ? runtime.apiUrl(
+            "/api/categories"
+          )
+        : "/api/categories";
+
     const response =
       await fetch(
-        "/api/categories"
+        url,
+        {
+          method: "GET",
+          headers,
+          credentials:
+            isNative
+              ? "omit"
+              : "same-origin",
+        }
       );
 
     if (!response.ok) {
