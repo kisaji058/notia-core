@@ -2629,7 +2629,7 @@ body.keyboard-open .input-area {
 
 @media (max-width: 480px) {
   .character-today-board {
-    top: 10.1%;
+    top: 5.0%;
     left: 65%;
 
     width: 35%;
