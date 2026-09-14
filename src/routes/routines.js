@@ -9,17 +9,10 @@ const {
   createRoutine,
   updateRoutineById,
   deleteRoutineById,
+  userCategoryExists,
 } = require("../../database");
 
 const router = express.Router();
-
-const VALID_CATEGORIES = [
-  "work",
-  "school",
-  "private",
-  "shopping",
-  "other",
-];
 
 const TIME_PATTERN =
   /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -220,11 +213,19 @@ router.post(
       }
 
       const normalizedCategory =
-        VALID_CATEGORIES.includes(
-          category
+        category || "other";
+
+      if (
+        !userCategoryExists(
+          req.userId,
+          normalizedCategory
         )
-          ? category
-          : "other";
+      ) {
+        return res.status(400).json({
+          error:
+            "分類が正しくありません。",
+        });
+      }
 
       const routine =
   createRoutine(
@@ -337,11 +338,19 @@ router.put(
       }
 
       const normalizedCategory =
-        VALID_CATEGORIES.includes(
-          category
+        category || "other";
+
+      if (
+        !userCategoryExists(
+          req.userId,
+          normalizedCategory
         )
-          ? category
-          : "other";
+      ) {
+        return res.status(400).json({
+          error:
+            "分類が正しくありません。",
+        });
+      }
 
       const result =
   updateRoutineById(

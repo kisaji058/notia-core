@@ -69,6 +69,8 @@ const tasksRouter =
   require("./src/routes/tasks");
 const routinesRouter =
   require("./src/routes/routines");
+const categoriesRouter =
+  require("./src/routes/categories");
 const calendarRouter =
   require("./src/routes/calendar");
 const todayRouter =
@@ -1118,6 +1120,7 @@ app.post("/api/chat", async (req, res) => {
 });
 
 app.use("/api", routinesRouter);
+app.use("/api", categoriesRouter);
 app.use("/api", calendarRouter);
 app.use("/api", todayRouter);
 

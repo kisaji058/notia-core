@@ -2887,7 +2887,386 @@ function addSecretaryExp(
   );
 }
 
+
+const DEFAULT_USER_CATEGORIES = [
+  ["work", "仕事", 1],
+  ["school", "学校", 2],
+  ["shopping", "買い物", 3],
+  ["private", "プライベート", 4],
+  ["other", "その他", 5],
+];
+
+function ensureUserCategories(
+  userId
+) {
+  const insert =
+    db.prepare(`
+      INSERT OR IGNORE INTO user_categories (
+        user_id,
+        category_key,
+        label,
+        is_default,
+        sort_order
+      )
+      VALUES (?, ?, ?, 1, ?)
+    `);
+
+  const transaction =
+    db.transaction(() => {
+      for (
+        const [
+          categoryKey,
+          label,
+          sortOrder,
+        ] of DEFAULT_USER_CATEGORIES
+      ) {
+        insert.run(
+          userId,
+          categoryKey,
+          label,
+          sortOrder
+        );
+      }
+    });
+
+  transaction();
+}
+
+function getUserCategories(
+  userId
+) {
+  ensureUserCategories(
+    userId
+  );
+
+  return db.prepare(`
+    SELECT
+      id,
+      user_id,
+      category_key,
+      label,
+      is_default,
+      sort_order,
+      created_at,
+      updated_at
+    FROM user_categories
+    WHERE user_id = ?
+    ORDER BY
+      sort_order ASC,
+      id ASC
+  `).all(userId);
+}
+
+function getUserCategoryById(
+  userId,
+  id
+) {
+  return db.prepare(`
+    SELECT
+      id,
+      user_id,
+      category_key,
+      label,
+      is_default,
+      sort_order,
+      created_at,
+      updated_at
+    FROM user_categories
+    WHERE user_id = ?
+      AND id = ?
+    LIMIT 1
+  `).get(
+    userId,
+    id
+  );
+}
+
+function userCategoryExists(
+  userId,
+  categoryKey
+) {
+  if (
+    typeof categoryKey !== "string" ||
+    !categoryKey.trim()
+  ) {
+    return false;
+  }
+
+  ensureUserCategories(
+    userId
+  );
+
+  return Boolean(
+    db.prepare(`
+      SELECT 1
+      FROM user_categories
+      WHERE user_id = ?
+        AND category_key = ?
+      LIMIT 1
+    `).get(
+      userId,
+      categoryKey.trim()
+    )
+  );
+}
+
+function createUserCategory(
+  userId,
+  label
+) {
+  const normalizedLabel =
+    String(label || "")
+      .trim();
+
+  if (!normalizedLabel) {
+    throw new Error(
+      "Category label is required"
+    );
+  }
+
+  const duplicate =
+    db.prepare(`
+      SELECT id
+      FROM user_categories
+      WHERE user_id = ?
+        AND LOWER(label) =
+          LOWER(?)
+      LIMIT 1
+    `).get(
+      userId,
+      normalizedLabel
+    );
+
+  if (duplicate) {
+    throw new Error(
+      "Category label already exists"
+    );
+  }
+
+  const sortOrderRow =
+    db.prepare(`
+      SELECT
+        COALESCE(
+          MAX(sort_order),
+          0
+        ) + 1 AS next_sort_order
+      FROM user_categories
+      WHERE user_id = ?
+    `).get(userId);
+
+  let categoryKey = "";
+
+  for (
+    let attempt = 0;
+    attempt < 10;
+    attempt += 1
+  ) {
+    categoryKey =
+      "custom_" +
+      Date.now()
+        .toString(36) +
+      "_" +
+      Math.random()
+        .toString(36)
+        .slice(2, 8);
+
+    if (
+      !userCategoryExists(
+        userId,
+        categoryKey
+      )
+    ) {
+      break;
+    }
+
+    categoryKey = "";
+  }
+
+  if (!categoryKey) {
+    throw new Error(
+      "Failed to generate category key"
+    );
+  }
+
+  const result =
+    db.prepare(`
+      INSERT INTO user_categories (
+        user_id,
+        category_key,
+        label,
+        is_default,
+        sort_order
+      )
+      VALUES (?, ?, ?, 0, ?)
+    `).run(
+      userId,
+      categoryKey,
+      normalizedLabel,
+      Number(
+        sortOrderRow?.next_sort_order ||
+        1
+      )
+    );
+
+  return getUserCategoryById(
+    userId,
+    result.lastInsertRowid
+  );
+}
+
+function updateUserCategory(
+  userId,
+  id,
+  label
+) {
+  const normalizedLabel =
+    String(label || "")
+      .trim();
+
+  if (!normalizedLabel) {
+    throw new Error(
+      "Category label is required"
+    );
+  }
+
+  const category =
+    getUserCategoryById(
+      userId,
+      id
+    );
+
+  if (!category) {
+    return null;
+  }
+
+  const duplicate =
+    db.prepare(`
+      SELECT id
+      FROM user_categories
+      WHERE user_id = ?
+        AND LOWER(label) =
+          LOWER(?)
+        AND id <> ?
+      LIMIT 1
+    `).get(
+      userId,
+      normalizedLabel,
+      id
+    );
+
+  if (duplicate) {
+    throw new Error(
+      "Category label already exists"
+    );
+  }
+
+  db.prepare(`
+    UPDATE user_categories
+    SET
+      label = ?,
+      updated_at =
+        CURRENT_TIMESTAMP
+    WHERE user_id = ?
+      AND id = ?
+  `).run(
+    normalizedLabel,
+    userId,
+    id
+  );
+
+  return getUserCategoryById(
+    userId,
+    id
+  );
+}
+
+function deleteUserCategory(
+  userId,
+  id
+) {
+  const category =
+    getUserCategoryById(
+      userId,
+      id
+    );
+
+  if (!category) {
+    return {
+      deleted: false,
+      reason: "not_found",
+    };
+  }
+
+  if (
+    Number(category.is_default) === 1
+  ) {
+    return {
+      deleted: false,
+      reason: "default_category",
+    };
+  }
+
+  const transaction =
+    db.transaction(() => {
+      db.prepare(`
+        UPDATE tasks
+        SET category = 'other'
+        WHERE user_id = ?
+          AND category = ?
+      `).run(
+        userId,
+        category.category_key
+      );
+
+      db.prepare(`
+        UPDATE events
+        SET category = 'other'
+        WHERE user_id = ?
+          AND category = ?
+      `).run(
+        userId,
+        category.category_key
+      );
+
+      db.prepare(`
+        UPDATE routines
+        SET category = 'other'
+        WHERE user_id = ?
+          AND category = ?
+      `).run(
+        userId,
+        category.category_key
+      );
+
+      return db.prepare(`
+        DELETE FROM user_categories
+        WHERE user_id = ?
+          AND id = ?
+      `).run(
+        userId,
+        id
+      );
+    });
+
+  const result =
+    transaction();
+
+  return {
+    deleted:
+      result.changes > 0,
+    reason: null,
+  };
+}
+
 module.exports = {
+  ensureUserCategories,
+  getUserCategories,
+  getUserCategoryById,
+  userCategoryExists,
+  createUserCategory,
+  updateUserCategory,
+  deleteUserCategory,
+
   getSecretaryProgress,
   addSecretaryExp,
   calculateSecretaryProgress,

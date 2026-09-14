@@ -33,6 +33,127 @@ let allTasks = [];
 let allEvents = [];
 let allRoutines = [];
 
+let allCategories = [];
+
+const FALLBACK_CATEGORIES = [
+  {
+    category_key: "work",
+    label: "仕事",
+  },
+  {
+    category_key: "school",
+    label: "学校",
+  },
+  {
+    category_key: "shopping",
+    label: "買い物",
+  },
+  {
+    category_key: "private",
+    label: "プライベート",
+  },
+  {
+    category_key: "other",
+    label: "その他",
+  },
+];
+
+function escapeCategoryHtml(
+  value
+) {
+  return String(
+    value ?? ""
+  )
+    .replaceAll(
+      "&",
+      "&amp;"
+    )
+    .replaceAll(
+      "<",
+      "&lt;"
+    )
+    .replaceAll(
+      ">",
+      "&gt;"
+    )
+    .replaceAll(
+      '"',
+      "&quot;"
+    )
+    .replaceAll(
+      "'",
+      "&#039;"
+    );
+}
+
+async function loadCategories() {
+  try {
+    const response =
+      await fetch(
+        "/api/categories"
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        `分類取得失敗: ${response.status}`
+      );
+    }
+
+    const categories =
+      await response.json();
+
+    allCategories =
+      Array.isArray(categories) &&
+      categories.length > 0
+        ? categories
+        : FALLBACK_CATEGORIES;
+  } catch (error) {
+    console.error(
+      "分類取得エラー:",
+      error
+    );
+
+    allCategories =
+      FALLBACK_CATEGORIES;
+  }
+}
+
+function getCategoryOptionsHtml(
+  selectedKey = "other"
+) {
+  const categories =
+    allCategories.length > 0
+      ? allCategories
+      : FALLBACK_CATEGORIES;
+
+  return categories
+    .map((category) => {
+      const key =
+        String(
+          category.category_key ||
+          ""
+        );
+
+      const label =
+        String(
+          category.label ||
+          key
+        );
+
+      const selected =
+        key === selectedKey
+          ? " selected"
+          : "";
+
+      return (
+        `<option value="${escapeCategoryHtml(key)}"${selected}>` +
+        `${escapeCategoryHtml(label)}` +
+        `</option>`
+      );
+    })
+    .join("");
+}
+
 let currentCreateType = "task";
 
 let recentCompletedTasks = [];
@@ -1970,6 +2091,7 @@ async function loadTaskPage() {
   loadTasks(),
   loadEvents(),
   loadRoutines(),
+  loadCategories(),
   loadRecentCompletedTasks(),
 ]);
 
@@ -2377,28 +2499,7 @@ function renderTaskCreateForm() {
             class="task-create-organize-select"
             name="category"
           >
-            <option value="work">
-              仕事
-            </option>
-
-            <option value="school">
-              学校
-            </option>
-
-            <option value="shopping">
-              買い物
-            </option>
-
-            <option value="private">
-              プライベート
-            </option>
-
-            <option
-              value="other"
-              selected
-            >
-              その他
-            </option>
+            ${getCategoryOptionsHtml("other")}
           </select>
 
           <span
@@ -2966,35 +3067,9 @@ function renderEventEditForm(
     id="editEventCategory"
     class="task-create-organize-select"
   >
-    <option value="work"
-      ${category === "work" ? "selected" : ""}
-    >
-      仕事
-    </option>
-
-    <option value="school"
-      ${category === "school" ? "selected" : ""}
-    >
-      学校
-    </option>
-
-    <option value="shopping"
-      ${category === "shopping" ? "selected" : ""}
-    >
-      買い物
-    </option>
-
-    <option value="private"
-      ${category === "private" ? "selected" : ""}
-    >
-      プライベート
-    </option>
-
-    <option value="other"
-      ${category === "other" ? "selected" : ""}
-    >
-      その他
-    </option>
+    ${getCategoryOptionsHtml(
+      category || "other"
+    )}
   </select>
 
   <span
@@ -3788,28 +3863,7 @@ function renderEventCreateForm() {
             id="newEventCategory"
             class="task-create-organize-select"
           >
-            <option value="work">
-              仕事
-            </option>
-
-            <option value="school">
-              学校
-            </option>
-
-            <option value="shopping">
-              買い物
-            </option>
-
-            <option value="private">
-              プライベート
-            </option>
-
-            <option
-              value="other"
-              selected
-            >
-              その他
-            </option>
+            ${getCategoryOptionsHtml("other")}
           </select>
 
           <span
@@ -4585,28 +4639,7 @@ function renderRoutineCreateForm() {
             id="newRoutineCategory"
             class="task-create-organize-select"
           >
-            <option value="work">
-              仕事
-            </option>
-
-            <option value="school">
-              学校
-            </option>
-
-            <option value="shopping">
-              買い物
-            </option>
-
-            <option
-              value="private"
-              selected
-            >
-              プライベート
-            </option>
-
-            <option value="other">
-              その他
-            </option>
+            ${getCategoryOptionsHtml("private")}
           </select>
 
           <span

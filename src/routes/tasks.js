@@ -14,6 +14,7 @@ const {
   deleteTaskById,
   convertTaskToEvent,
   addSecretaryExp,
+  userCategoryExists,
 } = require("../../database");
 
 const router = express.Router();
@@ -31,14 +32,6 @@ const VALID_NOTIFICATIONS = [
   "30_minutes_before",
   "1_hour_before",
   "day_before",
-];
-
-const VALID_CATEGORIES = [
-  "work",
-  "school",
-  "private",
-  "shopping",
-  "other",
 ];
 
 const DATE_PATTERN =
@@ -78,7 +71,10 @@ router.post("/tasks", (req, res) => {
     }
 
     if (
-      !VALID_CATEGORIES.includes(category)
+      !userCategoryExists(
+        req.userId,
+        category
+      )
     ) {
       return res.status(400).json({
         error: "分類が不正です",
@@ -240,7 +236,10 @@ router.patch("/tasks/:id", (req, res) => {
     // 分類
     if (
       category !== undefined &&
-      !VALID_CATEGORIES.includes(category)
+      !userCategoryExists(
+        req.userId,
+        category
+      )
     ) {
       return res.status(400).json({
         error: "分類が正しくありません。",

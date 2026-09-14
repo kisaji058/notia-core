@@ -8,6 +8,7 @@ const {
   getActiveEvents,
   convertEventToTask,
   addSecretaryExp,
+  userCategoryExists,
 } = require("../../database");
 
 const router = express.Router();
@@ -25,14 +26,6 @@ const VALID_NOTIFICATIONS = [
   "30_minutes_before",
   "1_hour_before",
   "day_before",
-];
-
-const VALID_CATEGORIES = [
-  "work",
-  "school",
-  "private",
-  "shopping",
-  "other",
 ];
 
 const DATE_PATTERN =
@@ -184,7 +177,10 @@ router.post("/events", (req, res) => {
   });
 }
 
-if (!VALID_CATEGORIES.includes(category)) {
+if (!userCategoryExists(
+  req.userId,
+  category
+)) {
   return res.status(400).json({
     error: "分類が正しくありません。",
   });
@@ -342,7 +338,10 @@ router.put("/events/:id", (req, res) => {
   });
 }
 
-if (!VALID_CATEGORIES.includes(category)) {
+if (!userCategoryExists(
+  req.userId,
+  category
+)) {
   return res.status(400).json({
     error: "分類が正しくありません。",
   });
