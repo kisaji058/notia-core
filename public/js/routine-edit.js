@@ -29,6 +29,128 @@ const isNew = params.get("new") === "1";
 
 let currentRoutine = null;
 
+const ROUTINE_FALLBACK_CATEGORIES = [
+  { category_key: "work", label: "仕事" },
+  { category_key: "school", label: "学校" },
+  { category_key: "shopping", label: "買い物" },
+  { category_key: "private", label: "プライベート" },
+  { category_key: "other", label: "その他" },
+];
+
+function escapeRoutineCategoryHtml(
+  value
+) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+async function loadRoutineCategories(
+  selectedKey = "private"
+) {
+  let categories =
+    ROUTINE_FALLBACK_CATEGORIES;
+
+  try {
+    const runtime =
+      window.NotiaRuntime;
+
+    const isNative =
+      runtime
+        ?.isNativeApp
+        ?.() === true;
+
+    const headers = {};
+
+    if (isNative) {
+      const token =
+        await runtime
+          .getAuthToken();
+
+      if (!token) {
+        throw new Error(
+          "分類取得用の認証情報がありません。"
+        );
+      }
+
+      headers.Authorization =
+        `Bearer ${token}`;
+    }
+
+    const url =
+      runtime?.apiUrl
+        ? runtime.apiUrl(
+            "/api/categories"
+          )
+        : "/api/categories";
+
+    const response =
+      await fetch(
+        url,
+        {
+          method: "GET",
+          headers,
+          credentials:
+            isNative
+              ? "omit"
+              : "same-origin",
+        }
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        `分類取得失敗: ${response.status}`
+      );
+    }
+
+    const result =
+      await response.json();
+
+    if (
+      Array.isArray(result) &&
+      result.length > 0
+    ) {
+      categories = result;
+    }
+  } catch (error) {
+    console.error(
+      "Routine categories load error:",
+      error
+    );
+  }
+
+  categoryInput.innerHTML =
+    categories
+      .map((category) => {
+        const key =
+          String(
+            category.category_key ||
+            ""
+          );
+
+        const label =
+          String(
+            category.label ||
+            key
+          );
+
+        const selected =
+          key === selectedKey
+            ? " selected"
+            : "";
+
+        return (
+          `<option value="${escapeRoutineCategoryHtml(key)}"${selected}>` +
+          `${escapeRoutineCategoryHtml(label)}` +
+          `</option>`
+        );
+      })
+      .join("");
+}
+
 function getSelectedDays() {
   return [...document.querySelectorAll(
     'input[name="routineDay"]:checked'
@@ -93,13 +215,18 @@ function setSaving(isSaving) {
       : "変更を保存";
 }
 
-function setupNewRoutine() {
+async function setupNewRoutine() {
   pageTitle.textContent = "ルーティーン追加";
   pageDescription.textContent =
     "毎週くり返す予定や習慣を登録します。";
   document.title = "Notia ルーティーン追加";
 
   setSelectedDays([new Date().getDay()]);
+
+  await loadRoutineCategories(
+    "private"
+  );
+
   categoryInput.value = "private";
   googleInput.checked = false;
   deleteButton.hidden = true;
@@ -108,7 +235,7 @@ function setupNewRoutine() {
   titleInput.focus();
 }
 
-function populateRoutine(routine) {
+async function populateRoutine(routine) {
   currentRoutine = routine;
   titleInput.value = routine.title || "";
   setSelectedDays(getRoutineDays(routine));
@@ -118,7 +245,12 @@ function populateRoutine(routine) {
   noTimeInput.checked = !routineTime;
   syncTimeState();
 
-  categoryInput.value = routine.category || "other";
+  await loadRoutineCategories(
+    routine.category || "other"
+  );
+
+  categoryInput.value =
+    routine.category || "other";
   googleInput.checked = Boolean(
     routine.google_calendar_enabled
   );
@@ -129,7 +261,7 @@ function populateRoutine(routine) {
 
 async function loadRoutine() {
   if (isNew) {
-    setupNewRoutine();
+    await setupNewRoutine();
     return;
   }
 
@@ -154,7 +286,7 @@ async function loadRoutine() {
       throw new Error("ルーティーンが見つかりません。");
     }
 
-    populateRoutine(routine);
+    await populateRoutine(routine);
   } catch (error) {
     console.error("ルーティーン取得エラー:", error);
     showError(error.message);

@@ -785,6 +785,545 @@ alert(
     );
   }
 
+
+  function escapeCategoryManagerHtml(
+    value
+  ) {
+    return String(
+      value ?? ""
+    )
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  async function categoryApiFetch(
+    path,
+    options = {}
+  ) {
+    const runtime =
+      window.NotiaRuntime;
+
+    const isNative =
+      runtime
+        ?.isNativeApp
+        ?.() === true;
+
+    const headers = {
+      ...(options.headers || {}),
+    };
+
+    if (isNative) {
+      const token =
+        await runtime
+          .getAuthToken();
+
+      if (!token) {
+        throw new Error(
+          "認証情報を取得できませんでした。"
+        );
+      }
+
+      headers.Authorization =
+        `Bearer ${token}`;
+    }
+
+    const url =
+      runtime?.apiUrl
+        ? runtime.apiUrl(path)
+        : path;
+
+    return fetch(
+      url,
+      {
+        ...options,
+        headers,
+        credentials:
+          isNative
+            ? "omit"
+            : "same-origin",
+      }
+    );
+  }
+
+  async function getCategoriesForManager() {
+    const response =
+      await categoryApiFetch(
+        "/api/categories"
+      );
+
+    const result =
+      await response
+        .json()
+        .catch(() => []);
+
+    if (!response.ok) {
+      throw new Error(
+        result?.error ||
+        "分類を取得できませんでした。"
+      );
+    }
+
+    return Array.isArray(result)
+      ? result
+      : [];
+  }
+
+  async function openCategoryManager() {
+    closeAccountMenu();
+
+    const existing =
+      document.querySelector(
+        ".category-manager-sheet"
+      );
+
+    if (existing) {
+      existing.remove();
+    }
+
+    await hideNotificationSettingsAdBanner();
+
+    const sheet =
+      document.createElement("div");
+
+    sheet.className =
+      "category-manager-sheet";
+
+    sheet.innerHTML = `
+      <div class="category-manager-card">
+        <div class="category-manager-header">
+          <div>
+            <h2>分類を管理</h2>
+            <p>
+              タスク・予定・ルーティーンで使う分類を設定できます。
+            </p>
+          </div>
+
+          <button
+            class="category-manager-close"
+            type="button"
+            aria-label="閉じる"
+          >
+            ×
+          </button>
+        </div>
+
+        <div
+          class="category-manager-list"
+        >
+          <p class="category-manager-loading">
+            読み込み中...
+          </p>
+        </div>
+
+        <button
+          class="category-manager-add"
+          type="button"
+        >
+          ＋ 分類を追加
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(
+      sheet
+    );
+
+    const closeSheet = async () => {
+      sheet.remove();
+
+      await restoreNotificationSettingsAdBanner();
+    };
+
+    sheet
+      .querySelector(
+        ".category-manager-close"
+      )
+      .addEventListener(
+        "click",
+        closeSheet
+      );
+
+    sheet.addEventListener(
+      "click",
+      (event) => {
+        if (event.target === sheet) {
+          closeSheet();
+        }
+      }
+    );
+
+    const list =
+      sheet.querySelector(
+        ".category-manager-list"
+      );
+
+    const addButton =
+      sheet.querySelector(
+        ".category-manager-add"
+      );
+
+    async function renderCategories() {
+      try {
+        list.innerHTML = `
+          <p class="category-manager-loading">
+            読み込み中...
+          </p>
+        `;
+
+        const categories =
+          await getCategoriesForManager();
+
+        if (
+          !document.body.contains(
+            sheet
+          )
+        ) {
+          return;
+        }
+
+        list.innerHTML =
+          categories
+            .map(
+              (category) => `
+                <div
+                  class="category-manager-row"
+                  data-category-id="${
+                    Number(category.id)
+                  }"
+                >
+                  <div
+                    class="category-manager-info"
+                  >
+                    <strong>
+                      ${
+                        escapeCategoryManagerHtml(
+                          category.label
+                        )
+                      }
+                    </strong>
+
+                    ${
+                      Number(
+                        category.is_default
+                      ) === 1
+                        ? `
+                          <span>
+                            標準
+                          </span>
+                        `
+                        : ""
+                    }
+                  </div>
+
+                  <div
+                    class="category-manager-actions"
+                  >
+                    <button
+                      class="category-manager-edit"
+                      type="button"
+                    >
+                      編集
+                    </button>
+
+                    ${
+                      Number(
+                        category.is_default
+                      ) === 1
+                        ? ""
+                        : `
+                          <button
+                            class="category-manager-delete"
+                            type="button"
+                          >
+                            削除
+                          </button>
+                        `
+                    }
+                  </div>
+                </div>
+              `
+            )
+            .join("");
+
+        list
+          .querySelectorAll(
+            ".category-manager-edit"
+          )
+          .forEach(
+            (button) => {
+              button.addEventListener(
+                "click",
+                async () => {
+                  const row =
+                    button.closest(
+                      ".category-manager-row"
+                    );
+
+                  const id =
+                    Number(
+                      row?.dataset
+                        ?.categoryId
+                    );
+
+                  const currentLabel =
+                    row
+                      ?.querySelector(
+                        ".category-manager-info strong"
+                      )
+                      ?.textContent
+                      ?.trim() || "";
+
+                  const nextLabel =
+                    prompt(
+                      "分類名を入力してください。",
+                      currentLabel
+                    );
+
+                  if (
+                    nextLabel === null
+                  ) {
+                    return;
+                  }
+
+                  const normalizedLabel =
+                    nextLabel.trim();
+
+                  if (
+                    !normalizedLabel ||
+                    normalizedLabel ===
+                      currentLabel
+                  ) {
+                    return;
+                  }
+
+                  try {
+                    button.disabled = true;
+
+                    const response =
+                      await categoryApiFetch(
+                        `/api/categories/${id}`,
+                        {
+                          method: "PUT",
+                          headers: {
+                            "Content-Type":
+                              "application/json",
+                          },
+                          body:
+                            JSON.stringify({
+                              label:
+                                normalizedLabel,
+                            }),
+                        }
+                      );
+
+                    const result =
+                      await response
+                        .json()
+                        .catch(
+                          () => ({})
+                        );
+
+                    if (!response.ok) {
+                      throw new Error(
+                        result.error ||
+                        "分類名を変更できませんでした。"
+                      );
+                    }
+
+                    await renderCategories();
+                  } catch (error) {
+                    console.error(
+                      "Category update error:",
+                      error
+                    );
+
+                    alert(
+                      error.message ||
+                      "分類名を変更できませんでした。"
+                    );
+
+                    button.disabled = false;
+                  }
+                }
+              );
+            }
+          );
+
+        list
+          .querySelectorAll(
+            ".category-manager-delete"
+          )
+          .forEach(
+            (button) => {
+              button.addEventListener(
+                "click",
+                async () => {
+                  const row =
+                    button.closest(
+                      ".category-manager-row"
+                    );
+
+                  const id =
+                    Number(
+                      row?.dataset
+                        ?.categoryId
+                    );
+
+                  const label =
+                    row
+                      ?.querySelector(
+                        ".category-manager-info strong"
+                      )
+                      ?.textContent
+                      ?.trim() || "この分類";
+
+                  const confirmed =
+                    confirm(
+                      `「${label}」を削除しますか？\n\nこの分類を使っている項目は「その他」に変更されます。`
+                    );
+
+                  if (!confirmed) {
+                    return;
+                  }
+
+                  try {
+                    button.disabled = true;
+
+                    const response =
+                      await categoryApiFetch(
+                        `/api/categories/${id}`,
+                        {
+                          method:
+                            "DELETE",
+                        }
+                      );
+
+                    const result =
+                      await response
+                        .json()
+                        .catch(
+                          () => ({})
+                        );
+
+                    if (!response.ok) {
+                      throw new Error(
+                        result.error ||
+                        "分類を削除できませんでした。"
+                      );
+                    }
+
+                    await renderCategories();
+                  } catch (error) {
+                    console.error(
+                      "Category delete error:",
+                      error
+                    );
+
+                    alert(
+                      error.message ||
+                      "分類を削除できませんでした。"
+                    );
+
+                    button.disabled = false;
+                  }
+                }
+              );
+            }
+          );
+      } catch (error) {
+        console.error(
+          "Category manager load error:",
+          error
+        );
+
+        list.innerHTML = `
+          <p class="category-manager-error">
+            分類を読み込めませんでした。
+          </p>
+        `;
+      }
+    }
+
+    addButton.addEventListener(
+      "click",
+      async () => {
+        const label =
+          prompt(
+            "追加する分類名を入力してください。"
+          );
+
+        if (label === null) {
+          return;
+        }
+
+        const normalizedLabel =
+          label.trim();
+
+        if (!normalizedLabel) {
+          return;
+        }
+
+        try {
+          addButton.disabled = true;
+          addButton.textContent =
+            "追加中...";
+
+          const response =
+            await categoryApiFetch(
+              "/api/categories",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type":
+                    "application/json",
+                },
+                body:
+                  JSON.stringify({
+                    label:
+                      normalizedLabel,
+                  }),
+              }
+            );
+
+          const result =
+            await response
+              .json()
+              .catch(
+                () => ({})
+              );
+
+          if (!response.ok) {
+            throw new Error(
+              result.error ||
+              "分類を追加できませんでした。"
+            );
+          }
+
+          await renderCategories();
+        } catch (error) {
+          console.error(
+            "Category create error:",
+            error
+          );
+
+          alert(
+            error.message ||
+            "分類を追加できませんでした。"
+          );
+        } finally {
+          addButton.disabled = false;
+          addButton.textContent =
+            "＋ 分類を追加";
+        }
+      }
+    );
+
+    await renderCategories();
+  }
+
     async function logoutNotia() {
     const confirmed =
       confirm(
@@ -937,6 +1476,13 @@ alert(
         type="button"
       >
         通知設定
+      </button>
+
+      <button
+        class="account-menu-item account-menu-categories"
+        type="button"
+      >
+        分類を管理
       </button>
 
       <button
@@ -1175,6 +1721,15 @@ alert(
     "click",
     openNotificationSettings
   );
+
+    menu
+      .querySelector(
+        ".account-menu-categories"
+      )
+      .addEventListener(
+        "click",
+        openCategoryManager
+      );
 
     menu
       .querySelector(

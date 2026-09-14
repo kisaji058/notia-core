@@ -61,6 +61,145 @@ const deleteTaskButton =
 let originalTaskState = null;
 let isSaving = false;
 
+const TASK_FALLBACK_CATEGORIES = [
+  {
+    category_key: "work",
+    label: "仕事",
+  },
+  {
+    category_key: "school",
+    label: "学校",
+  },
+  {
+    category_key: "shopping",
+    label: "買い物",
+  },
+  {
+    category_key: "private",
+    label: "プライベート",
+  },
+  {
+    category_key: "other",
+    label: "その他",
+  },
+];
+
+function escapeTaskCategoryHtml(
+  value
+) {
+  return String(
+    value ?? ""
+  )
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+async function loadTaskCategories(
+  selectedKey = "other"
+) {
+  let categories =
+    TASK_FALLBACK_CATEGORIES;
+
+  try {
+    const runtime =
+      window.NotiaRuntime;
+
+    const isNative =
+      runtime
+        ?.isNativeApp
+        ?.() === true;
+
+    const headers = {};
+
+    if (isNative) {
+      const token =
+        await runtime
+          .getAuthToken();
+
+      if (!token) {
+        throw new Error(
+          "分類取得用の認証情報がありません。"
+        );
+      }
+
+      headers.Authorization =
+        `Bearer ${token}`;
+    }
+
+    const url =
+      runtime?.apiUrl
+        ? runtime.apiUrl(
+            "/api/categories"
+          )
+        : "/api/categories";
+
+    const response =
+      await fetch(
+        url,
+        {
+          method: "GET",
+          headers,
+          credentials:
+            isNative
+              ? "omit"
+              : "same-origin",
+        }
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        `分類取得失敗: ${response.status}`
+      );
+    }
+
+    const result =
+      await response.json();
+
+    if (
+      Array.isArray(result) &&
+      result.length > 0
+    ) {
+      categories = result;
+    }
+  } catch (error) {
+    console.error(
+      "Task categories load error:",
+      error
+    );
+  }
+
+  taskCategory.innerHTML =
+    categories
+      .map((category) => {
+        const key =
+          String(
+            category.category_key ||
+            ""
+          );
+
+        const label =
+          String(
+            category.label ||
+            key
+          );
+
+        const selected =
+          key === selectedKey
+            ? " selected"
+            : "";
+
+        return (
+          `<option value="${escapeTaskCategoryHtml(key)}"${selected}>` +
+          `${escapeTaskCategoryHtml(label)}` +
+          `</option>`
+        );
+      })
+      .join("");
+}
+
 const notificationValuesRequiringTime = [
   "at_time",
   "10_minutes_before",
@@ -117,7 +256,7 @@ async function loadTask() {
 
     const task = await res.json();
 
-    renderTask(task);
+    await renderTask(task);
   } catch (error) {
     console.error(error);
     showError(error.message || "タスクを読み込めませんでした。");
@@ -205,13 +344,19 @@ taskDueTimeButton.addEventListener("click", () => {
   openDateTimePicker(taskDueTime);
 });
 
-function renderTask(task) {
+async function renderTask(task) {
   taskTypeTask.checked = true;
   taskTypeEvent.checked = false;
   taskTitle.value = task.title || "";
   taskDueDate.value = task.due_date || "";
   taskDueTime.value = task.due_time || "";
-  taskCategory.value = task.category || "other";
+
+  await loadTaskCategories(
+    task.category || "other"
+  );
+
+  taskCategory.value =
+    task.category || "other";
   const isImportant =
     task.priority === "high" ||
     task.priority === "important";

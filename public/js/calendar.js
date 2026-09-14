@@ -84,6 +84,235 @@ if (
 let pendingEventId =
   calendarParams.get("eventId");
 
+const CALENDAR_FALLBACK_CATEGORIES = [
+  { category_key: "work", label: "仕事" },
+  { category_key: "school", label: "学校" },
+  { category_key: "shopping", label: "買い物" },
+  { category_key: "private", label: "プライベート" },
+  { category_key: "other", label: "その他" },
+];
+
+let calendarCategories = [];
+
+let currentCalendarCategoryFilter =
+  "all";
+
+function escapeCalendarCategoryHtml(
+  value
+) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+async function loadCalendarCategories() {
+  try {
+    const runtime =
+      window.NotiaRuntime;
+
+    const isNative =
+      runtime
+        ?.isNativeApp
+        ?.() === true;
+
+    const headers = {};
+
+    if (isNative) {
+      const token =
+        await runtime
+          .getAuthToken();
+
+      if (!token) {
+        throw new Error(
+          "分類取得用の認証情報がありません。"
+        );
+      }
+
+      headers.Authorization =
+        `Bearer ${token}`;
+    }
+
+    const url =
+      runtime?.apiUrl
+        ? runtime.apiUrl(
+            "/api/categories"
+          )
+        : "/api/categories";
+
+    const response =
+      await fetch(
+        url,
+        {
+          method: "GET",
+          headers,
+          credentials:
+            isNative
+              ? "omit"
+              : "same-origin",
+        }
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        `分類取得失敗: ${response.status}`
+      );
+    }
+
+    const result =
+      await response.json();
+
+    calendarCategories =
+      Array.isArray(result) &&
+      result.length > 0
+        ? result
+        : CALENDAR_FALLBACK_CATEGORIES;
+  } catch (error) {
+    console.error(
+      "Calendar categories load error:",
+      error
+    );
+
+    calendarCategories =
+      CALENDAR_FALLBACK_CATEGORIES;
+  }
+
+  renderCalendarCategoryFilter();
+}
+
+function matchesCalendarCategory(
+  item
+) {
+  if (
+    currentCalendarCategoryFilter ===
+    "all"
+  ) {
+    return true;
+  }
+
+  return (
+    String(
+      item?.category || "other"
+    ) ===
+    currentCalendarCategoryFilter
+  );
+}
+
+function renderCalendarCategoryFilter() {
+  const container =
+    document.getElementById(
+      "calendarCategoryFilter"
+    );
+
+  if (!container) {
+    return;
+  }
+
+  const categories =
+    calendarCategories.length > 0
+      ? calendarCategories
+      : CALENDAR_FALLBACK_CATEGORIES;
+
+  container.innerHTML = "";
+
+  const filterItems = [
+    {
+      category_key: "all",
+      label: "すべて",
+    },
+    ...categories,
+  ];
+
+  filterItems.forEach(
+    (category) => {
+      const key =
+        String(
+          category.category_key
+        );
+
+      const button =
+        document.createElement(
+          "button"
+        );
+
+      button.type = "button";
+      button.className =
+        "calendar-category-chip";
+
+      button.textContent =
+        category.label || key;
+
+      const isActive =
+        key ===
+        currentCalendarCategoryFilter;
+
+      button.classList.toggle(
+        "active",
+        isActive
+      );
+
+      button.setAttribute(
+        "aria-pressed",
+        String(isActive)
+      );
+
+      button.addEventListener(
+        "click",
+        () => {
+          currentCalendarCategoryFilter =
+            key;
+
+          renderCalendarCategoryFilter();
+          loadCalendar();
+        }
+      );
+
+      container.appendChild(
+        button
+      );
+    }
+  );
+}
+
+function getCalendarCategoryOptionsHtml(
+  selectedKey = "other"
+) {
+  const categories =
+    calendarCategories.length > 0
+      ? calendarCategories
+      : CALENDAR_FALLBACK_CATEGORIES;
+
+  return categories
+    .map((category) => {
+      const key =
+        String(
+          category.category_key ||
+          ""
+        );
+
+      const label =
+        String(
+          category.label ||
+          key
+        );
+
+      const selected =
+        key === selectedKey
+          ? " selected"
+          : "";
+
+      return (
+        `<option value="${escapeCalendarCategoryHtml(key)}"${selected}>` +
+        `${escapeCalendarCategoryHtml(label)}` +
+        `</option>`
+      );
+    })
+    .join("");
+}
+
+
 function createTimeline() {
   timeline.innerHTML = "";
 
@@ -2415,45 +2644,9 @@ ${
         id="eventCategory"
         class="event-organize-control"
       >
-        <option
-          value="work"
-          ${eventItem?.category === "work" ? "selected" : ""}
-        >
-          仕事
-        </option>
-
-        <option
-          value="school"
-          ${eventItem?.category === "school" ? "selected" : ""}
-        >
-          学校
-        </option>
-
-        <option
-          value="shopping"
-          ${eventItem?.category === "shopping" ? "selected" : ""}
-        >
-          買い物
-        </option>
-
-        <option
-          value="private"
-          ${eventItem?.category === "private" ? "selected" : ""}
-        >
-          プライベート
-        </option>
-
-        <option
-          value="other"
-          ${
-            !eventItem?.category ||
-            eventItem?.category === "other"
-              ? "selected"
-              : ""
-          }
-        >
-          その他
-        </option>
+        ${getCalendarCategoryOptionsHtml(
+          eventItem?.category || "other"
+        )}
       </select>
 
       <span
@@ -3064,16 +3257,28 @@ async function loadCalendar() {
     const data = await res.json();
 
     const tasks =
-      data.tasks ?? [];
+      (data.tasks ?? [])
+        .filter(
+          matchesCalendarCategory
+        );
 
     const events =
-      data.events ?? [];
+      (data.events ?? [])
+        .filter(
+          matchesCalendarCategory
+        );
 
     const routines =
-      data.routines ?? [];
+      (data.routines ?? [])
+        .filter(
+          matchesCalendarCategory
+        );
 
     const externalEvents =
-      data.externalEvents ?? [];
+      currentCalendarCategoryFilter ===
+      "all"
+        ? data.externalEvents ?? []
+        : [];
 
     if (currentView === "day") {
   renderCalendar(
@@ -3259,4 +3464,7 @@ for (const button of viewButtons) {
 }
 
 updateViewPanels();
-loadCalendar();
+(async () => {
+  await loadCalendarCategories();
+  await loadCalendar();
+})();

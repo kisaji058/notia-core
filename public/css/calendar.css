@@ -2631,3 +2631,65 @@ body.calendar-page.keyboard-open
       22px
     );
 }
+
+/* ==========================================
+   Calendar category filter
+   ========================================== */
+
+.calendar-category-filter {
+  margin:
+    10px
+    0
+    12px;
+
+  padding:
+    0
+    2px
+    2px;
+
+  display: flex;
+  gap: 8px;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.calendar-category-filter::-webkit-scrollbar {
+  display: none;
+}
+
+.calendar-category-chip {
+  flex: 0 0 auto;
+
+  min-height: 34px;
+
+  padding:
+    0
+    14px;
+
+  border:
+    1px solid
+    #d7e1e0;
+
+  border-radius: 999px;
+
+  background: #fff;
+
+  color: #657275;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  white-space: nowrap;
+
+  cursor: pointer;
+}
+
+.calendar-category-chip.active {
+  border-color: #18aaa6;
+  background: #eaf8f7;
+  color: #0d918d;
+}

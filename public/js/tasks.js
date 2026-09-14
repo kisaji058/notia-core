@@ -156,6 +156,8 @@ async function loadCategories() {
     allCategories =
       FALLBACK_CATEGORIES;
   }
+
+  renderPlanCategoryFilter();
 }
 
 function getCategoryOptionsHtml(
@@ -194,6 +196,43 @@ function getCategoryOptionsHtml(
     .join("");
 }
 
+
+function getManagedCategoryLabel(
+  categoryKey
+) {
+  const key =
+    String(
+      categoryKey || "other"
+    );
+
+  const categories =
+    allCategories.length > 0
+      ? allCategories
+      : FALLBACK_CATEGORIES;
+
+  const category =
+    categories.find(
+      (item) =>
+        item.category_key === key
+    );
+
+  if (category?.label) {
+    return category.label;
+  }
+
+  const fallback =
+    FALLBACK_CATEGORIES.find(
+      (item) =>
+        item.category_key === key
+    );
+
+  return (
+    fallback?.label ||
+    key ||
+    "その他"
+  );
+}
+
 let currentCreateType = "task";
 
 let recentCompletedTasks = [];
@@ -207,6 +246,9 @@ let currentFilter =
   requestedFilter === "overdue"
     ? "overdue"
     : "all";
+
+let currentCategoryFilter =
+  "all";
 
 let taskGroupSequence = 0;
 
@@ -340,7 +382,10 @@ function getFilteredTasks(tasks) {
 
 function refreshTaskList() {
   const filteredTasks =
-    getFilteredTasks(allTasks);
+    getFilteredTasks(allTasks)
+      .filter(
+        matchesPlanCategory
+      );
 
   renderTaskList(filteredTasks);
 }
@@ -349,7 +394,10 @@ function updatePlanCounts() {
   const activeTasks =
     allTasks.filter(
       (task) =>
-        task.status === "active"
+        task.status === "active" &&
+        matchesPlanCategory(
+          task
+        )
     );
 
   const activeEvents =
@@ -559,6 +607,103 @@ function comparePlanRoutines(
   );
 }
 
+function matchesPlanCategory(
+  item
+) {
+  if (
+    currentCategoryFilter ===
+    "all"
+  ) {
+    return true;
+  }
+
+  return (
+    String(
+      item?.category || "other"
+    ) === currentCategoryFilter
+  );
+}
+
+function renderPlanCategoryFilter() {
+  const container =
+    document.getElementById(
+      "planCategoryFilter"
+    );
+
+  if (!container) {
+    return;
+  }
+
+  const categories =
+    allCategories.length > 0
+      ? allCategories
+      : FALLBACK_CATEGORIES;
+
+  container.innerHTML = "";
+
+  const filterItems = [
+    {
+      category_key: "all",
+      label: "すべて",
+    },
+    ...categories,
+  ];
+
+  filterItems.forEach(
+    (category) => {
+      const key =
+        String(
+          category.category_key
+        );
+
+      const button =
+        document.createElement(
+          "button"
+        );
+
+      button.type = "button";
+
+      button.className =
+        "category-filter-chip";
+
+      button.dataset.category =
+        key;
+
+      button.textContent =
+        category.label || key;
+
+      const isActive =
+        key ===
+        currentCategoryFilter;
+
+      button.classList.toggle(
+        "active",
+        isActive
+      );
+
+      button.setAttribute(
+        "aria-pressed",
+        String(isActive)
+      );
+
+      button.addEventListener(
+        "click",
+        () => {
+          currentCategoryFilter =
+            key;
+
+          renderPlanCategoryFilter();
+          renderPlanView();
+        }
+      );
+
+      container.appendChild(
+        button
+      );
+    }
+  );
+}
+
 function setPlanType(type) {
   currentPlanType = type;
 
@@ -739,6 +884,9 @@ function renderEventList() {
             "active" &&
           !isPastPlanEvent(
             event
+          ) &&
+          matchesPlanCategory(
+            event
           )
       )
       .sort(
@@ -825,9 +973,13 @@ function renderRoutineList() {
   routineList.innerHTML = "";
 
   const routines =
-    [...allRoutines].sort(
-      comparePlanRoutines
-    );
+    allRoutines
+      .filter(
+        matchesPlanCategory
+      )
+      .sort(
+        comparePlanRoutines
+      );
 
   if (routines.length === 0) {
     routineList.innerHTML = `
@@ -1000,12 +1152,9 @@ function renderPlanRoutineCard(
       : "時間未設定";
 
   const categoryLabel =
-    typeof getCategoryLabel ===
-    "function"
-      ? getCategoryLabel(
-          routine.category
-        )
-      : "その他";
+    getManagedCategoryLabel(
+      routine.category
+    );
 
   const card =
   createRoutineCard(
@@ -1074,7 +1223,10 @@ function renderRoutinePreview() {
   routineList.innerHTML = "";
 
   const routines =
-    [...allRoutines]
+    allRoutines
+      .filter(
+        matchesPlanCategory
+      )
       .sort(comparePlanRoutines);
 
   if (routines.length === 0) {
@@ -1586,7 +1738,10 @@ function renderEventPreview() {
     .filter(
       (event) =>
         event.status === "active" &&
-        !isPastPlanEvent(event)
+        !isPastPlanEvent(event) &&
+        matchesPlanCategory(
+          event
+        )
     )
     .sort(comparePlanEvents);
 
@@ -1645,7 +1800,7 @@ function renderTaskCard(
       : "",
 
     categoryText:
-      getCategoryLabel(
+      getManagedCategoryLabel(
         task.category
       ),
 
@@ -2354,7 +2509,7 @@ function createCompletedTaskHistoryGroup() {
                 : "期限未設定",
 
             categoryText:
-              getCategoryLabel(
+              getManagedCategoryLabel(
                 task.category
               ),
           }

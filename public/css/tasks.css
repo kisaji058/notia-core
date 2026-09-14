@@ -2482,3 +2482,70 @@ body.tasks-page.plan-page
     0 3px 8px
     rgba(47, 169, 157, 0.18);
 }
+/* ==========================================
+   Plan category filter
+   ========================================== */
+
+body.plan-page
+.category-filter-bar {
+  margin:
+    12px
+    0
+    0;
+
+  padding:
+    0
+    2px
+    2px;
+
+  display: flex;
+  gap: 8px;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.plan-page
+.category-filter-bar::-webkit-scrollbar {
+  display: none;
+}
+
+body.plan-page
+.category-filter-chip {
+  flex: 0 0 auto;
+
+  min-height: 34px;
+
+  padding:
+    0
+    14px;
+
+  border:
+    1px solid
+    #d7e1e0;
+
+  border-radius: 999px;
+
+  background: #fff;
+
+  color: #657275;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  white-space: nowrap;
+
+  cursor: pointer;
+}
+
+body.plan-page
+.category-filter-chip.active {
+  border-color: #18aaa6;
+
+  background: #eaf8f7;
+
+  color: #0d918d;
+}
