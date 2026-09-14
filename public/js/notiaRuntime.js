@@ -1184,11 +1184,13 @@
       .catch(() => {});
 
     const bottomNavHeight =
-      Math.ceil(
-        bottomNav
-          .getBoundingClientRect()
-          .height
-      );
+      Number.parseFloat(
+        getComputedStyle(
+          document.documentElement
+        ).getPropertyValue(
+          "--bottom-nav-height"
+        )
+      ) || 64;
 
     await adMob.showBanner({
       adId:
