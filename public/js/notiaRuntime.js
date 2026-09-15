@@ -1021,6 +1021,11 @@
     await adMob.addListener(
       "bannerAdFailedToLoad",
       (error) => {
+        console.error(
+          "[AdMob] bannerAdFailedToLoad:",
+          error
+        );
+
         document.documentElement
           .style
           .setProperty(
@@ -1191,6 +1196,11 @@
           "--bottom-nav-height"
         )
       ) || 64;
+
+    console.log(
+      "[AdMob] showBanner config:",
+      getAdMobBannerConfig()
+    );
 
     await adMob.showBanner({
       adId:
