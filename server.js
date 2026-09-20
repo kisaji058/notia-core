@@ -1077,6 +1077,55 @@ app.get(
   }
 );
 
+
+// ===== Quick Task Registration Start =====
+
+app.post(
+  "/api/chat/quick-task/start",
+  (req, res) => {
+    try {
+      const sessionManager =
+        require("./src/session/SessionManager");
+
+      const {
+        saveConversation,
+      } = require("./database");
+
+      const reply =
+        "タスク名を教えてください。";
+
+      sessionManager.clear(req.userId);
+
+      sessionManager.set(req.userId, {
+        mode: "quick_task_create",
+        step: "waiting_title",
+        pendingTask: null,
+      });
+
+      saveConversation(
+        req.userId,
+        "assistant",
+        reply
+      );
+
+      return res.json({
+        reply,
+        mode: "quick_task_create",
+      });
+    } catch (error) {
+      console.error(
+        "Quick task start error:",
+        error
+      );
+
+      return res.status(500).json({
+        error:
+          "タスク登録を開始できませんでした。",
+      });
+    }
+  }
+);
+
 app.post("/api/chat", async (req, res) => {
   try {
     const { message } = req.body;

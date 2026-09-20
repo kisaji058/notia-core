@@ -1156,6 +1156,121 @@ return this.safeParse(retryResponse);
   }
 
   
+
+  // ===== Quick Task Registration Analyzer =====
+
+  async analyzeQuickTask(userMessage, pendingTask = {}) {
+    const today = new Date().toLocaleDateString(
+      "sv-SE",
+      { timeZone: "Asia/Tokyo" }
+    );
+
+    const systemPrompt = `
+現在日付: ${today} (Asia/Tokyo)
+
+あなたはNotiaのタスク登録専用解析器です。
+
+現在、ユーザーはタスク登録を進めています。
+発言からタスク名・期限・時刻・通知設定を抽出してください。
+
+既存のタスクを更新したり、タスクを保存したりしてはいけません。
+解析結果のみをJSON形式で返してください。
+
+返却形式:
+{
+  "title": "string | null",
+  "dueDate": "YYYY-MM-DD | null",
+  "dueTime": "HH:mm | null",
+  "notification": "none | same_day | day_before | at_time | 10_minutes_before | 30_minutes_before | 1_hour_before | null",
+  "noDueDate": "boolean",
+  "cancel": "boolean"
+}
+
+ルール:
+- タスク名が指定されていなければtitleはnull。
+- 今日、明日、来週などの日付表現は現在日付から解釈する。
+- 日付が指定されていなければdueDateはnull。
+- 時刻が指定されていなければdueTimeはnull。
+- 「期限なし」「日付未設定」はnoDueDateをtrueにする。
+- 「通知なし」「通知しない」はnotificationをnoneにする。
+- 「当日に通知」はsame_day。
+- 「前日に通知」はday_before。
+- 「時間になったら通知」はat_time。
+- 通知の指定がなければnotificationはnull。
+- 「やっぱりやめる」「登録しない」などはcancelをtrueにする。
+- 不明な値は推測せずnullにする。
+- 既存のタスク情報がある場合、今回の発言で明示された変更だけ返す。
+- 必ずJSONのみ返す。
+`;
+
+    const userPrompt = `
+現在の登録途中の情報:
+${JSON.stringify(pendingTask, null, 2)}
+
+ユーザーの回答:
+${userMessage}
+`;
+
+    const response = await chatWithNotia(
+      userPrompt,
+      [],
+      systemPrompt
+    );
+
+    let parsed;
+
+    try {
+      parsed = JSON.parse(response);
+    } catch (error) {
+      console.error(
+        "Quick task analysis parse error:",
+        error
+      );
+
+      return {
+        title: null,
+        dueDate: null,
+        dueTime: null,
+        notification: null,
+        noDueDate: false,
+        cancel: false,
+        parseError: true,
+      };
+    }
+
+    return {
+      parseError: false,
+      title:
+        typeof parsed.title === "string" &&
+        parsed.title.trim()
+          ? parsed.title.trim()
+          : null,
+
+      dueDate:
+        typeof parsed.dueDate === "string"
+          ? parsed.dueDate
+          : null,
+
+      dueTime:
+        typeof parsed.dueTime === "string"
+          ? parsed.dueTime
+          : null,
+
+      notification:
+        VALID_NOTIFICATIONS.includes(
+          parsed.notification
+        )
+          ? parsed.notification
+          : null,
+
+      noDueDate:
+        parsed.noDueDate === true,
+
+      cancel:
+        parsed.cancel === true,
+    };
+  }
+
   async analyzeConfirmation(userMessage, context = {}) {
   const today = new Date().toLocaleDateString("sv-SE", {
     timeZone: "Asia/Tokyo",

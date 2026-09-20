@@ -4218,6 +4218,67 @@ startCharacterBackgroundTimer();
     messageInput.focus();
   }
 
+  async function startQuickTask() {
+    if (isSending) {
+      return;
+    }
+
+    isSending = true;
+    sendButton.disabled = true;
+
+    try {
+      const res = await fetch(
+        "/api/chat/quick-task/start",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(
+          "タスク登録の開始に失敗しました。"
+        );
+      }
+
+      const data = await res.json();
+
+      if (!data.reply) {
+        throw new Error(
+          "開始メッセージが取得できませんでした。"
+        );
+      }
+
+      messageInput.value = "";
+
+      addMessage(
+        "assistant",
+        data.reply,
+        new Date()
+      );
+
+      scrollChatToBottom();
+
+    } catch (error) {
+      console.error(
+        "Quick task start error:",
+        error
+      );
+
+      addMessage(
+        "assistant",
+        "タスク登録を開始できませんでした。もう一度お試しください。",
+        new Date()
+      );
+    } finally {
+      isSending = false;
+      sendButton.disabled = false;
+    }
+  }
+
   panel.querySelectorAll(
     "[data-quick-action]"
   ).forEach((button) => {
@@ -4229,7 +4290,7 @@ startCharacterBackgroundTimer();
 
       switch (action) {
         case "task":
-          prepareMessage("タスクを登録したい");
+          startQuickTask();
           break;
 
         case "event":
