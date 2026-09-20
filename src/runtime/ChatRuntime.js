@@ -259,6 +259,49 @@ async function handleChat(
       );
     }
 
+    // 時刻が必要な通知では、登録前に時刻を確認する
+    const timeDependentNotifications = [
+      "at_time",
+      "10_minutes_before",
+      "30_minutes_before",
+      "1_hour_before",
+    ];
+
+    if (
+      timeDependentNotifications.includes(task.notification) &&
+      (!task.dueDate || !task.dueTime)
+    ) {
+      // 期限なしの場合は、まず日付から確認する
+      if (!task.dueDate) {
+        sessionManager.set(userId, {
+          mode: "quick_task_create",
+          step: "waiting_date",
+          pendingTask: {
+            ...task,
+            noDueDate: false,
+          },
+        });
+
+        return createReply(
+          userId,
+          "その通知を設定するには日付と時刻が必要です。いつ行いますか？",
+          { intent: "chat" }
+        );
+      }
+
+      sessionManager.set(userId, {
+        mode: "quick_task_create",
+        step: "waiting_time",
+        pendingTask: task,
+      });
+
+      return createReply(
+        userId,
+        "1時間前など、指定したタイミングで通知するために、タスクの時刻を教えてください。何時までに行いますか？",
+        { intent: "chat" }
+      );
+    }
+
     const fixedAnalysis = {
       intent: "task_create",
       tasks: [{
