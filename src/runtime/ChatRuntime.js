@@ -107,6 +107,216 @@ async function handleChat(
     message
   );
 
+  // ===== Quick Event Registration Flow =====
+  const eventSession = sessionManager.get(userId);
+
+  if (eventSession.mode === "quick_event_create") {
+    const pending = eventSession.pendingEvent || {
+      title: null,
+      dueDate: null,
+      dueTime: null,
+      endDate: null,
+      endTime: null,
+      notification: null,
+    };
+
+    const parsed =
+      await conversationAnalyzer.analyzeQuickEvent(
+        message,
+        pending
+      );
+
+    if (parsed.parseError) {
+      return createReply(
+        userId,
+        "内容をうまく読み取れませんでした。もう一度教えてください。",
+        { intent: "chat" }
+      );
+    }
+
+    if (parsed.cancel) {
+      sessionManager.clear(userId);
+      return createReply(
+        userId,
+        "承知しました。予定の登録を中止しました。",
+        { intent: "chat" }
+      );
+    }
+
+    // 終了時刻の確認中は「なし」を明示的に処理する
+    const skipEndTime =
+      eventSession.step === "waiting_end_time" &&
+      /^(終了時刻なし|終了時間なし|設定しない)$/.test(
+        message.trim()
+      );
+
+    // 登録途中の情報は保持し、今回指定された項目だけ更新する
+    const event = {
+      ...pending,
+      title:
+        parsed.title || pending.title,
+      dueDate:
+        parsed.dueDate || pending.dueDate,
+      dueTime:
+        parsed.dueTime || pending.dueTime,
+      endDate:
+        parsed.endDate || pending.endDate,
+      endTime:
+        parsed.endTime || pending.endTime,
+      notification:
+        parsed.notification !== null
+          ? parsed.notification
+          : pending.notification,
+    };
+
+    const ask = (step, reply) => {
+      sessionManager.set(userId, {
+        mode: "quick_event_create",
+        step,
+        pendingEvent: event,
+      });
+
+      return createReply(
+        userId,
+        reply,
+        { intent: "chat" }
+      );
+    };
+
+    if (!event.title) {
+      return ask(
+        "waiting_title",
+        "予定名を教えてください。"
+      );
+    }
+
+    if (!event.dueDate) {
+      return ask(
+        "waiting_date",
+        "「" + event.title + "」はいつの予定ですか？"
+      );
+    }
+
+    if (!event.dueTime) {
+      return ask(
+        "waiting_time",
+        "「" + event.title + "」は何時からですか？"
+      );
+    }
+
+    if (skipEndTime) {
+      event.endDate = null;
+      event.endTime = null;
+    }
+
+    const finalEndDate =
+      event.endDate || event.dueDate;
+
+    // 終了日時が開始日時より前にならないよう確認する
+    if (
+      finalEndDate < event.dueDate ||
+      (
+        finalEndDate === event.dueDate &&
+        event.endTime &&
+        event.endTime <= event.dueTime
+      )
+    ) {
+      event.endDate = null;
+      event.endTime = null;
+
+      return ask(
+        "waiting_end_time",
+        "終了日時が開始日時より前になっています。終了日時をもう一度教えてください。終了時刻を設定しない場合は「終了時刻なし」と答えてください。"
+      );
+    }
+
+    if (eventSession.step === "waiting_end_time") {
+      const answer = message.trim();
+
+      if (
+        /^(終了時刻なし|終了時間なし|設定しない)$/.test(answer)
+      ) {
+        event.endDate = null;
+        event.endTime = null;
+      } else if (!parsed.endTime && !parsed.endDate) {
+        return ask(
+          "waiting_end_time",
+          "終了日時を教えてください。設定しない場合は「終了時刻なし」と答えてください。"
+        );
+      }
+    }
+
+    const notification =
+      event.notification || "none";
+
+    const fixedAnalysis = {
+      intent: "task_create",
+      tasks: [{
+        title: event.title,
+        dueDate: event.dueDate,
+        dueTime: event.dueTime,
+        endDate:
+          event.endDate || event.dueDate,
+        endTime: event.endTime,
+        notification,
+        priority: "normal",
+        category: "other",
+        itemType: "event",
+      }],
+    };
+
+    const result = taskManager.handle(
+      fixedAnalysis,
+      userId
+    );
+
+    sessionManager.clear(userId);
+
+    if (!result?.created) {
+      return createReply(
+        userId,
+        "予定を登録できませんでした。もう一度お試しください。",
+        { intent: "chat" },
+        result
+      );
+    }
+
+    const notificationLabels = {
+      none: "通知なし",
+      same_day: "当日通知",
+      day_before: "前日通知",
+      at_time: "開始時刻に通知",
+      "10_minutes_before": "10分前通知",
+      "30_minutes_before": "30分前通知",
+      "1_hour_before": "1時間前通知",
+    };
+
+    const dateText =
+      event.dueDate +
+      " " +
+      event.dueTime +
+      (
+        event.endTime
+          ? "〜" +
+            (event.endDate &&
+             event.endDate !== event.dueDate
+              ? event.endDate + " "
+              : "") +
+            event.endTime
+          : ""
+      );
+
+    return createReply(
+      userId,
+      "「" + event.title + "」を" +
+        dateText + "、" +
+        notificationLabels[notification] +
+        "で登録しました。",
+      fixedAnalysis,
+      result
+    );
+  }
+
   // ===== Quick Task Registration Flow =====
 
   const quickSession = sessionManager.get(userId);

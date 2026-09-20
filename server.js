@@ -1126,6 +1126,51 @@ app.post(
   }
 );
 
+// ===== Quick Event Registration Start =====
+
+app.post(
+  "/api/chat/quick-event/start",
+  (req, res) => {
+    try {
+      const sessionManager =
+        require("./src/session/SessionManager");
+      const { saveConversation } =
+        require("./database");
+
+      const reply =
+        "どんな予定を追加しますか？";
+
+      sessionManager.clear(req.userId);
+      sessionManager.set(req.userId, {
+        mode: "quick_event_create",
+        step: "waiting_title",
+        pendingEvent: null,
+      });
+
+      saveConversation(
+        req.userId,
+        "assistant",
+        reply
+      );
+
+      return res.json({
+        reply,
+        mode: "quick_event_create",
+      });
+    } catch (error) {
+      console.error(
+        "Quick event start error:",
+        error
+      );
+
+      return res.status(500).json({
+        error:
+          "予定追加を開始できませんでした。",
+      });
+    }
+  }
+);
+
 app.post("/api/chat", async (req, res) => {
   try {
     const { message } = req.body;

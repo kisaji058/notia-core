@@ -1271,6 +1271,137 @@ ${userMessage}
     };
   }
 
+  // ===== Quick Event Registration Analyzer =====
+  async analyzeQuickEvent(userMessage, pendingEvent = {}) {
+    const today = new Date().toLocaleDateString(
+      "sv-SE",
+      { timeZone: "Asia/Tokyo" }
+    );
+
+    const systemPrompt = `
+現在日付: ${today} (Asia/Tokyo)
+
+あなたはNotiaの予定登録専用解析器です。
+ユーザーの発言から予定の情報を抽出し、JSONのみ返してください。
+予定の保存や既存予定の更新は行わないでください。
+
+返却形式:
+{
+  "title": null,
+  "dueDate": null,
+  "dueTime": null,
+  "endDate": null,
+  "endTime": null,
+  "notification": null,
+  "cancel": false
+}
+
+各項目の形式:
+- title: 予定名の文字列、またはnull
+- dueDate: 開始日 YYYY-MM-DD、またはnull
+- dueTime: 開始時刻 HH:mm（24時間表記）、またはnull
+- endDate: 終了日 YYYY-MM-DD、またはnull
+- endTime: 終了時刻 HH:mm（24時間表記）、またはnull
+- notification: none / same_day / day_before / at_time /
+  10_minutes_before / 30_minutes_before / 1_hour_before / null
+- cancel: 登録中止を明示した場合のみtrue
+
+ルール:
+- 今日・明日・来週などの日付表現は現在日付から解釈する。
+- 発言に明示されていない項目はnullにする。推測で補わない。
+- 「15時から16時まで」はdueTime=15:00、endTime=16:00。
+- 終了日が明示されていなければendDateはnull。
+- 「通知なし」はnotification=none。
+- 「10分前に通知」はnotification=10_minutes_before。
+- 通知に言及がなければnotification=null。
+- 「やっぱりやめる」「登録を中止」はcancel=true。
+- 既存の登録途中の情報は文脈として参照するが、
+  今回の発言で明示された情報だけを返す。
+- 必ずJSONのみ返す。Markdownや説明文を付けない。
+`;
+
+    const userPrompt = `
+現在の登録途中の情報:
+${JSON.stringify(pendingEvent, null, 2)}
+
+今回のユーザーの回答:
+${userMessage}
+`;
+
+    const emptyResult = {
+      title: null,
+      dueDate: null,
+      dueTime: null,
+      endDate: null,
+      endTime: null,
+      notification: null,
+      cancel: false,
+      parseError: true,
+    };
+
+    const response = await chatWithNotia(
+      userPrompt,
+      [],
+      systemPrompt
+    );
+
+    let parsed;
+    try {
+      parsed = JSON.parse(response);
+      if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        Array.isArray(parsed)
+      ) {
+        return emptyResult;
+      }
+    } catch (error) {
+      console.error(
+        "Quick event analysis parse error:",
+        error
+      );
+      return emptyResult;
+    }
+
+    const validDate = (value) => {
+      if (
+        typeof value !== "string" ||
+        !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)
+      ) {
+        return null;
+      }
+      const date = new Date(value + "T00:00:00Z");
+      return !Number.isNaN(date.getTime()) &&
+        date.toISOString().slice(0, 10) === value
+        ? value
+        : null;
+    };
+
+    const validTime = (value) =>
+      typeof value === "string" &&
+      /^(?:[01]\\d|2[0-3]):[0-5]\\d$/.test(value)
+        ? value
+        : null;
+
+    return {
+      title:
+        typeof parsed.title === "string" &&
+        parsed.title.trim()
+          ? parsed.title.trim()
+          : null,
+      dueDate: validDate(parsed.dueDate),
+      dueTime: validTime(parsed.dueTime),
+      endDate: validDate(parsed.endDate),
+      endTime: validTime(parsed.endTime),
+      notification:
+        VALID_NOTIFICATIONS.includes(parsed.notification)
+          ? parsed.notification
+          : null,
+      cancel: parsed.cancel === true,
+      parseError: false,
+    };
+  }
+
   async analyzeConfirmation(userMessage, context = {}) {
   const today = new Date().toLocaleDateString("sv-SE", {
     timeZone: "Asia/Tokyo",

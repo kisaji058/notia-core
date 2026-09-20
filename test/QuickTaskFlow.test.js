@@ -57,6 +57,13 @@ const databaseMock = {
 };
 
 const analyzerMock = {
+  async analyzeQuickEvent() {
+    assert.ok(
+      analysisQueue.length > 0,
+      "予定の解析結果が不足しています"
+    );
+    return analysisQueue.shift();
+  },
   async analyzeQuickTask() {
     assert.ok(
       analysisQueue.length > 0,
@@ -345,5 +352,138 @@ test("時刻が必要な通知では時刻を確認してから登録する", as
   assert.equal(
     createdTasks[0].analysis.tasks[0].notification,
     "1_hour_before"
+  );
+});
+
+function startEvent(userId) {
+  sessionManager.set(userId, {
+    mode: "quick_event_create",
+    step: "waiting_title",
+    pendingEvent: null,
+  });
+}
+
+test("予定名・日付・開始時刻を一括回答して登録する", async () => {
+  reset();
+  startEvent("event-user-1");
+
+  queue({
+    title: "会議",
+    dueDate: "2026-09-22",
+    dueTime: "15:00",
+    endTime: "16:00",
+    notification: "10_minutes_before",
+  });
+
+  const result = await handleChat(
+    "明日の15時から16時まで会議。10分前に通知",
+    "event-user-1"
+  );
+
+  assert.match(result.reply, /登録しました/);
+  assert.equal(createdTasks.length, 1);
+
+  const event = createdTasks[0].analysis.tasks[0];
+  assert.equal(event.itemType, "event");
+  assert.equal(event.title, "会議");
+  assert.equal(event.dueDate, "2026-09-22");
+  assert.equal(event.dueTime, "15:00");
+  assert.equal(event.endTime, "16:00");
+  assert.equal(event.notification, "10_minutes_before");
+});
+
+test("開始時刻がない場合は質問してから予定を登録する", async () => {
+  reset();
+  startEvent("event-user-2");
+
+  queue({
+    title: "会議",
+    dueDate: "2026-09-22",
+  });
+
+  const first = await handleChat(
+    "明日、会議がある",
+    "event-user-2"
+  );
+
+  assert.match(first.reply, /何時から/);
+  assert.equal(createdTasks.length, 0);
+
+  queue({
+    dueTime: "15:00",
+  });
+
+  const second = await handleChat(
+    "15時から",
+    "event-user-2"
+  );
+
+  assert.match(second.reply, /登録しました/);
+  assert.equal(createdTasks.length, 1);
+
+  const event = createdTasks[0].analysis.tasks[0];
+  assert.equal(event.title, "会議");
+  assert.equal(event.dueTime, "15:00");
+  assert.equal(event.notification, "none");
+});
+
+test("予定追加をキャンセルすると保存しない", async () => {
+  reset();
+  startEvent("event-user-3");
+
+  queue({ cancel: true });
+
+  const result = await handleChat(
+    "やっぱりやめる",
+    "event-user-3"
+  );
+
+  assert.match(result.reply, /中止しました/);
+  assert.equal(createdTasks.length, 0);
+  assert.equal(
+    sessionManager.get("event-user-3").mode,
+    "normal"
+  );
+});
+
+test("終了時刻が開始時刻より早い場合、確認後に終了時刻なしで登録できる", async () => {
+  reset();
+  startEvent("event-user-end-time");
+
+  queue({
+    title: "打ち合わせ",
+    dueDate: "2026-09-22",
+    dueTime: "15:00",
+    endTime: "14:00",
+  });
+
+  const first = await handleChat(
+    "明日の15時から14時まで打ち合わせ",
+    "event-user-end-time"
+  );
+
+  assert.match(first.reply, /終了日時/);
+  assert.equal(createdTasks.length, 0);
+  assert.equal(
+    sessionManager.get("event-user-end-time").step,
+    "waiting_end_time"
+  );
+
+  queue({});
+  const second = await handleChat(
+    "終了時刻なし",
+    "event-user-end-time"
+  );
+
+  assert.match(second.reply, /登録しました/);
+  assert.equal(createdTasks.length, 1);
+
+  const event = createdTasks[0].analysis.tasks[0];
+  assert.equal(event.title, "打ち合わせ");
+  assert.equal(event.dueTime, "15:00");
+  assert.equal(event.endTime, null);
+  assert.equal(
+    sessionManager.get("event-user-end-time").mode,
+    "normal"
   );
 });

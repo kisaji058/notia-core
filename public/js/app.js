@@ -4279,6 +4279,66 @@ startCharacterBackgroundTimer();
     }
   }
 
+  async function startQuickEvent() {
+    if (isSending) {
+      return;
+    }
+
+    isSending = true;
+    sendButton.disabled = true;
+
+    try {
+      const res = await fetch(
+        "/api/chat/quick-event/start",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(
+          "予定追加の開始に失敗しました。"
+        );
+      }
+
+      const data = await res.json();
+
+      if (!data.reply) {
+        throw new Error(
+          "開始メッセージが取得できませんでした。"
+        );
+      }
+
+      messageInput.value = "";
+
+      addMessage(
+        "assistant",
+        data.reply,
+        new Date()
+      );
+
+      scrollChatToBottom();
+    } catch (error) {
+      console.error(
+        "Quick event start error:",
+        error
+      );
+
+      addMessage(
+        "assistant",
+        "予定追加を開始できませんでした。もう一度お試しください。",
+        new Date()
+      );
+    } finally {
+      isSending = false;
+      sendButton.disabled = false;
+    }
+  }
+
   panel.querySelectorAll(
     "[data-quick-action]"
   ).forEach((button) => {
@@ -4294,7 +4354,7 @@ startCharacterBackgroundTimer();
           break;
 
         case "event":
-          prepareMessage("予定を追加したい");
+          startQuickEvent();
           break;
 
         case "routine":
