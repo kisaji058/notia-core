@@ -4168,3 +4168,99 @@ function startCharacterBackgroundTimer() {
 }
 
 startCharacterBackgroundTimer();
+
+
+/* ===== Notia Quick Actions v01 ===== */
+
+(function initQuickActions() {
+  const panel =
+    document.getElementById("quickActions");
+
+  const toggle =
+    document.getElementById("quickActionsToggle");
+
+  const content =
+    document.getElementById("quickActionsContent");
+
+  if (!panel || !toggle || !content) {
+    return;
+  }
+
+  function setExpanded(expanded) {
+    content.hidden = !expanded;
+
+    panel.classList.toggle(
+      "is-collapsed",
+      !expanded
+    );
+
+    toggle.setAttribute(
+      "aria-expanded",
+      String(expanded)
+    );
+  }
+
+  setExpanded(true);
+
+  toggle.addEventListener("click", () => {
+    const expanded =
+      toggle.getAttribute("aria-expanded") === "true";
+
+    setExpanded(!expanded);
+  });
+
+  function prepareMessage(text) {
+    if (isSending) {
+      return;
+    }
+
+    messageInput.value = text;
+    messageInput.focus();
+  }
+
+  panel.querySelectorAll(
+    "[data-quick-action]"
+  ).forEach((button) => {
+    button.addEventListener("click", () => {
+      const action =
+        button.dataset.quickAction;
+
+      switch (action) {
+        case "task":
+          prepareMessage("タスクを登録したい");
+          break;
+
+        case "event":
+          prepareMessage("予定を追加したい");
+          break;
+
+        case "routine":
+          window.location.href = "/routine-edit.html";
+          break;
+
+        case "document":
+          if (!isSending) {
+            attachmentInput?.click();
+          }
+          break;
+
+        case "schedule":
+          prepareMessage("今日の予定を教えて");
+          break;
+
+        case "help":
+          window.alert(
+            "Notiaの使い方\n\n" +
+            "・タスクを登録：やることをチャットで登録\n" +
+            "・予定を追加：日時を指定して予定を登録\n" +
+            "・ルーティーン：繰り返す予定を管理\n" +
+            "・書類を読み込む：画像やPDFから予定を抽出\n" +
+            "・予定を確認：今日の予定やタスクを確認\n\n" +
+            "無料プランでは書類読み取りは月3ページまで。\n" +
+            "詳しいプラン内容はアカウント画面で確認できます。"
+          );
+          break;
+      }
+    });
+  });
+})();

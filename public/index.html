@@ -20,7 +20,7 @@
   />
   <link
     rel="stylesheet"
-    href="/css/chat.css?v=today-mobile-20260914-3"
+    href="/css/chat.css?v=quick-actions-20260920-1"
   />
 </head>
 
@@ -324,6 +324,62 @@
       </div>
     </section>
 
+    <!-- Notia Quick Actions -->
+    <section
+      id="quickActions"
+      class="quick-actions"
+      aria-label="クイックアクション"
+    >
+      <button
+        type="button"
+        id="quickActionsToggle"
+        class="quick-actions-toggle"
+        aria-expanded="true"
+        aria-controls="quickActionsContent"
+      >
+        <span>クイックアクション</span>
+        <span
+          class="quick-actions-chevron"
+          aria-hidden="true"
+        >⌄</span>
+      </button>
+
+      <div
+        id="quickActionsContent"
+        class="quick-actions-content"
+      >
+        <button type="button" data-quick-action="task">
+          <span aria-hidden="true">✓</span>
+          <span>タスクを登録</span>
+        </button>
+
+        <button type="button" data-quick-action="event">
+          <span aria-hidden="true">▦</span>
+          <span>予定を追加</span>
+        </button>
+
+        <button type="button" data-quick-action="routine">
+          <span aria-hidden="true">↻</span>
+          <span>ルーティーンを追加</span>
+        </button>
+
+        <button type="button" data-quick-action="document">
+          <span aria-hidden="true">▤</span>
+          <span>書類を読み込む</span>
+        </button>
+
+        <button type="button" data-quick-action="schedule">
+          <span aria-hidden="true">◷</span>
+          <span>予定を確認</span>
+        </button>
+
+        <button type="button" data-quick-action="help">
+          <span aria-hidden="true">?</span>
+          <span>使い方</span>
+        </button>
+      </div>
+    </section>
+
     <form
       id="chatForm"
       class="input-area"
@@ -496,6 +552,6 @@
 <script src="/js/authGuard.js?v=app-ready-1"></script>
   <script src="/js/components/paywall.js"></script>
 <script src="/js/components/accountMenu.js?v=category-20260914-1"></script>
-  <script src="/js/app.js?v=character-v01-20260911-24"></script>
+  <script src="/js/app.js?v=quick-actions-20260920-1"></script>
 </body>
 </html>
