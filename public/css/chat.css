@@ -3222,3 +3222,53 @@ body.keyboard-open .quick-actions {
     font-size: 10px;
   }
 }
+
+
+/* ===== Notia Quick Actions LINE v02 ===== */
+
+/* メニューは展開時のみ表示 */
+.quick-actions:has(.quick-actions-content[hidden]) {
+  display: none;
+}
+
+/* LINE風の＋ボタン */
+.input-area .quick-actions-plus {
+  display: grid;
+  place-items: center;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #d6e2df;
+  border-radius: 50%;
+  background: #e8f4f1;
+  color: #2fa99d;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.input-area .quick-actions-plus:active {
+  background: #d6ece6;
+  transform: scale(0.96);
+}
+
+.input-area .quick-actions-plus[aria-expanded="true"] {
+  background: #2fa99d;
+  color: #ffffff;
+}
+
+/* 展開メニューの配置 */
+.quick-actions {
+  bottom: calc(
+    var(--bottom-nav-height) +
+    var(--safe-area-bottom) +
+    var(--ad-banner-height) +
+    66px
+  );
+}
+
+/* キーボード表示中はメニューを閉じる */
+body.keyboard-open .quick-actions {
+  display: none;
+}

@@ -20,7 +20,7 @@
   />
   <link
     rel="stylesheet"
-    href="/css/chat.css?v=quick-actions-20260920-1"
+    href="/css/chat.css?v=quick-actions-line-20260920-1"
   />
 </head>
 
@@ -330,23 +330,10 @@
       class="quick-actions"
       aria-label="クイックアクション"
     >
-      <button
-        type="button"
-        id="quickActionsToggle"
-        class="quick-actions-toggle"
-        aria-expanded="true"
-        aria-controls="quickActionsContent"
-      >
-        <span>クイックアクション</span>
-        <span
-          class="quick-actions-chevron"
-          aria-hidden="true"
-        >⌄</span>
-      </button>
-
       <div
         id="quickActionsContent"
         class="quick-actions-content"
+        hidden
       >
         <button type="button" data-quick-action="task">
           <span aria-hidden="true">✓</span>
@@ -384,6 +371,16 @@
       id="chatForm"
       class="input-area"
     >
+      <button
+        type="button"
+        id="quickActionsToggle"
+        class="quick-actions-plus"
+        aria-label="クイックアクションを開く"
+        aria-expanded="false"
+        aria-controls="quickActionsContent"
+      >
+        <span aria-hidden="true">＋</span>
+      </button>
     <button
   type="button"
   class="attachment-button"
@@ -552,6 +549,6 @@
 <script src="/js/authGuard.js?v=app-ready-1"></script>
   <script src="/js/components/paywall.js"></script>
 <script src="/js/components/accountMenu.js?v=category-20260914-1"></script>
-  <script src="/js/app.js?v=quick-actions-20260920-1"></script>
+  <script src="/js/app.js?v=quick-actions-line-20260920-1"></script>
 </body>
 </html>

@@ -4200,7 +4200,7 @@ startCharacterBackgroundTimer();
     );
   }
 
-  setExpanded(true);
+  setExpanded(false);
 
   toggle.addEventListener("click", () => {
     const expanded =
@@ -4224,6 +4224,8 @@ startCharacterBackgroundTimer();
     button.addEventListener("click", () => {
       const action =
         button.dataset.quickAction;
+
+      setExpanded(false);
 
       switch (action) {
         case "task":
