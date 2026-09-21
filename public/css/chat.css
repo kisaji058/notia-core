@@ -3306,3 +3306,16 @@ body.keyboard-open .quick-actions {
     animation: none;
   }
 }
+
+/* ===== Notia thinking motion ===== */
+
+.character-tia.notia-thinking {
+  animation: none;
+  transform: translateY(-2px) rotate(-3deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .character-tia.notia-thinking {
+    animation: none;
+  }
+}

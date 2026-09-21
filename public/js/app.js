@@ -323,6 +323,8 @@ startCharacterIdleTimer();
 let notiaSuccessReactionTimer = null;
 
 function playNotiaSuccessReaction() {
+  setNotiaThinking(false);
+
   if (!characterTia || currentChatView !== "character") {
     return;
   }
@@ -352,7 +354,39 @@ function playNotiaSuccessReaction() {
   }, 1100);
 }
 
+let notiaExpressionBeforeThinking = null;
+
+function setNotiaThinking(isThinking) {
+  if (!characterTia) return;
+
+  const wasThinking =
+    characterTia.classList.contains("notia-thinking");
+
+  if (isThinking) {
+    if (wasThinking) return;
+
+    notiaExpressionBeforeThinking = currentNotiaExpression;
+    characterTia.classList.add("notia-thinking");
+    setNotiaExpression("sidelook");
+    return;
+  }
+
+  if (!wasThinking) return;
+
+  characterTia.classList.remove("notia-thinking");
+
+  if (currentNotiaExpression === "sidelook") {
+    setNotiaExpression(
+      notiaExpressionBeforeThinking || "default"
+    );
+  }
+
+  notiaExpressionBeforeThinking = null;
+}
+
 function playNotiaReplyReaction() {
+  setNotiaThinking(false);
+
   if (!characterTia) {
     return;
   }
@@ -3433,6 +3467,7 @@ chatForm.addEventListener(
 
     isSending = true;
     sendButton.disabled = true;
+    setNotiaThinking(true);
 
     let sentMessage = null;
 
@@ -3663,6 +3698,7 @@ return;
         new Date()
       );
     } finally {
+      setNotiaThinking(false);
       isSending = false;
 
       sendButton.disabled =
