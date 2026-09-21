@@ -3272,3 +3272,37 @@ body.keyboard-open .quick-actions {
 body.keyboard-open .quick-actions {
   display: none;
 }
+
+/* ===== Notia registration success reaction ===== */
+
+.character-tia.notia-success-react {
+  animation: notia-success-bounce 1050ms ease-out;
+}
+
+@keyframes notia-success-bounce {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+
+  18% {
+    transform: translateY(-11px) scale(1.025);
+  }
+
+  38% {
+    transform: translateY(0) scale(0.99);
+  }
+
+  57% {
+    transform: translateY(-6px) scale(1.012);
+  }
+
+  78% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .character-tia.notia-success-react {
+    animation: none;
+  }
+}

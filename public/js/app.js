@@ -320,6 +320,38 @@ function startCharacterIdleTimer() {
 
 startCharacterIdleTimer();
 
+let notiaSuccessReactionTimer = null;
+
+function playNotiaSuccessReaction() {
+  if (!characterTia || currentChatView !== "character") {
+    return;
+  }
+
+  window.clearTimeout(notiaSuccessReactionTimer);
+
+  // 通常の返答モーションから、登録成功時の動きに切り替える
+  characterTia.classList.remove(
+    "notia-reply-react",
+    "notia-success-react"
+  );
+
+  const previousExpression = currentNotiaExpression;
+
+  setNotiaExpression("smile");
+
+  void characterTia.offsetWidth;
+  characterTia.classList.add("notia-success-react");
+
+  notiaSuccessReactionTimer = window.setTimeout(() => {
+    characterTia.classList.remove("notia-success-react");
+
+    // 途中で別の表情に変わっていた場合は上書きしない
+    if (currentNotiaExpression === "smile") {
+      setNotiaExpression(previousExpression);
+    }
+  }, 1100);
+}
+
 function playNotiaReplyReaction() {
   if (!characterTia) {
     return;
@@ -3600,6 +3632,10 @@ return;
         null,
         data.expression
       );
+
+      if (data.taskResult?.created) {
+        playNotiaSuccessReaction();
+      }
 
       loadSecretaryProgress();
 
