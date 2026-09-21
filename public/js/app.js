@@ -4340,6 +4340,60 @@ startCharacterBackgroundTimer();
     }
   }
 
+  async function startQuickHelp() {
+    if (isSending) {
+      return;
+    }
+
+    isSending = true;
+    sendButton.disabled = true;
+
+    try {
+      const res = await fetch(
+        "/api/chat/quick-help/start",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(
+          "使い方を表示できませんでした。"
+        );
+      }
+
+      const data = await res.json();
+
+      if (!data.reply) {
+        throw new Error(
+          "使い方の文章を取得できませんでした。"
+        );
+      }
+
+      addMessage(
+        "assistant",
+        data.reply,
+        new Date()
+      );
+      scrollChatToBottom();
+    } catch (error) {
+      console.error(
+        "Quick help error:",
+        error
+      );
+      window.alert(
+        "使い方を表示できませんでした。もう一度お試しください。"
+      );
+    } finally {
+      isSending = false;
+      sendButton.disabled = false;
+    }
+  }
+
   async function startQuickSchedule() {
     if (isSending) {
       return;
@@ -4488,16 +4542,7 @@ startCharacterBackgroundTimer();
           break;
 
         case "help":
-          window.alert(
-            "Notiaの使い方\n\n" +
-            "・タスクを登録：やることをチャットで登録\n" +
-            "・予定を追加：日時を指定して予定を登録\n" +
-            "・ルーティーン：繰り返す予定を管理\n" +
-            "・書類を読み込む：画像やPDFから予定を抽出\n" +
-            "・予定を確認：今日の予定やタスクを確認\n\n" +
-            "無料プランでは書類読み取りは月3ページまで。\n" +
-            "詳しいプラン内容はアカウント画面で確認できます。"
-          );
+          startQuickHelp();
           break;
       }
     });

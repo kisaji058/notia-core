@@ -1270,6 +1270,39 @@ app.post(
   }
 );
 
+// ===== Quick Help =====
+
+app.post("/api/chat/quick-help/start", (req, res) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({
+        error: "ログインが必要です。",
+      });
+    }
+
+    const { saveConversation } = require("./database");
+
+    const reply =
+      "Notiaの使い方\n\n" +
+      "・タスクを登録：やることをチャットで登録\n" +
+      "・予定を追加：日時を指定して予定を登録\n" +
+      "・ルーティーン：繰り返す予定を管理\n" +
+      "・書類を読み込む：画像やPDFから予定を抽出\n" +
+      "・予定を確認：指定した日付や期間の予定・タスクを確認\n\n" +
+      "無料プランでは書類読み取りは月3ページまでです。\n" +
+      "詳しいプラン内容はアカウント画面で確認できます。";
+
+    saveConversation(req.userId, "assistant", reply);
+
+    return res.json({ reply });
+  } catch (error) {
+    console.error("Quick help error:", error);
+    return res.status(500).json({
+      error: "使い方を表示できませんでした。",
+    });
+  }
+});
+
 app.post("/api/chat", async (req, res) => {
   try {
     const { message } = req.body;
