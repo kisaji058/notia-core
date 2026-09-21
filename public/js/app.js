@@ -399,6 +399,57 @@ Object.values(
 
 let isSending = false;
 
+let notiaBlinkTimer = null;
+let notiaBlinkRestoreTimer = null;
+
+const NOTIA_BLINK_IMAGE =
+  "/images/character/tia-blink.png";
+
+// まばたき画像を先読みする
+const notiaBlinkPreload = new Image();
+notiaBlinkPreload.src = NOTIA_BLINK_IMAGE;
+
+function scheduleNotiaBlink() {
+  window.clearTimeout(notiaBlinkTimer);
+
+  // 5〜9秒ごとに、まばたきできる状態か確認する
+  const delay = 5000 + Math.random() * 4000;
+
+  notiaBlinkTimer = window.setTimeout(() => {
+    const canBlink =
+      characterTia &&
+      currentChatView === "character" &&
+      !characterChat?.hidden &&
+      !document.hidden &&
+      !isSending &&
+      !characterTia.classList.contains("notia-reply-react") &&
+      characterTia.getAttribute("src") ===
+        NOTIA_EXPRESSION_IMAGES.default;
+
+    if (canBlink) {
+      characterTia.src = NOTIA_BLINK_IMAGE;
+
+      window.clearTimeout(notiaBlinkRestoreTimer);
+
+      notiaBlinkRestoreTimer = window.setTimeout(() => {
+        // 途中で別の表情になっていたら上書きしない
+        if (
+          characterTia.getAttribute("src") ===
+          NOTIA_BLINK_IMAGE
+        ) {
+          setNotiaExpression(currentNotiaExpression);
+        }
+      }, 140);
+    }
+
+    scheduleNotiaBlink();
+  }, delay);
+}
+
+scheduleNotiaBlink();
+
+
+
 function clearAttachmentPreview() {
   selectedAttachment = null;
 
