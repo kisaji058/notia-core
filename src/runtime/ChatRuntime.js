@@ -20,6 +20,7 @@ const {
   saveConversation,
   getRecentConversations,
   getActiveTasks,
+  createRoutine,
 } = require("../../database");
 
 const EXPLICIT_COMPLETION_PATTERNS = [
@@ -106,6 +107,139 @@ async function handleChat(
     "user",
     message
   );
+
+  // ===== Quick Routine Registration Flow =====
+  const routineSession = sessionManager.get(userId);
+
+  if (routineSession.mode === "quick_routine_create") {
+    const pending = routineSession.pendingRoutine || {
+      title: null,
+      daysOfWeek: null,
+      routineTime: null,
+    };
+
+    const parsed =
+      await conversationAnalyzer.analyzeQuickRoutine(
+        message,
+        pending
+      );
+
+    if (parsed.parseError) {
+      return createReply(
+        userId,
+        "内容をうまく読み取れませんでした。もう一度教えてください。",
+        { intent: "chat" }
+      );
+    }
+
+    if (parsed.cancel) {
+      sessionManager.clear(userId);
+      return createReply(
+        userId,
+        "承知しました。ルーティーンの登録を中止しました。",
+        { intent: "chat" }
+      );
+    }
+
+    const routine = {
+      title: parsed.title || pending.title,
+      daysOfWeek:
+        parsed.daysOfWeek || pending.daysOfWeek,
+      routineTime:
+        parsed.routineTime || pending.routineTime,
+    };
+
+    const ask = (step, reply) => {
+      sessionManager.set(userId, {
+        mode: "quick_routine_create",
+        step,
+        pendingRoutine: routine,
+      });
+
+      return createReply(
+        userId,
+        reply,
+        { intent: "chat" }
+      );
+    };
+
+    if (!routine.title) {
+      return ask(
+        "waiting_title",
+        "ルーティーン名を教えてください。"
+      );
+    }
+
+    if (!routine.daysOfWeek) {
+      return ask(
+        "waiting_days",
+        "「" + routine.title +
+          "」は何曜日に行いますか？"
+      );
+    }
+
+    if (!routine.routineTime) {
+      return ask(
+        "waiting_time",
+        "「" + routine.title +
+          "」は何時に行いますか？"
+      );
+    }
+
+    let savedRoutine;
+
+    try {
+      savedRoutine = createRoutine(userId, {
+        title: routine.title,
+        dayOfWeek: routine.daysOfWeek[0],
+        daysOfWeek: routine.daysOfWeek,
+        routineTime: routine.routineTime,
+        category: "other",
+        memo: "",
+        googleCalendarEnabled: false,
+      });
+    } catch (error) {
+      console.error(
+        "Quick routine save error:",
+        error
+      );
+
+      sessionManager.clear(userId);
+
+      return createReply(
+        userId,
+        "ルーティーンを登録できませんでした。もう一度お試しください。",
+        { intent: "chat" }
+      );
+    }
+
+    sessionManager.clear(userId);
+
+    if (!savedRoutine?.id) {
+      return createReply(
+        userId,
+        "ルーティーンを登録できませんでした。もう一度お試しください。",
+        { intent: "chat" }
+      );
+    }
+
+    const dayLabels =
+      ["日", "月", "火", "水", "木", "金", "土"];
+
+    const daysText = routine.daysOfWeek
+      .map((day) => dayLabels[day])
+      .join("・");
+
+    return createReply(
+      userId,
+      "「" + routine.title +
+        "」を毎週" + daysText +
+        "曜日の" + routine.routineTime +
+        "に登録しました。",
+      { intent: "routine_create" },
+      { created: true, routine: savedRoutine }
+    );
+  }
 
   // ===== Quick Event Registration Flow =====
   const eventSession = sessionManager.get(userId);

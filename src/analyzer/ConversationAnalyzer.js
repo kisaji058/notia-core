@@ -1402,6 +1402,121 @@ ${userMessage}
     };
   }
 
+  // ===== Quick Routine Registration Analyzer =====
+  async analyzeQuickRoutine(userMessage, pendingRoutine = {}) {
+    const systemPrompt = `
+あなたはNotiaのルーティーン登録専用解析器です。
+ユーザーの発言から情報を抽出してJSONのみ返してください。
+登録・更新などの保存操作は行わないでください。
+
+返却形式:
+{
+  "title": null,
+  "daysOfWeek": null,
+  "routineTime": null,
+  "googleCalendarEnabled": null,
+  "cancel": false
+}
+
+各項目の形式:
+- title: ルーティーン名の文字列、またはnull
+- daysOfWeek: 曜日の配列、またはnull
+  日=0、月=1、火=2、水=3、木=4、金=5、土=6
+- routineTime: HH:mm（24時間表記）、またはnull
+- googleCalendarEnabled: 同期ON=true、OFF=false、言及なし=null
+- cancel: 登録中止を明示した場合のみtrue
+
+ルール:
+- 「毎週月・水・金」はdaysOfWeek=[1,3,5]。
+- 「毎日」はdaysOfWeek=[0,1,2,3,4,5,6]。
+- 「平日」はdaysOfWeek=[1,2,3,4,5]。
+- 「週末」はdaysOfWeek=[0,6]。
+- 「朝7時」はroutineTime="07:00"。
+- 日付（今日・明日など）だけから曜日を推測しない。
+- 今回の発言に明示された情報だけ返す。
+- 既存の登録途中の情報は文脈として参照する。
+- 同期について言及がなければgoogleCalendarEnabled=null。
+- 「やっぱりやめる」「登録を中止」はcancel=true。
+- 不明な値は推測せずnullにする。
+- 必ずJSONのみ返す。
+`;
+
+    const userPrompt = `
+現在の登録途中の情報:
+${JSON.stringify(pendingRoutine, null, 2)}
+
+今回のユーザーの回答:
+${userMessage}
+`;
+
+    const emptyResult = {
+      title: null,
+      daysOfWeek: null,
+      routineTime: null,
+      googleCalendarEnabled: null,
+      cancel: false,
+      parseError: true,
+    };
+
+    const response = await chatWithNotia(
+      userPrompt,
+      [],
+      systemPrompt
+    );
+
+    let parsed;
+    try {
+      parsed = JSON.parse(response);
+      if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        Array.isArray(parsed)
+      ) {
+        return emptyResult;
+      }
+    } catch (error) {
+      console.error(
+        "Quick routine analysis parse error:",
+        error
+      );
+      return emptyResult;
+    }
+
+    const validDays =
+      Array.isArray(parsed.daysOfWeek) &&
+      parsed.daysOfWeek.length > 0 &&
+      parsed.daysOfWeek.every(
+        (day) =>
+          Number.isInteger(day) &&
+          day >= 0 &&
+          day <= 6
+      )
+        ? [...new Set(parsed.daysOfWeek)].sort((a, b) => a - b)
+        : null;
+
+    const validTime =
+      typeof parsed.routineTime === "string" &&
+      /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(parsed.routineTime)
+        ? parsed.routineTime
+        : null;
+
+    return {
+      title:
+        typeof parsed.title === "string" &&
+        parsed.title.trim()
+          ? parsed.title.trim()
+          : null,
+      daysOfWeek: validDays,
+      routineTime: validTime,
+      googleCalendarEnabled:
+        typeof parsed.googleCalendarEnabled === "boolean"
+          ? parsed.googleCalendarEnabled
+          : null,
+      cancel: parsed.cancel === true,
+      parseError: false,
+    };
+  }
+
   async analyzeConfirmation(userMessage, context = {}) {
   const today = new Date().toLocaleDateString("sv-SE", {
     timeZone: "Asia/Tokyo",

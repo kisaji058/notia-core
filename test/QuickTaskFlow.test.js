@@ -13,6 +13,7 @@ const originalLoad = Module._load;
 const sessions = new Map();
 const conversations = [];
 const createdTasks = [];
+const createdRoutines = [];
 
 let analysisQueue = [];
 
@@ -54,9 +55,25 @@ const databaseMock = {
   getActiveTasks() {
     return [];
   },
+  createRoutine(userId, details) {
+    const routine = {
+      id: createdRoutines.length + 1,
+      userId,
+      ...details,
+    };
+    createdRoutines.push(routine);
+    return routine;
+  },
 };
 
 const analyzerMock = {
+  async analyzeQuickRoutine() {
+    assert.ok(
+      analysisQueue.length > 0,
+      "ルーティーンの解析結果が不足しています"
+    );
+    return analysisQueue.shift();
+  },
   async analyzeQuickEvent() {
     assert.ok(
       analysisQueue.length > 0,
@@ -143,6 +160,7 @@ function reset() {
   sessions.clear();
   conversations.length = 0;
   createdTasks.length = 0;
+  createdRoutines.length = 0;
   analysisQueue = [];
 }
 
@@ -484,6 +502,116 @@ test("終了時刻が開始時刻より早い場合、確認後に終了時刻�
   assert.equal(event.endTime, null);
   assert.equal(
     sessionManager.get("event-user-end-time").mode,
+    "normal"
+  );
+});
+
+function startRoutine(userId) {
+  sessionManager.set(userId, {
+    mode: "quick_routine_create",
+    step: "waiting_title",
+    pendingRoutine: null,
+  });
+}
+
+test("曜日・時刻を一括指定してルーティーンを登録できる", async () => {
+  reset();
+  startRoutine("routine-user-1");
+
+  queue({
+    title: "筋トレ",
+    daysOfWeek: [1, 3, 5],
+    routineTime: "07:00",
+  });
+
+  const result = await handleChat(
+    "毎週月水金の7時に筋トレ",
+    "routine-user-1"
+  );
+
+  assert.match(result.reply, /登録しました/);
+  assert.equal(createdRoutines.length, 1);
+  assert.equal(createdRoutines[0].title, "筋トレ");
+  assert.deepEqual(createdRoutines[0].daysOfWeek, [1, 3, 5]);
+  assert.equal(createdRoutines[0].routineTime, "07:00");
+  assert.equal(createdRoutines[0].googleCalendarEnabled, false);
+});
+
+test("曜日が未指定なら質問する", async () => {
+  reset();
+  startRoutine("routine-user-2");
+
+  queue({
+    title: "掃除",
+    routineTime: "19:00",
+  });
+
+  const first = await handleChat(
+    "19時に掃除する",
+    "routine-user-2"
+  );
+
+  assert.match(first.reply, /何曜日/);
+  assert.equal(createdRoutines.length, 0);
+
+  queue({ daysOfWeek: [1, 4] });
+
+  const second = await handleChat(
+    "月曜と木曜",
+    "routine-user-2"
+  );
+
+  assert.match(second.reply, /登録しました/);
+  assert.equal(createdRoutines.length, 1);
+  assert.deepEqual(createdRoutines[0].daysOfWeek, [1, 4]);
+  assert.equal(createdRoutines[0].routineTime, "19:00");
+});
+
+test("時刻が未指定なら質問する", async () => {
+  reset();
+  startRoutine("routine-user-3");
+
+  queue({
+    title: "読書",
+    daysOfWeek: [0, 6],
+  });
+
+  const first = await handleChat(
+    "週末に読書",
+    "routine-user-3"
+  );
+
+  assert.match(first.reply, /何時/);
+  assert.equal(createdRoutines.length, 0);
+
+  queue({ routineTime: "20:30" });
+
+  const second = await handleChat(
+    "20時30分",
+    "routine-user-3"
+  );
+
+  assert.match(second.reply, /登録しました/);
+  assert.equal(createdRoutines.length, 1);
+  assert.equal(createdRoutines[0].routineTime, "20:30");
+  assert.deepEqual(createdRoutines[0].daysOfWeek, [0, 6]);
+});
+
+test("ルーティーン登録をキャンセルできる", async () => {
+  reset();
+  startRoutine("routine-user-4");
+
+  queue({ cancel: true });
+
+  const result = await handleChat(
+    "やっぱりやめる",
+    "routine-user-4"
+  );
+
+  assert.match(result.reply, /中止しました/);
+  assert.equal(createdRoutines.length, 0);
+  assert.equal(
+    sessionManager.get("routine-user-4").mode,
     "normal"
   );
 });

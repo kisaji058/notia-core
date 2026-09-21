@@ -1171,6 +1171,57 @@ app.post(
   }
 );
 
+// ===== Quick Routine Registration Start =====
+
+app.post(
+  "/api/chat/quick-routine/start",
+  (req, res) => {
+    try {
+      if (!req.userId) {
+        return res.status(401).json({
+          error: "ログインが必要です。",
+        });
+      }
+
+      const sessionManager =
+        require("./src/session/SessionManager");
+      const { saveConversation } =
+        require("./database");
+
+      const reply =
+        "どんなルーティーンを追加しますか？";
+
+      sessionManager.clear(req.userId);
+      sessionManager.set(req.userId, {
+        mode: "quick_routine_create",
+        step: "waiting_title",
+        pendingRoutine: null,
+      });
+
+      saveConversation(
+        req.userId,
+        "assistant",
+        reply
+      );
+
+      return res.json({
+        reply,
+        mode: "quick_routine_create",
+      });
+    } catch (error) {
+      console.error(
+        "Quick routine start error:",
+        error
+      );
+
+      return res.status(500).json({
+        error:
+          "ルーティーン登録を開始できませんでした。",
+      });
+    }
+  }
+);
+
 app.post("/api/chat", async (req, res) => {
   try {
     const { message } = req.body;
