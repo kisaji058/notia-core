@@ -108,6 +108,82 @@ async function handleChat(
     message
   );
 
+  // ===== Quick Schedule Query Flow =====
+
+  const scheduleSession = sessionManager.get(userId);
+
+  if (scheduleSession.mode === "quick_schedule_query") {
+    const answer = message.trim();
+
+    if (/^(キャンセル|中止|やめる|やめて)$/.test(answer)) {
+      sessionManager.clear(userId);
+      return createReply(
+        userId,
+        "予定確認を中止しました。",
+        { intent: "chat" }
+      );
+    }
+
+    const ranges = {
+      "今日": "today",
+      "きょう": "today",
+      "明日": "tomorrow",
+      "あした": "tomorrow",
+      "今週": "this_week",
+      "来週": "next_week",
+    };
+
+    const range = ranges[answer];
+
+    if (!range) {
+      return createReply(
+        userId,
+        "確認する日付を教えてください。まずは「今日」「明日」「今週」「来週」から指定できます。",
+        { intent: "chat" }
+      );
+    }
+
+    const analysis = {
+      intent: "schedule_query",
+      scheduleQuery: {
+        range,
+        target: "schedule",
+        title: null,
+      },
+    };
+
+    const activeTasks = getActiveTasks(userId);
+    const recentMessages = getRecentConversations(userId, 10);
+    const context = conversationContextBuilder.build({
+      conversations: recentMessages,
+      activeTasks,
+    });
+
+    const scheduleResolver =
+      require("../resolvers/ScheduleResolver");
+
+    const result = scheduleResolver.resolve(
+      analysis,
+      context,
+      userId
+    );
+
+    if (!result.handled || !result.reply) {
+      return createReply(
+        userId,
+        "予定を確認できませんでした。もう一度日付を教えてください。",
+        { intent: "chat" }
+      );
+    }
+
+    sessionManager.clear(userId);
+    return createReply(
+      userId,
+      result.reply,
+      analysis
+    );
+  }
+
   // ===== Quick Routine Registration Flow =====
   const routineSession = sessionManager.get(userId);
 

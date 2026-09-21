@@ -4340,6 +4340,63 @@ startCharacterBackgroundTimer();
     }
   }
 
+  async function startQuickSchedule() {
+    if (isSending) {
+      return;
+    }
+
+    isSending = true;
+    sendButton.disabled = true;
+
+    try {
+      const res = await fetch(
+        "/api/chat/quick-schedule/start",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(
+          "予定確認を開始できませんでした。"
+        );
+      }
+
+      const data = await res.json();
+
+      if (!data.reply) {
+        throw new Error(
+          "開始メッセージが取得できませんでした。"
+        );
+      }
+
+      messageInput.value = "";
+
+      addMessage(
+        "assistant",
+        data.reply,
+        new Date()
+      );
+
+      scrollChatToBottom();
+    } catch (error) {
+      console.error(
+        "Quick schedule start error:",
+        error
+      );
+      window.alert(
+        "予定確認を開始できませんでした。もう一度お試しください。"
+      );
+    } finally {
+      isSending = false;
+      sendButton.disabled = false;
+    }
+  }
+
   async function startQuickRoutine() {
     if (isSending) {
       return;
@@ -4427,7 +4484,7 @@ startCharacterBackgroundTimer();
           break;
 
         case "schedule":
-          prepareMessage("今日の予定を教えて");
+          startQuickSchedule();
           break;
 
         case "help":

@@ -1222,6 +1222,54 @@ app.post(
   }
 );
 
+// ===== Quick Schedule Query Start =====
+
+app.post(
+  "/api/chat/quick-schedule/start",
+  (req, res) => {
+    try {
+      if (!req.userId) {
+        return res.status(401).json({
+          error: "ログインが必要です。",
+        });
+      }
+
+      const sessionManager =
+        require("./src/session/SessionManager");
+      const { saveConversation } =
+        require("./database");
+
+      const reply =
+        "いつの予定を確認しますか？ まずは「今日」「明日」「今週」「来週」から選んでください。";
+
+      sessionManager.clear(req.userId);
+      sessionManager.set(req.userId, {
+        mode: "quick_schedule_query",
+        step: "waiting_date",
+      });
+
+      saveConversation(
+        req.userId,
+        "assistant",
+        reply
+      );
+
+      return res.json({
+        reply,
+        mode: "quick_schedule_query",
+      });
+    } catch (error) {
+      console.error(
+        "Quick schedule start error:",
+        error
+      );
+      return res.status(500).json({
+        error: "予定確認を開始できませんでした。",
+      });
+    }
+  }
+);
+
 app.post("/api/chat", async (req, res) => {
   try {
     const { message } = req.body;
