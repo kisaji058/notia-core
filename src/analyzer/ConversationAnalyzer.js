@@ -1402,6 +1402,115 @@ ${userMessage}
     };
   }
 
+  // ===== Quick Schedule Query Date Analyzer =====
+
+  async analyzeQuickScheduleDate(userMessage) {
+    const today = new Date().toLocaleDateString(
+      "sv-SE",
+      { timeZone: "Asia/Tokyo" }
+    );
+
+    const systemPrompt = `
+現在日付: ${today} (Asia/Tokyo)
+
+あなたはNotiaの予定確認専用の日付解析器です。
+ユーザーが確認したい日付または期間だけを読み取ってください。
+予定の登録・更新・削除は行わないでください。
+
+次のJSONのみ返してください。
+
+{
+  "startDate": null,
+  "endDate": null,
+  "cancel": false
+}
+
+ルール:
+- startDate・endDateはYYYY-MM-DD形式。1日だけの指定なら両方に同じ日付を入れる。
+- 「今日」「明日は？」「明後日」「今週」「来週」「今月」などを現在日付から解釈する。
+- 週は月曜日から日曜日までとする。
+- 「来週の月曜日」「今週の金曜日」などは、その週の指定曜日を返す。
+- 「22日」のように月を省略した日付は、今日以降で最初に到来する該当日を返す。
+- 「9月25日」は指定された月日として解釈する。年が省略されている場合は今日以降で最初に到来する該当日を返す。
+- 「9月23日から25日まで」のような期間指定は、開始日と終了日を返す。
+- 日付を確定できない場合はstartDateとendDateをnullにする。
+- 中止を明示した場合だけcancelをtrueにする。
+- 今日の日付とユーザーの発言にない情報を捏造しない。
+- JSON以外は出力しない。
+`;
+
+    const emptyResult = {
+      startDate: null,
+      endDate: null,
+      cancel: false,
+      parseError: true,
+    };
+
+    let parsed;
+
+    try {
+      const response = await chatWithNotia(
+        userMessage,
+        [],
+        systemPrompt
+      );
+
+      parsed = JSON.parse(response);
+
+      if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        Array.isArray(parsed)
+      ) {
+        return emptyResult;
+      }
+    } catch (error) {
+      console.error(
+        "Quick schedule date analysis error:",
+        error
+      );
+      return emptyResult;
+    }
+
+    const validDate = (value) => {
+      if (
+        typeof value !== "string" ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(value)
+      ) {
+        return null;
+      }
+
+      const date = new Date(
+        `${value}T00:00:00Z`
+      );
+
+      return (
+        !Number.isNaN(date.getTime()) &&
+        date.toISOString().slice(0, 10) === value
+      )
+        ? value
+        : null;
+    };
+
+    const startDate = validDate(parsed.startDate);
+    const endDate = validDate(parsed.endDate);
+
+    if (
+      (startDate && !endDate) ||
+      (!startDate && endDate) ||
+      (startDate && endDate && endDate < startDate)
+    ) {
+      return emptyResult;
+    }
+
+    return {
+      startDate,
+      endDate,
+      cancel: parsed.cancel === true,
+      parseError: false,
+    };
+  }
+
   // ===== Quick Routine Registration Analyzer =====
   async analyzeQuickRoutine(userMessage, pendingRoutine = {}) {
     const systemPrompt = `

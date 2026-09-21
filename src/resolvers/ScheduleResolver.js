@@ -58,6 +58,26 @@ function resolve(
   }
 }
 
+function resolveByDateRange(
+  startDate,
+  endDate,
+  context,
+  userId
+) {
+  const label = startDate === endDate
+    ? formatScheduleDate(startDate)
+    : `${formatScheduleDate(startDate)}〜${formatScheduleDate(endDate)}`;
+
+  return resolveScheduleByRange(
+    startDate,
+    endDate,
+    label,
+    context,
+    userId,
+    startDate !== endDate
+  );
+}
+
 function formatScheduleDate(dateString) {
   const date = new Date(
     `${dateString}T00:00:00+09:00`
@@ -447,4 +467,5 @@ function resolveNextWeekSchedule(context, userId) {
 
 module.exports = {
   resolve,
+  resolveByDateRange,
 };

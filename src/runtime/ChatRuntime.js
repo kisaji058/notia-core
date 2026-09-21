@@ -124,21 +124,28 @@ async function handleChat(
       );
     }
 
-    const ranges = {
-      "今日": "today",
-      "きょう": "today",
-      "明日": "tomorrow",
-      "あした": "tomorrow",
-      "今週": "this_week",
-      "来週": "next_week",
-    };
+    const parsed =
+      await conversationAnalyzer.analyzeQuickScheduleDate(
+        answer
+      );
 
-    const range = ranges[answer];
-
-    if (!range) {
+    if (parsed.cancel) {
+      sessionManager.clear(userId);
       return createReply(
         userId,
-        "確認する日付を教えてください。まずは「今日」「明日」「今週」「来週」から指定できます。",
+        "予定確認を中止しました。",
+        { intent: "chat" }
+      );
+    }
+
+    if (
+      parsed.parseError ||
+      !parsed.startDate ||
+      !parsed.endDate
+    ) {
+      return createReply(
+        userId,
+        "日付を読み取れませんでした。確認したい日付や期間をもう一度教えてください。",
         { intent: "chat" }
       );
     }
@@ -146,9 +153,11 @@ async function handleChat(
     const analysis = {
       intent: "schedule_query",
       scheduleQuery: {
-        range,
+        range: "date_range",
         target: "schedule",
         title: null,
+        startDate: parsed.startDate,
+        endDate: parsed.endDate,
       },
     };
 
@@ -162,8 +171,9 @@ async function handleChat(
     const scheduleResolver =
       require("../resolvers/ScheduleResolver");
 
-    const result = scheduleResolver.resolve(
-      analysis,
+    const result = scheduleResolver.resolveByDateRange(
+      parsed.startDate,
+      parsed.endDate,
       context,
       userId
     );
