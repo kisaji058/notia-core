@@ -3218,24 +3218,25 @@ conversations.forEach((conversation) => {
   }
 
 }
+function openDocumentPicker() {
+  if (isSending) {
+    return;
+  }
+
+  const useCamera = window.confirm(
+    "写真を撮影しますか？\\n\\nOK：カメラで撮影\\nキャンセル：写真・PDFを選択"
+  );
+
+  if (useCamera) {
+    cameraInput?.click();
+  } else {
+    attachmentInput?.click();
+  }
+}
+
 attachmentButton?.addEventListener(
   "click",
-  () => {
-    if (isSending) {
-      return;
-    }
-
-    const useCamera =
-      window.confirm(
-        "写真を撮影しますか？\n\nOK：カメラで撮影\nキャンセル：写真・PDFを選択"
-      );
-
-    if (useCamera) {
-      cameraInput?.click();
-    } else {
-      attachmentInput?.click();
-    }
-  }
+  openDocumentPicker
 );
 
 attachmentInput?.addEventListener(
@@ -4422,9 +4423,7 @@ startCharacterBackgroundTimer();
           break;
 
         case "document":
-          if (!isSending) {
-            attachmentInput?.click();
-          }
+          openDocumentPicker();
           break;
 
         case "schedule":
