@@ -3224,7 +3224,7 @@ function openDocumentPicker() {
   }
 
   const useCamera = window.confirm(
-    "写真を撮影しますか？\\n\\nOK：カメラで撮影\\nキャンセル：写真・PDFを選択"
+    "写真を撮影しますか？\n\nOK：カメラで撮影\nキャンセル：写真・PDFを選択"
   );
 
   if (useCamera) {
