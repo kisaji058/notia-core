@@ -1240,7 +1240,7 @@ app.post(
         require("./database");
 
       const reply =
-        "いつの予定を確認しますか？ まずは「今日」「明日」「今週」「来週」から選んでください。";
+        "いつの予定を確認しますか？";
 
       sessionManager.clear(req.userId);
       sessionManager.set(req.userId, {

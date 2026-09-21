@@ -1,5 +1,9 @@
 const {
   getTodayRoutines,
+  getEventsByDate,
+  getEventsByDateRange,
+  getExternalCalendarEventsByDate,
+  getExternalCalendarEventsByDateRange,
 } = require("../../database");
 
 function resolve(
@@ -30,17 +34,20 @@ function resolve(
 
     case "tomorrow":
       return resolveTomorrowSchedule(
-        context
+        context,
+        userId
       );
 
     case "this_week":
       return resolveThisWeekSchedule(
-        context
+        context,
+        userId
       );
 
     case "next_week":
       return resolveNextWeekSchedule(
-        context
+        context,
+        userId
       );
 
     default:
@@ -90,118 +97,113 @@ function getTasksByDate(
 function resolveScheduleByDate(
   targetDate,
   label,
-  context
+  context,
+  userId
 ) {
-  console.log(
-    "schedule targetDate:",
-    targetDate
-  );
-
-  console.log(
-    "activeTasks:",
-    (context.activeTasks || []).map(
-      (task) => ({
-        id: task.id,
-        title: task.title,
-        due_date: task.due_date,
-        due_time: task.due_time,
-        status: task.status,
-      })
-    )
-  );
-  
-  const tasks =
-  getTasksByDate(
+  return resolveScheduleByRange(
     targetDate,
-    context
+    targetDate,
+    label,
+    context,
+    userId,
+    false
   );
-
-  if (tasks.length === 0) {
-    return {
-      handled: true,
-      reply: `${label}の予定はありません。`,
-    };
-  }
-
-  const lines = tasks.map((task) => {
-    if (task.due_time) {
-      return `・${task.due_time} ${task.title}`;
-    }
-
-    return `・${task.title}`;
-  });
-
-  return {
-    handled: true,
-    reply:
-      `${label}は${tasks.length}件あります。\n\n` +
-      lines.join("\n"),
-  };
 }
 
 function resolveScheduleByRange(
   startDate,
   endDate,
   label,
-  context
+  context,
+  userId,
+  showDate = true
 ) {
   const tasks = (context.activeTasks || [])
-    .filter((task) => {
-      if (!task.due_date) {
-        return false;
-      }
+    .filter((task) =>
+      task.due_date >= startDate &&
+      task.due_date <= endDate
+    )
+    .sort((a, b) =>
+      (a.due_date || "").localeCompare(b.due_date || "") ||
+      (a.due_time || "99:99").localeCompare(b.due_time || "99:99")
+    );
 
-      return (
-        task.due_date >= startDate &&
-        task.due_date <= endDate
-      );
-    })
-    .sort((a, b) => {
-      if (a.due_date !== b.due_date) {
-        return a.due_date.localeCompare(
-          b.due_date
-        );
-      }
+  const events = getEventsByDateRange(
+    userId,
+    startDate,
+    endDate
+  );
 
-      const timeA =
-        a.due_time || "99:99";
+  const externalEvents =
+    getExternalCalendarEventsByDateRange(
+      userId,
+      "google",
+      startDate,
+      endDate
+    );
 
-      const timeB =
-        b.due_time || "99:99";
+  const dateLabel = (date) =>
+    showDate && date
+      ? `${formatScheduleDate(date)} `
+      : "";
 
-      return timeA.localeCompare(timeB);
-    });
+  const eventLines = events.map((event) => {
+    const date = event.event_date < startDate
+      ? startDate
+      : event.event_date;
+    const time = event.start_time
+      ? `${event.start_time} `
+      : "";
 
-  if (tasks.length === 0) {
-    return {
-      handled: true,
-      reply: `${label}の予定はありません。`,
-    };
-  }
+    return `・${dateLabel(date)}${time}${event.title}`;
+  });
 
-  const lines = tasks.map((task) => {
-    const dateLabel =
-      formatScheduleDate(task.due_date);
-
-    if (task.due_time) {
-      return (
-        `・${dateLabel} ` +
-        `${task.due_time} ` +
-        `${task.title}`
-      );
-    }
+  const googleLines = externalEvents.map((event) => {
+    const date = event.start_datetime?.slice(0, 10);
+    const displayDate = date && date < startDate
+      ? startDate
+      : date;
+    const time = event.is_all_day
+      ? ""
+      : event.start_datetime?.slice(11, 16);
+    const timeLabel = time ? `${time} ` : "";
 
     return (
-      `・${dateLabel} ` +
-      `${task.title}`
+      `・${dateLabel(displayDate)}${timeLabel}${event.title}` +
+      "（Google）"
     );
   });
 
+  const taskLines = tasks.map((task) => {
+    const time = task.due_time
+      ? `${task.due_time} `
+      : "";
+
+    return (
+      `・${dateLabel(task.due_date)}${time}${task.title}`
+    );
+  });
+
+  const sections = [];
+
+  if (eventLines.length || googleLines.length) {
+    sections.push(
+      "📅 予定\n" +
+      [...eventLines, ...googleLines].join("\n")
+    );
+  }
+
+  if (taskLines.length) {
+    sections.push(
+      "📝 タスク\n" + taskLines.join("\n")
+    );
+  }
+
   return {
     handled: true,
-    reply:
-      `${label}は${tasks.length}件あります。\n\n` +
-      lines.join("\n"),
+    reply: sections.length
+      ? `${label}の予定です。\n\n${sections.join("\n\n")}`
+      : `${label}の予定はありません。`,
   };
 }
 
@@ -212,45 +214,91 @@ function resolveTodaySchedule(
   const today =
     new Date().toLocaleDateString(
       "sv-SE",
-      {
-        timeZone: "Asia/Tokyo",
-      }
+      { timeZone: "Asia/Tokyo" }
     );
 
-  const tasks =
-  getTasksByDate(
+  const tasks = getTasksByDate(
     today,
     context
   );
 
-  const routines =
-  getTodayRoutines(userId);
+  const events = getEventsByDate(
+    userId,
+    today
+  );
+
+  const externalEvents =
+    getExternalCalendarEventsByDate(
+      userId,
+      "google",
+      today
+    );
+
+  const routines = getTodayRoutines(userId);
 
   if (
     tasks.length === 0 &&
+    events.length === 0 &&
+    externalEvents.length === 0 &&
     routines.length === 0
   ) {
     return {
       handled: true,
-      reply:
-        "今日の予定はありません。",
+      reply: "今日の予定はありません。",
     };
   }
 
   const sections = [];
 
-  if (tasks.length > 0) {
-    const taskLines =
-      tasks.map((task) => {
-        if (task.due_time) {
-          return (
-            `・${task.due_time} ` +
-            `${task.title}`
-          );
-        }
+  if (
+    events.length > 0 ||
+    externalEvents.length > 0
+  ) {
+    const eventLines = events.map(
+      (event) => {
+        const time = event.start_time
+          ? `${event.start_time} `
+          : "";
 
-        return `・${task.title}`;
-      });
+        return `・${time}${event.title}`;
+      }
+    );
+
+    const googleLines = externalEvents.map(
+      (event) => {
+        const time =
+          event.is_all_day
+            ? ""
+            : event.start_datetime
+                ?.slice(11, 16);
+
+        const timeLabel = time
+          ? `${time} `
+          : "";
+
+        return (
+          `・${timeLabel}${event.title}` +
+          "（Google）"
+        );
+      }
+    );
+
+    sections.push(
+      "📅 予定\n" +
+      [...eventLines, ...googleLines].join("\n")
+    );
+  }
+
+  if (tasks.length > 0) {
+    const taskLines = tasks.map(
+      (task) => {
+        const time = task.due_time
+          ? `${task.due_time} `
+          : "";
+
+        return `・${time}${task.title}`;
+      }
+    );
 
     sections.push(
       "📝 タスク\n" +
@@ -259,17 +307,15 @@ function resolveTodaySchedule(
   }
 
   if (routines.length > 0) {
-    const routineLines =
-      routines.map((routine) => {
-        if (routine.routine_time) {
-          return (
-            `・${routine.routine_time} ` +
-            `${routine.title}`
-          );
-        }
+    const routineLines = routines.map(
+      (routine) => {
+        const time = routine.routine_time
+          ? `${routine.routine_time} `
+          : "";
 
-        return `・${routine.title}`;
-      });
+        return `・${time}${routine.title}`;
+      }
+    );
 
     sections.push(
       "🔁 ルーティーン\n" +
@@ -285,7 +331,7 @@ function resolveTodaySchedule(
   };
 }
 
-function resolveTomorrowSchedule(context) {
+function resolveTomorrowSchedule(context, userId) {
   const tomorrow = new Date();
 
   tomorrow.setDate(
@@ -303,11 +349,12 @@ function resolveTomorrowSchedule(context) {
   return resolveScheduleByDate(
     tomorrowDate,
     "明日",
-    context
+    context,
+    userId
   );
 }
 
-function resolveThisWeekSchedule(context) {
+function resolveThisWeekSchedule(context, userId) {
   const today = new Date();
 
   const day = today.getDay();
@@ -336,11 +383,12 @@ function resolveThisWeekSchedule(context) {
     startDate,
     endDate,
     "今週",
-    context
+    context,
+    userId
   );
 }
 
-function resolveNextWeekSchedule(context) {
+function resolveNextWeekSchedule(context, userId) {
   const today = new Date();
 
   const day = today.getDay();
@@ -392,7 +440,8 @@ function resolveNextWeekSchedule(context) {
     startDate,
     endDate,
     "来週",
-    context
+    context,
+    userId
   );
 }
 
