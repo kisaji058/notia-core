@@ -12,8 +12,6 @@ function createOverdueTaskReminderRepository(db) {
     WHERE user_id = ?
       AND item_type = 'task'
       AND status = 'active'
-      AND notification IS NOT NULL
-      AND notification != 'none'
       AND due_date IS NOT NULL
       AND due_time IS NOT NULL
   `);
@@ -30,8 +28,6 @@ function createOverdueTaskReminderRepository(db) {
       AND id = ?
       AND item_type = 'task'
       AND status = 'active'
-      AND notification IS NOT NULL
-      AND notification != 'none'
       AND due_date = ?
       AND due_time = ?
   `);

@@ -7,8 +7,6 @@ function getReminderKey(task) {
   if (
     task?.item_type !== "task" ||
     task.status !== "active" ||
-    !task.notification ||
-    task.notification === "none" ||
     !/^\d{4}-\d{2}-\d{2}$/.test(task.due_date || "") ||
     !/^([01]\d|2[0-3]):[0-5]\d$/.test(task.due_time || "")
   ) {

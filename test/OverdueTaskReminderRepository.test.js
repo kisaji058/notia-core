@@ -65,7 +65,8 @@ test("未完了タスクを1時間後に1回だけ通知対象にする", () => 
 
     assert.deepEqual(
       repository.claimDueReminders(10, now).map(t => t.id),
-      [1]
+      [1, 2],
+      "通常の通知設定が「なし」のタスクも対象にする"
     );
 
     assert.deepEqual(
@@ -101,10 +102,6 @@ for (const scenario of [
   {
     name: "完了",
     update: "UPDATE tasks SET status = 'completed' WHERE id = 1",
-  },
-  {
-    name: "通知なし",
-    update: "UPDATE tasks SET notification = 'none' WHERE id = 1",
   },
   {
     name: "日時変更",
@@ -180,3 +177,72 @@ for (const scenario of [
     }
   });
 }
+
+test("対象取得直後に通知なしへ変更されても1回だけ通知対象になる", () => {
+  const db = new Database(":memory:");
+
+  try {
+    db.exec(`
+      CREATE TABLE tasks (
+        id INTEGER PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        item_type TEXT NOT NULL,
+        status TEXT NOT NULL,
+        notification TEXT,
+        due_date TEXT,
+        due_time TEXT
+      );
+
+      INSERT INTO tasks (
+        id, user_id, title, item_type, status,
+        notification, due_date, due_time
+      ) VALUES (
+        1, 10, 'テストタスク', 'task', 'active',
+        'at_time', '2026-09-24', '10:00'
+      );
+    `);
+
+    migration.up(db);
+
+    const wrappedDb = {
+      prepare(sql) {
+        const statement = db.prepare(sql);
+
+        if (sql.includes("SELECT *") && sql.includes("FROM tasks")) {
+          return {
+            all(userId) {
+              const tasks = statement.all(userId);
+              db.prepare(
+                "UPDATE tasks SET notification = 'none' WHERE id = 1"
+              ).run();
+              return tasks;
+            },
+          };
+        }
+
+        return statement;
+      },
+    };
+
+    const repository =
+      createOverdueTaskReminderRepository(wrappedDb);
+    const now = new Date("2026-09-24T11:00:00+09:00");
+
+    assert.deepEqual(
+      repository.claimDueReminders(10, now).map(task => task.id),
+      [1]
+    );
+
+    assert.equal(
+      db.prepare(
+        "SELECT COUNT(*) AS count FROM overdue_task_reminder_logs"
+      ).get().count,
+      1
+    );
+
+    assert.deepEqual(repository.claimDueReminders(10, now), []);
+  } finally {
+    db.close();
+  }
+});

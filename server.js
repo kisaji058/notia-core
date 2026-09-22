@@ -1822,8 +1822,6 @@ function runOverdueTaskReminderCheck(userId) {
       !currentTask ||
       currentTask.item_type !== "task" ||
       currentTask.status !== "active" ||
-      !currentTask.notification ||
-      currentTask.notification === "none" ||
       currentTask.due_date !== task.due_date ||
       currentTask.due_time !== task.due_time
     ) {

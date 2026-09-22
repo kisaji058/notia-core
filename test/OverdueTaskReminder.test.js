@@ -37,11 +37,11 @@ test("1時間前は対象外、1時間後から10分間だけ対象", () => {
   );
 });
 
-test("通知なし・完了済み・時刻なしは対象外", () => {
+test("通知なしでも対象、完了済み・時刻なしは対象外", () => {
   assert.equal(isReminderDue(
     { ...task, notification: "none" },
     new Date("2026-09-24T11:00:00+09:00")
-  ), false);
+  ), true);
   assert.equal(isReminderDue(
     { ...task, status: "completed" },
     new Date("2026-09-24T11:00:00+09:00")
