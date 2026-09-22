@@ -1197,6 +1197,22 @@
         )
       ) || 64;
 
+    // 非同期の広告準備中に通知設定などが開いた場合は表示しない
+    if (
+      adKeyboardVisible ||
+      hasVisibleAdBlockingDialog()
+    ) {
+      document.documentElement
+        .style
+        .setProperty(
+          "--ad-banner-height",
+          "0px"
+        );
+      await adMob.removeBanner()
+        .catch(() => {});
+      return;
+    }
+
     console.log(
       "[AdMob] showBanner config:",
       getAdMobBannerConfig()
