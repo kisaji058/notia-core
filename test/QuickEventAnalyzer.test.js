@@ -96,3 +96,42 @@ test("JSONの解析に失敗した場合は登録を進めない", async () => {
 
   assert.equal(result.parseError, true);
 });
+
+test("指定した場所を返し、場所がなければnullを返す", async () => {
+  aiResponse = JSON.stringify({
+    title: "会議",
+    dueDate: "2026-09-24",
+    dueTime: "15:00",
+    endDate: null,
+    endTime: null,
+    location: "第2会議室",
+    notification: null,
+    cancel: false,
+  });
+
+  const withLocation = await analyzer.analyzeQuickEvent(
+    "会議の場所は第2会議室",
+    { title: "会議" }
+  );
+
+  assert.equal(withLocation.parseError, false);
+  assert.equal(withLocation.location, "第2会議室");
+
+  aiResponse = JSON.stringify({
+    title: null,
+    dueDate: null,
+    dueTime: null,
+    endDate: null,
+    endTime: null,
+    location: null,
+    notification: null,
+    cancel: false,
+  });
+
+  const withoutLocation = await analyzer.analyzeQuickEvent(
+    "通知なし",
+    { title: "会議", location: "第2会議室" }
+  );
+
+  assert.equal(withoutLocation.location, null);
+});

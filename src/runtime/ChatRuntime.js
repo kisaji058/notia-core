@@ -20,6 +20,7 @@ const {
   saveConversation,
   getRecentConversations,
   getActiveTasks,
+  getActiveEvents,
   createRoutine,
 } = require("../../database");
 
@@ -162,6 +163,8 @@ async function handleChat(
     };
 
     const activeTasks = getActiveTasks(userId);
+
+const activeEvents = getActiveEvents(userId);
     const recentMessages = getRecentConversations(userId, 10);
     const context = conversationContextBuilder.build({
       conversations: recentMessages,
@@ -337,6 +340,7 @@ async function handleChat(
       dueTime: null,
       endDate: null,
       endTime: null,
+      location: null,
       notification: null,
     };
 
@@ -383,6 +387,8 @@ async function handleChat(
         parsed.endDate || pending.endDate,
       endTime:
         parsed.endTime || pending.endTime,
+      location:
+        parsed.location ?? pending.location ?? null,
       notification:
         parsed.notification !== null
           ? parsed.notification
@@ -478,6 +484,7 @@ async function handleChat(
         endDate:
           event.endDate || event.dueDate,
         endTime: event.endTime,
+        location: event.location || "",
         notification,
         priority: "normal",
         category: "other",
@@ -803,6 +810,8 @@ async function handleChat(
 const activeTasks =
   getActiveTasks(userId);
 
+const activeEvents = getActiveEvents(userId);
+
 const recentMessages =
   getRecentConversations(
     userId,
@@ -819,6 +828,7 @@ const resolvedReference = referenceResolver.resolve(message, context);
 const analysis = await conversationAnalyzer.analyze(message, {
   source: "api/chat",
   activeTasks,
+  activeEvents,
   context,
   resolvedReference,
 });

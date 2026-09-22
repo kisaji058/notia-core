@@ -10,6 +10,10 @@ function createTaskResultReply(taskResult, analysis = {}) {
     ].join("\n");
   }
 
+  if (taskResult.reason === "ambiguous event") {
+    return "変更する予定を特定できませんでした。予定名と日付を指定して、もう一度教えてください。";
+  }
+
   if (taskResult.reason === "no updates") {
     return [
       "変更する内容を読み取れませんでした。",

@@ -615,3 +615,63 @@ test("ルーティーン登録をキャンセルできる", async () => {
     "normal"
   );
 });
+
+test("場所を含む予定を一括回答で登録できる", async () => {
+  reset();
+  startEvent("event-user-location-1");
+
+  queue({
+    title: "会議",
+    dueDate: "2026-09-24",
+    dueTime: "15:00",
+    location: "第2会議室",
+  });
+
+  const result = await handleChat(
+    "9月24日15時から第2会議室で会議",
+    "event-user-location-1"
+  );
+
+  assert.match(result.reply, /登録しました/);
+  assert.equal(createdTasks.length, 1);
+  assert.equal(
+    createdTasks[0].analysis.tasks[0].location,
+    "第2会議室"
+  );
+});
+
+test("開始時刻を確認する間も場所を保持する", async () => {
+  reset();
+  startEvent("event-user-location-2");
+
+  queue({
+    title: "会議",
+    dueDate: "2026-09-24",
+    location: "第2会議室",
+  });
+
+  const first = await handleChat(
+    "9月24日に第2会議室で会議",
+    "event-user-location-2"
+  );
+
+  assert.match(first.reply, /何時から/);
+  assert.equal(createdTasks.length, 0);
+
+  queue({
+    dueTime: "15:00",
+    location: null,
+  });
+
+  const second = await handleChat(
+    "15時から",
+    "event-user-location-2"
+  );
+
+  assert.match(second.reply, /登録しました/);
+  assert.equal(createdTasks.length, 1);
+  assert.equal(
+    createdTasks[0].analysis.tasks[0].location,
+    "第2会議室"
+  );
+});

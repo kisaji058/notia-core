@@ -81,6 +81,7 @@ class ConversationAnalyzer {
     const conversationContext = options.context || {};
     const activeTasks =
       options.activeTasks || conversationContext.activeTasks || [];
+    const activeEvents = options.activeEvents || [];
     const resolvedReference = options.resolvedReference || null;
 
     const systemPrompt = `
@@ -104,6 +105,7 @@ JSONのみで返してください。
       "dueTime": "string | null",
       "endDate": "string | null",
       "endTime": "string | null",
+      "location": "string | null",
       "category": "work | school | shopping | private | other | null",
       "notification": "none | same_day | day_before | at_time | 10_minutes_before | 30_minutes_before | 1_hour_before | null",
       "needsDateConfirmation": "boolean",
@@ -126,9 +128,12 @@ JSONのみで返してください。
   "dueTime": "string | null",
   "endDate": "string | null",
   "endTime": "string | null",
+  "location": "string | null",
   "category": "work | school | shopping | private | other | null",
   "notification": "none | same_day | day_before | at_time | 10_minutes_before | 30_minutes_before | 1_hour_before | null",
   "targetTaskId": "number | null",
+  "targetEventId": "number | null",
+  "targetEventDate": "YYYY-MM-DD | null",
   "targetTaskTitle": "string | null",
   "scheduleQuery": {
   "range": "today | tomorrow | day_after_tomorrow | weekday | next_weekday | this_week | next_week | this_month | null",
@@ -145,6 +150,7 @@ JSONのみで返してください。
     "description": "string | null",
     "dueDate": "string | null",
     "dueTime": "string | null",
+    "location": "string | null",
     "priority": "important | normal | null",
     "category": "work | school | shopping | private | other | null",
     "notification": "none | same_day | day_before | at_time | 10_minutes_before | 30_minutes_before | 1_hour_before | null"
@@ -162,6 +168,11 @@ JSONのみで返してください。
   "confidence": "number"
 }
 
+【予定の場所】
+- ユーザーが予定の場所を指定した場合は、該当するtasks内の予定のlocationに入れる。
+- 予定が1件の場合は、トップレベルのlocationにも同じ値を入れる。
+- 場所が指定されていなければlocationはnullにする。場所を推測しない。
+
 【基本ルール】
 
 - 必ず返却形式にあるすべての項目を返す。
@@ -176,7 +187,7 @@ JSONのみで返してください。
 - タスクが1件だけの場合もtasksに1件入れる。
 - 複数の行動が含まれる場合は、1つにまとめず別々のタスクに分割する。
 - 既存互換のため、task_createではtasksの先頭要素と同じ内容を
-  title、description、dueDate、dueTime、category、notification、
+  title、description、dueDate、dueTime、location、category、notification、
   needsDateConfirmation、dateExpression、priorityにも入れる。
 - routine_createの場合はtasksを空配列にする。
 - routine_createの場合のみroutineを設定する。
@@ -652,6 +663,17 @@ resolvedReferenceがnullで、
 ユーザーが変更を明示していない場合は、
 似たactiveTasksが存在していてもtask_updateにしてはいけない。
 
+【既存予定の更新】
+- 既存予定の場所変更もintentはtask_updateにする。
+- 更新対象が予定の場合、現在のアクティブ予定から対象を選び、targetEventIdにその予定のidを入れる。
+- 予定の場合、targetTaskIdはnullにする。
+- ユーザーが更新対象の予定の日付を指定した場合はtargetEventDateにYYYY-MM-DD形式で入れる。
+- targetEventDateは変更前の予定を特定するための日付であり、変更後の日付を表すupdates.dueDateとは区別する。
+- 対象の日付が特定できない場合はtargetEventDateをnullにする。
+- タスクの場合、targetEventIdはnullにする。
+- 対象を一意に特定できない場合、targetEventIdとtargetTaskIdはともにnullにし、勝手に更新対象を決めない。
+- 場所だけの変更ならupdates.locationだけに変更後の場所を入れる。
+
 【タスク更新】
 
 既存タスクの内容を変更する発言はtask_updateにする。
@@ -659,12 +681,15 @@ resolvedReferenceがnullで、
 task_updateの場合:
 
 - 変更する内容だけをupdatesに入れる。
+- 既存予定の場所変更はupdates.locationに変更後の場所を入れる。
+- 場所の変更指示がなければupdates.locationはnullにする。
 - 変更しない項目は必ずnullにする。
 - title、description、dueDate、dueTime、priority、category、
   notificationのトップレベル値は原則nullにする。
 - priorityのトップレベル値は互換性維持のためnormalを返してよいが、
   実際の変更内容はupdates.priorityを使用する。
-- 更新対象をtargetTaskIdとtargetTaskTitleに入れる。
+- 更新対象がタスクの場合はtargetTaskIdとtargetTaskTitleに入れ、targetEventIdはnullにする。
+- 更新対象が予定の場合はtargetEventIdとtargetTaskTitleに入れ、targetTaskIdはnullにする。
 
 更新例:
 
@@ -1015,6 +1040,9 @@ ${JSON.stringify(conversationContext.history || [], null, 2)}
 現在のアクティブタスク:
 ${JSON.stringify(activeTasks, null, 2)}
 
+現在のアクティブ予定:
+${JSON.stringify(activeEvents, null, 2)}
+
 会話コンテキスト:
 ${JSON.stringify(conversationContext, null, 2)}
 `;
@@ -1292,6 +1320,7 @@ ${userMessage}
   "dueTime": null,
   "endDate": null,
   "endTime": null,
+  "location": null,
   "notification": null,
   "cancel": false
 }
@@ -1302,6 +1331,7 @@ ${userMessage}
 - dueTime: 開始時刻 HH:mm（24時間表記）、またはnull
 - endDate: 終了日 YYYY-MM-DD、またはnull
 - endTime: 終了時刻 HH:mm（24時間表記）、またはnull
+- location: 予定の場所。明示されていなければnull
 - notification: none / same_day / day_before / at_time /
   10_minutes_before / 30_minutes_before / 1_hour_before / null
 - cancel: 登録中止を明示した場合のみtrue
@@ -1334,6 +1364,7 @@ ${userMessage}
       dueTime: null,
       endDate: null,
       endTime: null,
+      location: null,
       notification: null,
       cancel: false,
       parseError: true,
@@ -1393,6 +1424,11 @@ ${userMessage}
       dueTime: validTime(parsed.dueTime),
       endDate: validDate(parsed.endDate),
       endTime: validTime(parsed.endTime),
+      location:
+        typeof parsed.location === "string" &&
+        parsed.location.trim()
+          ? parsed.location.trim()
+          : null,
       notification:
         VALID_NOTIFICATIONS.includes(parsed.notification)
           ? parsed.notification
@@ -1832,6 +1868,7 @@ ${userMessage}
           dueTime: task.dueTime ?? null,
           endDate: task.endDate ?? null,
           endTime: task.endTime ?? null,
+          location: task.location ?? null,
           category: validateEnum(
   task.category,
   VALID_CATEGORIES
@@ -1869,6 +1906,7 @@ ${userMessage}
           dueTime: parsed.dueTime ?? null,
           endDate: parsed.endDate ?? null,
           endTime: parsed.endTime ?? null,
+          location: parsed.location ?? null,
           category: parsed.category ?? null,
           notification: parsed.notification ?? null,
           needsDateConfirmation:
@@ -1941,12 +1979,15 @@ ${userMessage}
       dueTime: parsed.dueTime ?? null,
       endDate: parsed.endDate ?? null,
       endTime: parsed.endTime ?? null,
+      location: parsed.location ?? null,
       category: parsed.category ?? null,
       notification: parsed.notification ?? null,
       needsDateConfirmation:
         parsed.needsDateConfirmation ?? false,
       dateExpression: parsed.dateExpression ?? null,
       targetTaskId: parsed.targetTaskId ?? null,
+      targetEventId: parsed.targetEventId ?? null,
+      targetEventDate: parsed.targetEventDate ?? null,
       targetTaskTitle: parsed.targetTaskTitle ?? null,
       scheduleQuery: {
   range:
@@ -1965,6 +2006,7 @@ ${userMessage}
         description: parsed.updates?.description ?? null,
         dueDate: parsed.updates?.dueDate ?? null,
         dueTime: parsed.updates?.dueTime ?? null,
+        location: parsed.updates?.location ?? null,
         priority:
   validateEnum(
     parsed.updates?.priority,
@@ -2011,6 +2053,8 @@ notification:
       needsDateConfirmation: false,
       dateExpression: null,
       targetTaskId: null,
+      targetEventId: null,
+      targetEventDate: null,
       targetTaskTitle: null,
 
       scheduleQuery: {

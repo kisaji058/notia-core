@@ -3,6 +3,9 @@ const {
   addEvent,
   findActiveTasks,
   updateTaskById,
+  getActiveEvents,
+  getEventById,
+  updateEventById,
   completeTask,
   addSecretaryExp,
 } = require("../../database");
@@ -200,6 +203,145 @@ if (task.itemType === "event") {
 }
 
   handleUpdate(analysis, userId) {
+    if (
+      analysis.updates?.location != null &&
+      analysis.targetEventId == null
+    ) {
+      return {
+        updated: false,
+        reason: "ambiguous event",
+      };
+    }
+
+    if (
+      analysis.targetEventId != null &&
+      analysis.targetTaskId != null
+    ) {
+      return {
+        updated: false,
+        reason: "ambiguous event",
+      };
+    }
+
+    if (analysis.targetEventId != null) {
+      const eventId = Number(analysis.targetEventId);
+      const targetTitle = analysis.targetTaskTitle;
+      const location = analysis.updates?.location;
+
+      const otherUpdates = Object.entries(analysis.updates || {})
+        .filter(([field, value]) =>
+          field !== "location" && value !== null && value !== undefined
+        );
+
+      if (otherUpdates.length > 0) {
+        return {
+          updated: false,
+          reason: "unsupported event update",
+        };
+      }
+
+      if (
+        !Number.isSafeInteger(eventId) ||
+        eventId <= 0 ||
+        typeof targetTitle !== "string" ||
+        !targetTitle.trim()
+      ) {
+        return {
+          updated: false,
+          reason: "target task not found",
+        };
+      }
+
+      const event = getEventById(userId, eventId);
+
+      if (
+        !event ||
+        event.status !== "active" ||
+        event.title !== targetTitle.trim()
+      ) {
+        return {
+          updated: false,
+          reason: "target task not found",
+        };
+      }
+
+      const targetEventDate = analysis.targetEventDate;
+
+      if (
+        targetEventDate != null &&
+        (
+          typeof targetEventDate !== "string" ||
+          !/^\d{4}-\d{2}-\d{2}$/.test(targetEventDate)
+        )
+      ) {
+        return {
+          updated: false,
+          reason: "ambiguous event",
+        };
+      }
+
+      if (
+        targetEventDate != null &&
+        !(
+          event.event_date <= targetEventDate &&
+          (event.end_date || event.event_date) >= targetEventDate
+        )
+      ) {
+        return {
+          updated: false,
+          reason: "ambiguous event",
+        };
+      }
+
+      const matchingEvents = getActiveEvents(userId).filter(
+        (candidate) =>
+          candidate.title === event.title &&
+          (
+            targetEventDate == null ||
+            (
+              candidate.event_date <= targetEventDate &&
+              (candidate.end_date || candidate.event_date) >= targetEventDate
+            )
+          )
+      );
+
+      if (matchingEvents.length !== 1 ||
+          matchingEvents[0].id !== event.id) {
+        return {
+          updated: false,
+          reason: "ambiguous event",
+        };
+      }
+
+      if (typeof location !== "string" || !location.trim()) {
+        return {
+          updated: false,
+          reason: "no updates",
+        };
+      }
+
+      const success = updateEventById(userId, event.id, {
+        title: event.title,
+        description: event.description,
+        event_date: event.event_date,
+        end_date: event.end_date,
+        start_time: event.start_time,
+        end_time: event.end_time,
+        location: location.trim(),
+        items_to_bring: event.items_to_bring,
+        priority: event.priority,
+        category: event.category,
+        notification: event.notification,
+        status: event.status,
+      });
+
+      return {
+        updated: success,
+        taskId: event.id,
+        updates: { location: location.trim() },
+      };
+    }
+
     if (!analysis.targetTaskId) {
       return {
         updated: false,
