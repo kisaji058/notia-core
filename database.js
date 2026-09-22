@@ -10,6 +10,15 @@ const db = new Database("notia.db");
 
 runMigrations(db);
 
+const {
+  createOverdueTaskReminderRepository,
+} = require("./src/database/overdueTaskReminderRepository");
+
+const {
+  claimDueReminders: claimDueOverdueTaskReminders,
+} = createOverdueTaskReminderRepository(db);
+
+
 // =====================
 // users
 // =====================
@@ -3301,6 +3310,7 @@ function deleteUserCategory(
 }
 
 module.exports = {
+  claimDueOverdueTaskReminders,
   ensureUserCategories,
   getUserCategories,
   getUserCategoryById,

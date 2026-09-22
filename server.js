@@ -86,10 +86,12 @@ const {
   getGoogleIntegration,
   getAllUsers,
   getUserById,
+  getTaskById,
   hasDailyNotificationBeenSent,
   markDailyNotificationSent,
   getNotificationSettings,
   getNativePushTokensByUserId,
+  claimDueOverdueTaskReminders,
   registerDocumentForRecheck,
   reserveDocumentRecheck,
   releaseDocumentRecheck,
@@ -1810,6 +1812,42 @@ function runEveningTaskCheck(
   );
 }
 
+function runOverdueTaskReminderCheck(userId) {
+  const tasks = claimDueOverdueTaskReminders(userId);
+
+  for (const task of tasks) {
+    const currentTask = getTaskById(userId, task.id);
+
+    if (
+      !currentTask ||
+      currentTask.item_type !== "task" ||
+      currentTask.status !== "active" ||
+      !currentTask.notification ||
+      currentTask.notification === "none" ||
+      currentTask.due_date !== task.due_date ||
+      currentTask.due_time !== task.due_time
+    ) {
+      continue;
+    }
+
+    const body =
+      `「${currentTask.title}」の設定時刻から1時間が経過しました。` +
+      "まだ完了していない場合は確認してください。";
+
+    sendNotificationToUser(
+      userId,
+      "Notia",
+      body
+    );
+
+    saveConversation(
+      userId,
+      "assistant",
+      `🔔 ${body}`
+    );
+  }
+}
+
 function runNotificationCycle() {
   const users =
     getAllUsers();
@@ -1817,6 +1855,10 @@ function runNotificationCycle() {
   for (const user of users) {
     try {
       runNotificationCheck(
+        user.id
+      );
+
+      runOverdueTaskReminderCheck(
         user.id
       );
 
