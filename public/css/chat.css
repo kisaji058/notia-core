@@ -3100,7 +3100,7 @@ body.keyboard-open .input-area {
 
 @media (max-width: 480px) {
   .character-action-card {
-    top: 77%;
+    top: calc(77% - 24px);
     width: 74%;
 
     padding: 13px 15px;
@@ -3317,5 +3317,17 @@ body.keyboard-open .quick-actions {
 @media (prefers-reduced-motion: reduce) {
   .character-tia.notia-thinking {
     animation: none;
+  }
+}
+
+/* Character chat: leave a little more room between the card and composer */
+@media (max-width: 480px) {
+  body:has(#characterChat:not([hidden])):not(.keyboard-open) .input-area {
+    bottom: calc(
+      var(--bottom-nav-height) +
+      var(--safe-area-bottom) +
+      var(--ad-banner-height) +
+      2px
+    );
   }
 }
