@@ -1236,12 +1236,29 @@ async function loadCharacterToday() {
           item.type === "task" &&
           item.status === "completed";
 
-        if (isCompletedTask) {
+        const startTimeMatch =
+          typeof item.startTime === "string"
+            ? item.startTime.match(/^(\d{1,2}):(\d{2})/)
+            : null;
+
+        const startMinutes = startTimeMatch
+          ? Number(startTimeMatch[1]) * 60 +
+            Number(startTimeMatch[2])
+          : null;
+
+        const isPastEvent =
+          item.type === "event" &&
+          !item.isAllDay &&
+          startMinutes !== null &&
+          Number.isInteger(startMinutes) &&
+          startMinutes >= 0 &&
+          startMinutes < 24 * 60 &&
+          startMinutes <= getJapanCurrentMinutes();
+
+        if (isCompletedTask || isPastEvent) {
           check.textContent = "✓";
         } else {
-          check.classList.add(
-            "empty"
-          );
+          check.classList.add("empty");
         }
 
         const title =
