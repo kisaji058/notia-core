@@ -3919,6 +3919,13 @@ async function syncCalendar() {
   }
 
   try {
+    const selection =
+      await window.NotiaCalendarSyncPicker.open();
+
+    if (!selection) {
+      return;
+    }
+
     syncButton.disabled = true;
     syncButton.textContent = "同期中...";
 
@@ -3928,6 +3935,14 @@ async function syncCalendar() {
 
     const res = await fetch("/api/calendar/sync", {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(
+        selection.categories === null
+          ? {}
+          : { categories: selection.categories }
+      ),
     });
 
     const result = await res.json();

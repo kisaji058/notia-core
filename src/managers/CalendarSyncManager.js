@@ -10,7 +10,15 @@ const {
 const googleProvider =
   require("../calendar/providers/GoogleCalendarProvider");
 
-async function syncGoogleCalendar(userId) {
+async function syncGoogleCalendar(
+  userId,
+  selectedCategories = null
+) {
+  const allowedCategories =
+    selectedCategories === null
+      ? null
+      : new Set(selectedCategories);
+
   // Google → Notia
   const googleEvents =
     await googleProvider.listEvents(userId);
@@ -56,6 +64,12 @@ async function syncGoogleCalendar(userId) {
   let exportedTasks = 0;
 
   for (const task of unsyncedTasks) {
+    if (
+      allowedCategories &&
+      !allowedCategories.has(task.category || "other")
+    ) {
+      continue;
+    }
     try {
       const googleEvent =
         await googleProvider
@@ -92,6 +106,12 @@ async function syncGoogleCalendar(userId) {
   let exportedRoutines = 0;
 
   for (const routine of unsyncedRoutines) {
+    if (
+      allowedCategories &&
+      !allowedCategories.has(routine.category || "other")
+    ) {
+      continue;
+    }
     try {
       const googleEvent =
         await googleProvider

@@ -11,6 +11,7 @@ const {
   getExternalCalendarEventsByDate,
   getExternalCalendarEventsByDateRange,
   getActiveRoutines,
+  getUserCategories,
 } = require("../../database");
 
 const {
@@ -214,10 +215,53 @@ router.post("/calendar/sync", async (req, res) => {
       });
     }
 
+    // 分類指定がなければ、従来どおりすべて同期する
+    let selectedCategories = null;
+
+    if (req.body?.categories !== undefined) {
+      const categories = req.body.categories;
+
+      if (
+        !Array.isArray(categories) ||
+        categories.length === 0 ||
+        categories.length > 100 ||
+        categories.some(
+          (key) =>
+            typeof key !== "string" ||
+            key.length === 0
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: "同期する分類を1件以上選んでください。",
+        });
+      }
+
+      const validKeys = new Set(
+        getUserCategories(req.userId).map(
+          (category) => category.category_key
+        )
+      );
+
+      if (
+        categories.some(
+          (key) => !validKeys.has(key)
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: "選択された分類を確認できませんでした。",
+        });
+      }
+
+      selectedCategories = categories;
+    }
+
     const result =
-  await syncGoogleCalendar(
-    req.userId
-  );
+      await syncGoogleCalendar(
+        req.userId,
+        selectedCategories
+      );
 
     res.json({
   success: true,

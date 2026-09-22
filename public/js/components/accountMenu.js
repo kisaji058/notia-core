@@ -263,6 +263,13 @@ async function restoreNotificationSettingsAdBanner() {
     button
   ) {
     try {
+      const selection =
+        await window.NotiaCalendarSyncPicker.open();
+
+      if (!selection) {
+        return;
+      }
+
       button.disabled = true;
       button.textContent = "同期中...";
 
@@ -271,6 +278,16 @@ async function restoreNotificationSettingsAdBanner() {
           "/api/calendar/sync",
           {
             method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(
+              selection.categories === null
+                ? {}
+                : {
+                    categories: selection.categories,
+                  }
+            ),
           }
         );
 
