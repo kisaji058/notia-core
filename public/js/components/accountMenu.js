@@ -321,11 +321,18 @@ async function restoreNotificationSettingsAdBanner() {
 
       alert(
         `同期が完了しました。\n` +
-        `Google予定 ${
+        `Googleから取り込み ${
           result.importedEvents ?? 0
         }件\n` +
-        `Notia同期 ${
+        `Googleへ送信：\n` +
+        `・タスク ${
           result.exportedTasks ?? 0
+        }件\n` +
+        `・予定 ${
+          result.exportedEvents ?? 0
+        }件\n` +
+        `・ルーティーン ${
+          result.exportedRoutines ?? 0
         }件`
       );
 

@@ -3973,8 +3973,10 @@ async function syncCalendar() {
 
     if (syncStatus) {
       syncStatus.textContent =
-        `Google予定 ${result.importedEvents}件更新 / ` +
-        `Notiaタスク ${result.exportedTasks}件送信`;
+        `Googleから取り込み ${result.importedEvents ?? 0}件 / ` +
+        `Googleへ送信：タスク ${result.exportedTasks ?? 0}件・` +
+        `予定 ${result.exportedEvents ?? 0}件・` +
+        `ルーティーン ${result.exportedRoutines ?? 0}件`;
     }
 
     await loadCalendar();

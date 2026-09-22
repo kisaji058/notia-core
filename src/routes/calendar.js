@@ -269,6 +269,8 @@ router.post("/calendar/sync", async (req, res) => {
     result.importedEvents,
   exportedTasks:
     result.exportedTasks,
+  exportedEvents:
+    result.exportedEvents,
   exportedRoutines:
     result.exportedRoutines,
 });
