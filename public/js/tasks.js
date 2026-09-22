@@ -1070,7 +1070,8 @@ function renderTaskPreview() {
   const activeTasks =
     allTasks.filter(
       (task) =>
-        task.status === "active"
+        task.status === "active" &&
+        matchesPlanCategory(task)
     );
 
   if (activeTasks.length === 0) {
