@@ -3687,6 +3687,9 @@ return;
 
       if (data.taskResult?.created) {
         playNotiaSuccessReaction();
+        window.dispatchEvent(
+          new Event("notia:registration-succeeded")
+        );
       }
 
       loadSecretaryProgress();
