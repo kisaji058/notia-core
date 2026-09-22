@@ -472,6 +472,103 @@ async function createEventFromTask(
   return response.data;
 }
 
+async function createEventFromNotiaEvent(
+  userId,
+  event
+) {
+  if (
+    !event ||
+    !event.id ||
+    !event.event_date ||
+    !event.title
+  ) {
+    throw new Error(
+      "同期する予定の情報が正しくありません。"
+    );
+  }
+
+  const startDate = event.event_date;
+  const endDate = event.end_date || startDate;
+
+  if (endDate < startDate) {
+    throw new Error(
+      "予定の終了日が開始日より前です。"
+    );
+  }
+
+  const nextDate = (date) => {
+    const value = new Date(`${date}T00:00:00Z`);
+    if (Number.isNaN(value.getTime())) {
+      throw new Error("予定の日付形式が正しくありません。");
+    }
+    value.setUTCDate(value.getUTCDate() + 1);
+    return value.toISOString().slice(0, 10);
+  };
+
+  let start;
+  let end;
+
+  if (event.start_time) {
+    const startValue = new Date(
+      `${startDate}T${event.start_time}:00+09:00`
+    );
+
+    const endValue = event.end_time
+      ? new Date(
+          `${endDate}T${event.end_time}:00+09:00`
+        )
+      : new Date(
+          new Date(
+            `${endDate}T${event.start_time}:00+09:00`
+          ).getTime() + 60 * 60 * 1000
+        );
+
+    if (
+      Number.isNaN(startValue.getTime()) ||
+      Number.isNaN(endValue.getTime()) ||
+      endValue <= startValue
+    ) {
+      throw new Error(
+        "予定の開始・終了日時が正しくありません。"
+      );
+    }
+
+    start = {
+      dateTime: startValue.toISOString(),
+      timeZone: "Asia/Tokyo",
+    };
+
+    end = {
+      dateTime: endValue.toISOString(),
+      timeZone: "Asia/Tokyo",
+    };
+  } else {
+    start = { date: startDate };
+    end = { date: nextDate(endDate) };
+  }
+
+  const calendar = getAuthenticatedCalendar(userId);
+
+  const response = await calendar.events.insert({
+    calendarId: "primary",
+    requestBody: {
+      summary: event.title,
+      description: event.description || "",
+      location: event.location || "",
+      start,
+      end,
+      extendedProperties: {
+        private: {
+          source: "notia",
+          notiaEventId: String(event.id),
+        },
+      },
+    },
+  });
+
+  return response.data;
+}
+
 async function createRecurringEventFromRoutine(
   userId,
   routine
@@ -730,6 +827,7 @@ module.exports = {
   listEvents,
 
   createEventFromTask,
+  createEventFromNotiaEvent,
   createRecurringEventFromRoutine,
   updateRecurringEventFromRoutine,
   deleteRecurringEvent,

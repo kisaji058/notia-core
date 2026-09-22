@@ -21,6 +21,16 @@ const routines = [
   { id: 12, title: "私用ルーティーン", category: "private" },
 ];
 
+const events = [
+  { id: 21, title: "部活の予定1", category: "club" },
+  { id: 22, title: "部活の予定2", category: "club" },
+  { id: 23, title: "仕事の予定", category: "work" },
+];
+
+let sentEvents = [];
+let savedEventLinks = [];
+let linkedEventIds = new Set();
+
 let sentTasks = [];
 let sentRoutines = [];
 let savedTaskLinks = [];
@@ -28,6 +38,12 @@ let savedRoutineLinks = [];
 
 const databaseMock = {
   getUnsyncedTimedTasks: () => tasks,
+  getUnsyncedEvents: () =>
+    events.filter(event => !linkedEventIds.has(event.id)),
+  saveEventCalendarLink: (_userId, eventId) => {
+    savedEventLinks.push(eventId);
+    linkedEventIds.add(eventId);
+  },
   getUnsyncedGoogleRoutines: () => routines,
   saveExternalCalendarEvent: () => {
     throw new Error("予期しない予定取り込み");
@@ -43,6 +59,10 @@ const databaseMock = {
 
 const providerMock = {
   listEvents: async () => [],
+  createEventFromNotiaEvent: async (_userId, event) => {
+    sentEvents.push(event.id);
+    return { id: `event-${event.id}` };
+  },
   createEventFromTask: async (_userId, task) => {
     sentTasks.push(task.id);
     return { id: `task-${task.id}` };
@@ -81,6 +101,9 @@ try {
 }
 
 function resetRecords() {
+  sentEvents = [];
+  savedEventLinks = [];
+  linkedEventIds = new Set();
   sentTasks = [];
   sentRoutines = [];
   savedTaskLinks = [];
@@ -122,4 +145,36 @@ test("選択分類に該当する項目がなければ送信しない", async ()
   assert.deepEqual(savedRoutineLinks, []);
   assert.equal(result.exportedTasks, 0);
   assert.equal(result.exportedRoutines, 0);
+});
+
+
+test("部活だけを選ぶと部活の予定だけ送る", async () => {
+  resetRecords();
+
+  const result = await syncGoogleCalendar(18, ["club"]);
+
+  assert.deepEqual(sentEvents, [21, 22]);
+  assert.deepEqual(savedEventLinks, [21, 22]);
+  assert.equal(result.exportedEvents, 2);
+});
+
+test("分類を指定しなければ予定も全件送る", async () => {
+  resetRecords();
+
+  const result = await syncGoogleCalendar(18);
+
+  assert.deepEqual(sentEvents, [21, 22, 23]);
+  assert.equal(result.exportedEvents, 3);
+});
+
+test("予定は2回同期しても重複送信しない", async () => {
+  resetRecords();
+
+  const first = await syncGoogleCalendar(18, ["club"]);
+  const second = await syncGoogleCalendar(18, ["club"]);
+
+  assert.equal(first.exportedEvents, 2);
+  assert.equal(second.exportedEvents, 0);
+  assert.deepEqual(sentEvents, [21, 22]);
+  assert.deepEqual(savedEventLinks, [21, 22]);
 });

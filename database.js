@@ -1100,6 +1100,25 @@ CREATE TABLE IF NOT EXISTS task_calendar_links (
 `).run();
 
 // =====================
+// event_calendar_links
+// =====================
+
+db.prepare(`
+CREATE TABLE IF NOT EXISTS event_calendar_links (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  event_id INTEGER NOT NULL,
+  provider TEXT NOT NULL,
+  external_event_id TEXT NOT NULL,
+  synced_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, event_id, provider),
+  FOREIGN KEY (event_id)
+    REFERENCES events(id)
+    ON DELETE CASCADE
+)
+`).run();
+
+// =====================
 // daily_notification_logs
 // =====================
 
@@ -2414,6 +2433,55 @@ function getActiveEvents(
 
 
 // =====================
+// event calendar link functions
+// =====================
+
+function saveEventCalendarLink(
+  userId,
+  eventId,
+  provider,
+  externalEventId
+) {
+  db.prepare(`
+    INSERT INTO event_calendar_links (
+      user_id,
+      event_id,
+      provider,
+      external_event_id,
+      synced_at
+    )
+    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT(user_id, event_id, provider)
+    DO UPDATE SET
+      external_event_id = excluded.external_event_id,
+      synced_at = CURRENT_TIMESTAMP
+  `).run(
+    userId,
+    eventId,
+    provider,
+    externalEventId
+  );
+}
+
+function getUnsyncedEvents(
+  userId,
+  provider
+) {
+  return db.prepare(`
+    SELECT events.*
+    FROM events
+    LEFT JOIN event_calendar_links
+      ON event_calendar_links.event_id = events.id
+      AND event_calendar_links.user_id = events.user_id
+      AND event_calendar_links.provider = ?
+    WHERE events.user_id = ?
+      AND events.status = 'active'
+      AND event_calendar_links.id IS NULL
+    ORDER BY events.event_date ASC, events.id ASC
+  `).all(provider, userId);
+}
+
+// =====================
 // subscriptions
 // =====================
 
@@ -3361,6 +3429,8 @@ module.exports = {
     getExternalCalendarEventsByDate,
   getExternalCalendarEventsByDateRange,
   saveTaskCalendarLink,
+  saveEventCalendarLink,
+  getUnsyncedEvents,
   getUnsyncedTimedTasks,
   getGoogleIntegration,
   updateIntegrationLastSync,

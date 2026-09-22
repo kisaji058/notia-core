@@ -1,5 +1,7 @@
 const {
   getUnsyncedTimedTasks,
+  getUnsyncedEvents,
+  saveEventCalendarLink,
   saveExternalCalendarEvent,
   saveTaskCalendarLink,
   updateIntegrationLastSync,
@@ -98,6 +100,47 @@ async function syncGoogleCalendar(
     }
   }
 
+  // Notiaの予定 → Google
+  const unsyncedEvents =
+    getUnsyncedEvents(userId, "google");
+
+  let exportedEvents = 0;
+
+  for (const event of unsyncedEvents) {
+    if (
+      allowedCategories &&
+      !allowedCategories.has(event.category || "other")
+    ) {
+      continue;
+    }
+
+    try {
+      const googleEvent =
+        await googleProvider.createEventFromNotiaEvent(
+          userId,
+          event
+        );
+
+      saveEventCalendarLink(
+        userId,
+        event.id,
+        "google",
+        googleEvent.id
+      );
+
+      exportedEvents += 1;
+    } catch (error) {
+      console.error(
+        "Google event export error:",
+        {
+          eventId: event.id,
+          title: event.title,
+          error: error.message,
+        }
+      );
+    }
+  }
+
   const unsyncedRoutines =
     getUnsyncedGoogleRoutines(
       userId
@@ -147,6 +190,7 @@ async function syncGoogleCalendar(
   return {
     importedEvents,
     exportedTasks,
+    exportedEvents,
     exportedRoutines,
   };
 }
