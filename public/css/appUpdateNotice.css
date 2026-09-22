@@ -1,0 +1,62 @@
+/* Notia アップデート案内 */
+
+.notia-update-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  padding-top: calc(24px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  background: rgba(25, 42, 48, 0.42);
+}
+
+.notia-update-card {
+  box-sizing: border-box;
+  width: min(100%, 360px);
+  padding: 28px 24px 20px;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 16px 48px rgba(25, 42, 48, 0.18);
+  text-align: center;
+}
+
+.notia-update-card h2 {
+  margin: 0 0 12px;
+  color: #234642;
+  font-size: 20px;
+  line-height: 1.4;
+}
+
+.notia-update-card p {
+  margin: 0 0 24px;
+  color: #52635f;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.notia-update-card button {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.notia-update-primary {
+  background: #16877d;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.notia-update-later {
+  margin-top: 8px;
+  background: transparent;
+  color: #52635f;
+}

@@ -201,6 +201,22 @@ app.use(
     },
   })
 );
+// 公開済みバージョンの確認（ログイン前でも利用可能）
+app.get("/api/app-version", (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+
+  res.json({
+    ios: {
+      latestVersion: process.env.NOTIA_IOS_LATEST_VERSION || null,
+      storeUrl: process.env.NOTIA_IOS_STORE_URL || null,
+    },
+    android: {
+      latestVersion: process.env.NOTIA_ANDROID_LATEST_VERSION || null,
+      storeUrl: process.env.NOTIA_ANDROID_STORE_URL || null,
+    },
+  });
+});
+
 app.use("/login", authRouter);
 
 app.use(express.json());
